@@ -1,11 +1,11 @@
 /**
  * Report call, engine pipeline — Backend Instruction v1 §2 step 6:
- *   system prompt = the AI Master Prompt, MongoDB promptConfigs/default.systemPromptTemplate
+ *   system prompt = the level's Master Prompt, MongoDB promptConfigs/<record>.systemPromptTemplate (services/promptRouting.js)
  *                   (admin dashboard; the only copy — no prompt file on disk)
  *   user content  = the per-user geometry blocks + the engine payload
  *   corpus        = the Corpus Manifest slice (the model's WHOLE corpus for the request, rule 10)
  *
- * Selected by config.reportPipeline (set in the repo, live since 2026-09-16). Shared by
+ * The only report pipeline (live since 2026-09-16). Shared by
  * routes/ai.js and scripts/engine-dry-run.js so the dry-run exercises the exact request the route
  * would send.
  */
@@ -13,16 +13,20 @@
 'use strict';
 
 const { runPipeline, corpusName } = require('./index');
+const { loadPromptRecord, promptRecordId } = require('../services/promptRouting');
 
-/** The Master Prompt from its one home. Missing or empty is fatal — never an empty system message. */
-async function loadMasterPrompt(db) {
-  const cfg = await db.collection('promptConfigs').findOne({ _id: 'default' }, { projection: { systemPromptTemplate: 1 } });
-  return requirePrompt(cfg && cfg.systemPromptTemplate);
+/**
+ * A level's Master Prompt from its one home (services/promptRouting.js; default: the Leerling v1
+ * record). Missing or empty is fatal — never an empty system message.
+ */
+async function loadMasterPrompt(db, slot = 'advanced') {
+  const cfg = await loadPromptRecord(db, slot);
+  return requirePrompt(cfg && cfg.systemPromptTemplate, slot);
 }
 
-function requirePrompt(system) {
+function requirePrompt(system, slot = 'advanced') {
   if (typeof system !== 'string' || !system.trim()) {
-    throw new Error('Master Prompt missing: promptConfigs/default.systemPromptTemplate is empty');
+    throw new Error(`Master Prompt missing: promptConfigs/${promptRecordId(slot)}.systemPromptTemplate is empty`);
   }
   return system;
 }
@@ -87,7 +91,7 @@ function formatPayloadBlock(payload) {
  * the gate-6 dry-run to prove a withheld section stays out of scope; the route never passes it.
  */
 function corpusBlock(manifest, withhold = []) {
-  const kept = manifest.documents.filter((d) => d.kind !== 'image' && !withhold.includes(d.id)).map((d) => d.id);
+  const kept = manifest.documents.filter((d) => !withhold.includes(d.id)).map((d) => d.id);
   const sections = manifest.text.split(/\n\n(?=════ CORPUS )/).filter((s) => kept.includes(/^════ CORPUS (\S+) ════/.exec(s)[1]));
   return {
     ids: kept,
@@ -97,7 +101,7 @@ function corpusBlock(manifest, withhold = []) {
 
 /**
  * @param {object} p
- * @param {string} p.system         the Master Prompt (Mongo promptConfigs/default), passed through unaltered
+ * @param {string} p.system         the Master Prompt (Mongo promptConfigs, per level), passed through unaltered
  * @param {object} p.bleed          the bleed-engine fields from the request body (archetypeDetails, archetypeKey, …)
  * @param {string} p.geometryMsg    the per-user geometry blocks (prompt builder, slice-scoped)
  * @param {string} [p.lineTypeBlock]
@@ -147,4 +151,4 @@ function clientPayload(payload) {
   return { main: { register: { register_baseline_pct: reg.register_baseline_pct, register_transform_pct: reg.register_transform_pct } } };
 }
 
-module.exports = { buildV5Request, clientPayload, engineInputs, geometryPassthrough, loadMasterPrompt };
+module.exports = { buildV5Request, clientPayload, engineInputs, geometryPassthrough, loadMasterPrompt, requirePrompt, corpusBlock, formatCPathBlock, formatPayloadBlock };

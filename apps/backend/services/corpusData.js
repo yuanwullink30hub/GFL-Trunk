@@ -31,8 +31,8 @@ const CORPUS_PATHS = {
   nl: path.join(CANON_DIR, 'deltawerken_corpus_nl.json'),
 };
 // The canonical NUMERIC source (stored_D, C-[Effect]) is language-independent and
-// validated against EN — the engine always reads EN. Language only selects which
-// corpus TEXT is sent to the model.
+// validated against EN — the engine always reads EN. Language only selects which corpus
+// the model's slice is cut from (engine/corpusResolver.js).
 const ENGINE_LANG = 'en';
 
 /** Map any language tag → a supported corpus language ('nl' | 'en'; uk/en/default → en). */
@@ -40,27 +40,13 @@ function resolveLang(language) {
   return String(language || '').toLowerCase() === 'nl' ? 'nl' : 'en';
 }
 
-const CORPUS_PATH = CORPUS_PATHS.en; // back-compat default
-
 const _corpus = {};      // parsed, memoised per language
-const _corpusText = {};  // raw text, memoised per language
 
 /** Load + memoise the parsed canon corpus for a language (engine reads EN by default). */
 function loadCorpus(language = ENGINE_LANG) {
   const lang = resolveLang(language);
   if (!_corpus[lang]) _corpus[lang] = JSON.parse(fs.readFileSync(CORPUS_PATHS[lang], 'utf8'));
   return _corpus[lang];
-}
-
-/**
- * Raw corpus file text (memoised per language) — the byte-stable block sent to the
- * model as cached context. Read verbatim (not re-stringified) so the cached prefix
- * is identical across calls and the prompt cache reliably hits per language.
- */
-function getCorpusText(language = ENGINE_LANG) {
-  const lang = resolveLang(language);
-  if (!_corpusText[lang]) _corpusText[lang] = fs.readFileSync(CORPUS_PATHS[lang], 'utf8');
-  return _corpusText[lang];
 }
 
 // ── Key normalisation: UPPERCASE (backend/scoring) <-> TitleCase (corpus) ──
@@ -134,12 +120,7 @@ function getCEffectDirection(corpus, supportKey) {
 }
 
 module.exports = {
-  CORPUS_PATH,
   loadCorpus,
-  getCorpusText,
-  toCorpusKey,
-  getStoredDFor,
   getStoredD,
   getCEffectDirection,
-  parseEffectDirection,
 };

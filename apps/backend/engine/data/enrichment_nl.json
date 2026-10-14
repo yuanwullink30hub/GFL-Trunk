@@ -1,0 +1,26 @@
+{
+  "_note": "Dutch enrichment cells (payload instruction v7 §9), ratified by the owner 2026-10-13. Keys are the English cell values exactly as the corpus holds them. Dutch v2 reports read these (engine/index.js dutchCells); a value missing here fails loudly.",
+  "strain_response": {
+    "mask": "maskeren",
+    "cling": "vastklampen",
+    "rise": "in verzet komen",
+    "withdraw": "terugtrekken",
+    "buffer": "opvangen (bufferen)",
+    "escalate": "escaleren",
+    "escalates → suppresses → exhausts": "escaleert → onderdrukt → raakt uitgeput"
+  },
+  "failure_mode": {
+    "rigidity_lock": "verstarring",
+    "dissolution_fusion": "oplossen in de ander (versmelting)",
+    "dissolution_chaos": "ontbinding naar chaos",
+    "dissociation": "loskoppeling",
+    "valence_inversion": "emotionele omkering",
+    "drive_depletion": "uitputting van de drijfkracht",
+    "drive_depletion (mode 4) — effort-exhaustion at threshold": "uitputting van de drijfkracht (modus 4) — uitputting door inspanning op de drempel"
+  },
+  "valence_trajectory": {
+    "neutral": "neutraal",
+    "approach->defensive": "van toenadering naar afweer",
+    "approach → collapsed-approach (want intact, capacity gone)": "van toenadering naar ingestorte toenadering (het willen blijft, het kunnen is weg)"
+  }
+}

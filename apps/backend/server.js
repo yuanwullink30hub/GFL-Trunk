@@ -23,6 +23,7 @@ const verbondRoutes = require('./routes/verbond');
 const activationCodeRoutes = require('./routes/activationCodes');
 const paymentRoutes = require('./routes/payments');
 const stripeWebhookRoutes = require('./routes/stripeWebhook');
+const refusalTextRoutes = require('./routes/refusalText');
 
 const app = express();
 const PRIVATE_DEV_ORIGIN_RE = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
@@ -87,6 +88,8 @@ app.use('/api/tools', toolsRoutes);
 app.use('/api/verbond', verbondRoutes);
 app.use('/api/activation-codes', activationCodeRoutes);
 app.use('/api/payments', paymentRoutes);
+// N1 refusal free text — anonymous, opt-in, its own store (routes/refusalText.js); 503 until REFUSAL_TEXT_MONGODB_URI is set.
+app.use('/api/refusal-text', refusalTextRoutes);
 
 // Lightweight keepalive — frontend pings on every card save to prevent Render sleep
 app.get('/api/ping', (_req, res) => res.json({ pong: true }));
@@ -100,7 +103,6 @@ app.get('/api/status', (_req, res) => {
   res.json({
     status: 'ready',
     providers,
-    reportPipeline: config.reportPipeline,
     encryption: encryptionEnabled() ? 'AES-256-GCM' : 'disabled',
   });
 });
@@ -274,6 +276,8 @@ async function start() {
 
     // Computed profiles never survive the night — swept at 00:00 Europe/Amsterdam.
     scheduleProfilePurge();
+    // N1 retention: texts 12 months past their month are deleted (no-op without the N1 store).
+    require('./services/refusalTextStore').startRetentionJob();
 
     // Which Stripe pieces are present for the active mode (never the values).
     const d = require('./services/paymentConfig').paymentDiagnostics();

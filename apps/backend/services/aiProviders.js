@@ -83,9 +83,7 @@ async function callAI({
   messages,
   maxTokens = 2048,
   temperature = 0.7,
-  uploadedImages = [],
   cachedContext = null,
-  referenceDocs = [],
 }) {
   const providerDef = PROVIDERS[provider];
   if (!providerDef) {
@@ -101,7 +99,7 @@ async function callAI({
 
   // ── Claude: use @anthropic-ai/sdk ──
   if (providerDef.useClaudeSDK) {
-    return callClaudeSDK({ messages, model: selectedModel, maxTokens, temperature, providerConfig, uploadedImages, cachedContext, referenceDocs });
+    return callClaudeSDK({ messages, model: selectedModel, maxTokens, temperature, providerConfig, cachedContext });
   }
 
   // ── OpenAI / Grok: REST API ──
@@ -170,25 +168,16 @@ function parseResponse(json) {
 // Anthropic Claude — @anthropic-ai/sdk
 // ─────────────────────────────────────────────────────────────
 
-async function callClaudeSDK({ messages, model, maxTokens, temperature, providerConfig, uploadedImages = [], cachedContext = null, referenceDocs = [] }) {
+async function callClaudeSDK({ messages, model, maxTokens, temperature, providerConfig, cachedContext = null }) {
   const client = new Anthropic({ apiKey: providerConfig.apiKey });
 
   const systemMsg = messages.find(m => m.role === 'system');
   const userMsgs  = messages.filter(m => m.role !== 'system');
 
-  // Only allow mimeTypes that Claude's vision API accepts
-  const VALID_CLAUDE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-  const userImageBlocks = uploadedImages
-    .filter(img => VALID_CLAUDE_TYPES.includes(img.mimeType))
-    .map(img => ({
-      type: 'image',
-      source: { type: 'base64', media_type: img.mimeType, data: img.base64 },
-    }));
-
   const anthropicMessages = userMsgs.map((m, i) => {
     const role = m.role === 'assistant' ? 'assistant' : 'user';
     // Attach the cached corpus block FIRST (static prefix → prompt cache), then the
-    // model diagram images + user-uploaded images, then the per-user payload text.
+    // model diagram images, then the per-user payload text.
     if (i === 0 && role === 'user') {
       return {
         role,
@@ -198,18 +187,10 @@ async function callClaudeSDK({ messages, model, maxTokens, temperature, provider
           ...(cachedContext
             ? [{ type: 'text', text: cachedContext, cache_control: { type: 'ephemeral' } }]
             : []),
-          // Static reference documents (e.g. the line-type lookup table) shipped as their own
-          // labelled blocks. They sit inside the cached prefix (static → cheap on repeat calls).
-          ...referenceDocs.map(doc => ({
-            type: 'text',
-            text: `═══ REFERENTIEDOCUMENT: ${doc.name} ═══\n${doc.text}`,
-            cache_control: { type: 'ephemeral' },
-          })),
           ...MODEL_IMAGES.map(img => ({
             type: 'image',
             source: { type: 'base64', media_type: img.mimeType, data: img.base64 },
           })),
-          ...userImageBlocks,
           { type: 'text', text: m.content },
         ],
       };

@@ -15,7 +15,7 @@ const path = require('path');
 // module object, so its `require('dotenv').config()` becomes a no-op.
 require('dotenv').config = () => ({ parsed: {} });
 for (const k of Object.keys(process.env)) {
-  if (/^(STRIPE_|ANTHROPIC_|OPENAI_|GROK_|SMTP_|MONGODB_|EDGE_SECRET|API_PUBLIC_URL|PAYMENTS_)/.test(k)) delete process.env[k];
+  if (/^(STRIPE_|ANTHROPIC_|OPENAI_|GROK_|SMTP_|MONGODB_|STATS_MONGODB_|EDGE_SECRET|API_PUBLIC_URL|PAYMENTS_)/.test(k)) delete process.env[k];
 }
 
 // Config is read once, at first require. Pin a safe test environment before anything loads it.

@@ -289,16 +289,6 @@ export function getArchetypeImageByKey(lookupKey, variant = DEFAULT_PORTRAIT_VAR
 }
 
 /**
- * @param {string} name - e.g. 'The Mentor' or 'De Mentor' (live roster names only)
- * @param {string} [variant] - 'male' | 'female'
- * @returns {string|null} portrait path, or null while the artwork is unavailable
- */
-export function getArchetypeImageByName(name, variant = DEFAULT_PORTRAIT_VARIANT) {
-  const key = extendedKeyForName(name);
-  return key ? getArchetypeImageByKey(key, variant) : null;
-}
-
-/**
  * resolvePortrait() by display name - e.g. for the account dashboard's full-resolution download.
  * @param {string} name - e.g. 'The Sovereign' or 'De Soeverein' (live roster names only)
  * @param {string} [variant] - 'male' | 'female'

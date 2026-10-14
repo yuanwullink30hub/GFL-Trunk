@@ -138,71 +138,6 @@ const preloadThreeJS = async () => {
 };
 
 /**
- * Preload heavy React components
- */
-export const preloadComponents = () => {
-  return new Promise((resolve) => {
-    const componentModules = [
-      () => import('../components/orbital/HoloEarth'),
-      () => import('../components/orbital/DesktopLayout'),
-      () => import('../components/orbital/MobileLayout'),
-      () => import('../components/orbital/TechContainer'),
-      () => import('../components/orbital/EarthParticleWaves'),
-      () => import('../components/holoearth/HoloPyramid'),
-      () => import('../components/holoearth/HoloCore'),
-      () => import('../components/holoearth/HoloLabel'),
-      () => import('../components/holoearth/PyramidView'),
-      () => import('../components/holoearth/PyramidInner'),
-      () => import('../components/holoearth/PyramidOverlay'),
-      () => import('../pages/FilosofiePage'),
-      () => import('../pages/GardensPage'),
-      () => import('../pages/DataPage'),
-      () => import('../pages/LoginPage'),
-      () => import('../pages/EyedentityPage'),
-      // Map destinations added later — warm them too, or the chunk fetch lands
-      // mid-pan and the fly-to stutters (same lesson as the entity-emergence chunks).
-      () => import('../pages/WinkelPage'),
-      () => import('../pages/KookPage'),
-    ];
-
-    // Load all components in parallel for speed
-    Promise.all(
-      componentModules.map(load => 
-        load().catch(err => {
-          console.warn('Component preload failed:', err);
-          return null;
-        })
-      )
-    ).then(() => {
-      console.log('[Preload] Components loaded');
-      resolve();
-    });
-  });
-};
-
-/**
- * Preload critical images
- */
-export const preloadImages = () => {
-  // Critical images that need to be ready immediately
-  const criticalImages = [
-    'images/landingpage/logo.webp',
-  ];
-  
-  // UI images
-  const uiImages = [
-    'images/Eyedentity.png',
-    'images/illustrativesun.png',
-  ];
-  
-  const allImages = [...criticalImages, ...uiImages];
-  
-  return Promise.all(allImages.map(preloadImage)).then(() => {
-    console.log('[Preload] Images loaded');
-  });
-};
-
-/**
  * Preload fonts to prevent FOUT (Flash of Unstyled Text)
  */
 const preloadFonts = () => {
@@ -326,6 +261,9 @@ export const preloadInBackground = () => {
     () => import('../pages/GardensPage'),
     () => import('../pages/DataPage'),
     () => import('../pages/EyedentityPage'),
+    // Its default tab (Profiel) is a lazy chunk of its own, with the radar library and the portrait: warmed
+    // here, or a first pan to the page lands on an empty pane while they download.
+    () => import('../pages/OwnerProfile').then((m) => m.warmOwnerProfile?.()),
     () => import('../pages/WinkelPage'),
     () => import('../pages/KookPage'),
   ];

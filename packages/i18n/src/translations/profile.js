@@ -298,7 +298,6 @@ export default {
         syncFailed: { nl: 'Synchroniseren mislukt', en: 'Synchronising failed' },
         noArchetypeImage: { nl: 'Geen archetype-afbeelding gevonden.', en: 'No archetype image found.' },
         photoStarted: { nl: 'Download gestart (PNG, ±20 MB) ✓', en: 'Download started (PNG, ~20 MB) ✓' },
-        downloadFailed: { nl: 'Download mislukt.', en: 'Download failed.' },
         videoUnsupported: {
           nl: 'Video wordt niet ondersteund in deze browser.',
           en: 'Video is not supported in this browser.',
@@ -320,20 +319,11 @@ export default {
 
       files: {
         crystalFallback: { nl: 'kristal', en: 'crystal' },
-        photoSuffix: { nl: 'profielfoto', en: 'profile-photo' },
       },
     },
 
     /* ── profileCardMicrocopy.js — placeholder per-archetype copy ─────── */
     microcopy: {
-      tendency: {
-        nl: 'PLACEHOLDER — tendens-microcopy volgt uit de schrijfronde.',
-        en: 'PLACEHOLDER — tendency microcopy follows from the writing round.',
-      },
-      expression: {
-        nl: 'PLACEHOLDER — dit expressieprofiel beschrijft straks in *waarschijnlijke tendensen* hoe deze configuratie zich doorgaans uitdrukt. De definitieve twaalf teksten worden apart geschreven en hier ingeladen.',
-        en: 'PLACEHOLDER — this expression profile will soon describe, in *likely tendencies*, how this configuration usually expresses itself. The definitive twelve texts are written separately and loaded in here.',
-      },
     },
   },
 };

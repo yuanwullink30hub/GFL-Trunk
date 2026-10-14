@@ -103,19 +103,4 @@ export const BRANDS = [
   makeTemplate('12', 'template-12'),
 ];
 
-// Get brand by index (0-11)
-export const getBrandByIndex = (index) => {
-  return BRANDS[index % BRANDS.length];
-};
-
-// Get brand by slug
-export const getBrandBySlug = (slug) => {
-  return BRANDS.find(brand => brand.slug === slug);
-};
-
-// Get brand by ID
-export const getBrandById = (id) => {
-  return BRANDS.find(brand => brand.id === id);
-};
-
 export default BRANDS;

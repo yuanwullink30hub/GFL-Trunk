@@ -8,6 +8,13 @@ import PublicProfilesDirectory from '../components/assessment/PublicProfilesDire
 
 // The owner's own profile (Profiel tab). Lazy: it brings the chart library, which must not load at boot.
 const OwnerProfile = lazy(() => import('./OwnerProfile'));
+// Shown only when the tab opens before the idle warm-up (preloadInBackground) has fetched it — a functional
+// loader, so it keeps spinning under the low-GPU freeze.
+const PROFILE_LOADING = (
+  <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem 0' }}>
+    <div className="keep-spinning" style={{ width: '2rem', height: '2rem', border: '2px solid #a855f7', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+  </div>
+);
 
 const CornerStone = ({ variant = 'purple' }) => {
   const accentColor = variant === 'orange' ? '#f59e0b' : '#a855f7';
@@ -561,7 +568,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
             }}>
               {selectedId === 'profile' ? (
                 // The owner's own profile on the 132 roster — De Ronin, in the first person (2026-09-19).
-                isVisible && <Suspense fallback={null}><OwnerProfile /></Suspense>
+                isVisible && <Suspense fallback={PROFILE_LOADING}><OwnerProfile /></Suspense>
               ) : selectedId === 'feedback' ? (
                 <FeedbackStandaloneForm />
               ) : (

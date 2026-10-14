@@ -127,10 +127,6 @@ export default {
         nl: 'Details verbergen',
         en: 'Hide details',
       },
-      whatWeDoLabel: {
-        nl: 'Wat we doen',
-        en: 'What we do',
-      },
       whatWeDoP1: {
         nl: 'Je antwoorden worden verwerkt door het AI-model {b|Claude van Anthropic} om een persoonlijk zelfreflectierapport te genereren op basis van het Garden For Life Deltawerken Model. Dit rapport is uitsluitend bedoeld als persoonlijk zelfinzichtinstrument — {b|geen klinische diagnose, geen medisch oordeel}.',
         en: 'Your answers are processed by the AI model {b|Claude by Anthropic} in order to generate a personal self-reflection report based on the Garden For Life Deltawerken Model. This report is intended solely as a personal self-insight instrument — {b|not a clinical diagnosis, not a medical judgement}.',
@@ -284,12 +280,12 @@ export default {
           en: 'Most tests hand you a box. Four letters, a colour, an animal — a label you carry with you that never changes, however hard life pulls at you.',
         },
         p2: {
-          nl: 'Dit model vraagt iets anders. Niet ‘’wat ben je’’ maar ‘’hoe navigeer je’’ — tussen instinct en aanleg, wie je van nature bent en wie je hebt leren zijn. \n En belangrijker: wat kost dat je wanneer de druk oploopt. Want een mens is geen vast punt. Een mens is een vorm die buigt, aan ons de kunst om jou te vertellen waar, hoe ver en wat er overeind blijft.',
-          en: 'This model asks something else. Not ‘’what are you’’ but ‘’how do you navigate’’ — between instinct and disposition, who you are by nature and who you have learned to be. \n And more importantly: what that costs you when the pressure rises. Because a human being is not a fixed point. A human being is a shape that bends; ours is the art of telling you where it bends, how far, and what stays standing.',
+          nl: 'Dit model stelt een andere vraag. Niet wat ben je, maar hoe navigeer je. En, belangrijker: wat kost dat je, wanneer de druk oploopt. Want een mens is geen vast punt. Een mens is een vorm die buigt, en de kunst is om te weten waar, en hoe ver, en wat er overeind blijft.',
+          en: 'This model asks a different question. Not what are you, but how do you navigate. And, more importantly: what does that cost you, when the pressure rises. Because a human being is not a fixed point. A human being is a shape that bends, and the art is to know where, and how far, and what stays standing.',
         },
         p3: {
-          nl: 'Daarvoor bouwen we op drie originele modellen — elk bezielt op zeer intieme wijze de schoonheid van onze tuin.',
-          en: 'For that we build on three original models — each one animates, in a deeply intimate way, the beauty of our garden.',
+          nl: 'Daarvoor bouwen we op drie originele modellen. Geen van de drie is decoratie; elk bezielt op intieme wijze de schoonheid in onze tuin.',
+          en: 'For that we build on three original models. None of the three is decoration; each one animates, in an intimate way, the beauty in our garden.',
         },
       },
 
@@ -331,8 +327,8 @@ export default {
           en: 'Contradiction here is not politics but {g:#ef4444|contrasting} hardware: nature having made a choice, and the human being having to respect it.',
         },
         learned: {
-          nl: 'En over alles heen ligt wat je hebt {g:#eab308|geléérd}. Driehoeken van archetypen die biologisch niets delen, maar die jaren van vorming tot één aangeleerd netwerk hebben gesmeed — de software die je schreef om te overleven.',
-          en: 'And over all of it lies what you have {g:#eab308|learned}. Triangles of archetypes that share nothing biologically, but that years of formation have forged into a single learned network — the software you wrote in order to survive.',
+          nl: 'Natuur is gekristalliseerde cultuur, en cultuur is vloeibare natuur, in ons model duiden wij deze dynamiek aan met verschillende {g:#eab308|cognitieve netwerken} die een sterke synergetische bond vormen.',
+          en: 'Nature is crystallized culture, and culture is liquid nature; in our model we mark this dynamic with different {g:#eab308|cognitive networks} that form a strong synergetic bond.',
         },
         closing: {
           nl: 'Geen van deze verbindingen is verzonnen, ze presenteerden zichzelf. Dit is de synchronisatie tussen determinatie en vrije wil.',
@@ -376,12 +372,12 @@ export default {
           en: 'What this model carries, and most do not',
         },
         p1: {
-          nl: 'Een gewone test vraagt je een paar vinkjes en geeft je wat data terug. Hier kies je tweeledig op zesendertig vragen, die onderscheid maken tussen aangeleerd gedrag en de essentie — en elke keuze stroomt niet naar één punt, maar door de geometrie van het hele wiel. Tweeënzeventig datapunten waarvan er geen één op zichzelf staat.',
-          en: 'An ordinary test asks you for a few ticks and hands you back some data. Here you choose twice on thirty-six questions that separate learned behaviour from essence — and every choice flows not to a single point, but through the geometry of the whole wheel. Seventy-two data points, not one of which stands on its own.',
+          nl: 'Een gewone test vraagt je een paar vinkjes en geeft je wat data terug. Hier ontstaat jouw antwoordprofiel door een sequentie van 36 vragen, elk 2 lagen, zodat we een eerlijk profiel kunnen tekenen van die vloeibare archetypische kristallisatie. Elke keuze stroomt niet naar één punt, maar door de geometrie van het hele wiel. Geen enkele keuze staat op zichzelf.',
+          en: 'An ordinary test asks you for a few ticks and hands you back some data. Here your answer profile arises from a sequence of 36 questions, each with 2 layers, so that we can draw an honest profile of that fluid archetypal crystallization. Every choice flows not to a single point, but through the geometry of the whole wheel. No single choice stands on its own.',
         },
         p2: {
-          nl: 'Tel je uit hoeveel verschillende geometrieën daaruit kunnen ontstaan, dan kom je op een getal van vierenvijftig cijfers: 30³⁶ — meer dan honderdvijftig quadriljard maal een biljoen. Meer dan er sterren aan de hemel staan, meer dan er atomen in je lichaam zitten.',
-          en: 'Work out how many different geometries can arise from that and you land on a fifty-four-digit number: 30³⁶ — more than a hundred and fifty quadrillion times a trillion. More than there are stars in the sky, more than there are atoms in your body.',
+          nl: 'Tel je uit hoeveel verschillende antwoordpatronen daaruit kunnen ontstaan, dan kom je op een getal van drieëntachtig cijfers: 190³⁶ — in dezelfde orde als het geschatte aantal atomen in het hele waarneembare heelal. Meer dan er sterren aan de hemel staan, onvoorstelbaar veel meer dan er atomen in je lichaam zitten.',
+          en: 'Work out how many different answer patterns can arise from that and you land on an eighty-three-digit number: 190³⁶ — the same order as the estimated number of atoms in the entire observable universe. More than there are stars in the sky, unimaginably more than there are atoms in your body.',
         },
         p3: {
           nl: 'Dit is geen losse statistiek: het is een gevolg van hoe het model leest. Elke keuze stroomt niet naar één oceaan, maar verspreidt zich in vijf afzonderlijke geometrische kanalen — gedeelde hardware, bruggen, schaduw, aangeleerde driehoeken, frictie. \nGeen etiket, een vingerafdruk.',

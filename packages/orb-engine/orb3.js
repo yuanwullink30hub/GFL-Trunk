@@ -103,7 +103,6 @@ const EDGES = {
 // geometries) overwrites them. SEQUENCING: format-pin (done) → individuation (now — the 4 levers
 // read the individual's composed-B) → NORM-calibration (deferred) → regenerate production codes.
 const SCALARS = {
-  POLAR_SCALE: 100,        // polar_norm denominator (radial + purple gate)
   FBASE: 0.15,             // friction floor for an active in-top-3 seam
   FAINT: 0.30,             // out-of-top-3 red-partner attenuation (floor-bypassed)
   HARMONY_SCALE: 3.0,      // provisional harmony normalisation (NORM_harmony)
@@ -275,23 +274,19 @@ function decodeOrb3(code) {
 }
 
 /**
- * AUTHORITATIVE backend code-gen. Reads the geometry + gates radial/purple with the real
- * polar_gap (main − shadow weight), then snapshots to "LC_ORB3_…" (§1 snapshot, pre-PDF).
+ * AUTHORITATIVE backend code-gen. Reads the geometry + gates radial/purple with the caller's
+ * polar_norm, then snapshots to "LC_ORB3_…" (§1 snapshot, pre-PDF). The backend passes the value
+ * from its one polar_norm (apps/backend/engine/polarNorm.js: gap ÷ Main, addendum rev 2) — the orb
+ * never derives it itself. Without one the gate stays open (0), as in the client fallback.
+ * @param {{ archetypeDetails: Array, polarNorm?: number }} geometry
  * @returns {string} "LC_ORB3_…" or '' when the geometry is incomplete.
  */
-function orb3FromGeometry({ archetypeDetails, mainKey, shadowKey } = {}) {
+function orb3FromGeometry({ archetypeDetails, polarNorm } = {}) {
   if (!Array.isArray(archetypeDetails) || !archetypeDetails.length) return '';
-  const totalByKey = {};
-  for (const d of archetypeDetails) totalByKey[String(d.key || '').toUpperCase()] = d.total ?? d.score ?? 0;
-  const mainW = totalByKey[String(mainKey || '').toUpperCase()] ?? 0;
-  const shadowW = shadowKey ? (totalByKey[String(shadowKey).toUpperCase()] ?? 0) : 0;
-  const polarNorm = clamp01((mainW - shadowW) / SCALARS.POLAR_SCALE);
   return encodeOrb3(deriveOrb3(archetypeDetails, { polarNorm }));
 }
 
 module.exports = {
-  ORB3_POS: POS, ORB3_GROUP_BY_POS: GROUP_BY_POS, ORB3_GROUP_NAME: GROUP_NAME,
-  ORB3_ORIENT: ORIENT, ORB3_TEMPO: TEMPO, ORB3_PALETTES: PALETTES, ORB3_EDGES: EDGES,
-  ORB3_GROUP_PRESET: GROUP_PRESET, ORB3_SCALARS: SCALARS, ORB3_B_PRIORS: B_PRIORS,
-  deriveOrb3, encodeOrb3, decodeOrb3, orb3FromGeometry, composedB,
+  ORB3_GROUP_NAME: GROUP_NAME, ORB3_PALETTES: PALETTES,
+  deriveOrb3, encodeOrb3, decodeOrb3, orb3FromGeometry,
 };

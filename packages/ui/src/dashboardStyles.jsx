@@ -62,18 +62,6 @@ export const BTN = {
   fontWeight: 'bold',
 };
 
-export const BTN_LG = {
-  ...BTN,
-  padding: '0.7rem 1.5rem',
-  fontSize: 'max(11px, 0.6vw)',
-  letterSpacing: '0.15em',
-  width: '100%',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '0.5rem',
-};
-
 // ── Labels ──
 export const LABEL = {
   fontSize: 'max(10px, 0.5vw)',
@@ -125,44 +113,10 @@ export const TEXTAREA = {
   resize: 'vertical',
 };
 
-// ── Tab buttons ──
-export const TAB_STYLE = (active) => ({
-  ...BTN,
-  background: active
-    ? 'linear-gradient(135deg, rgba(255, 174, 0, 0.2), rgba(255, 174, 0, 0.3))'
-    : 'linear-gradient(135deg, rgba(255, 174, 0, 0.03), rgba(255, 174, 0, 0.06))',
-  borderColor: active ? 'rgba(255, 174, 0, 0.7)' : 'rgba(255, 174, 0, 0.2)',
-});
-
 // ── Separator line ──
 export const SEPARATOR = {
   height: 1,
   backgroundColor: 'rgba(255, 174, 0, 0.12)',
-};
-
-// ── Hover helpers (GlowButton-style glow) ──
-export const hover = (e, on) => {
-  if (on) {
-    e.target.style.background = 'linear-gradient(135deg, rgba(255, 174, 0, 0.8), rgba(255, 174, 0, 0.9))';
-    e.target.style.color = '#000000';
-    e.target.style.boxShadow = '0 0 20px rgba(255, 174, 0, 0.6)';
-  } else {
-    e.target.style.background = 'linear-gradient(135deg, rgba(255, 174, 0, 0.1), rgba(255, 174, 0, 0.2))';
-    e.target.style.color = '#ffae00';
-    e.target.style.boxShadow = 'none';
-  }
-};
-
-export const hoverDanger = (e, on) => {
-  if (on) {
-    e.target.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.7), rgba(239, 68, 68, 0.8))';
-    e.target.style.color = '#ffffff';
-    e.target.style.boxShadow = '0 0 20px rgba(239, 68, 68, 0.5)';
-  } else {
-    e.target.style.background = 'linear-gradient(135deg, rgba(255, 174, 0, 0.1), rgba(255, 174, 0, 0.2))';
-    e.target.style.color = '#ffae00';
-    e.target.style.boxShadow = 'none';
-  }
 };
 
 // ── SciFiButton — scroll-label exact visual pattern ──

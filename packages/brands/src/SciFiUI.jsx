@@ -337,28 +337,6 @@ export const IconButton = ({ icon, onClick, variant = 'default', className = '' 
 };
 
 /**
- * LoadingSpinner - Sci-fi loading animation
- */
-export const LoadingSpinner = ({ message = 'SYNCHRONIZING...' }) => (
-  <div 
-    className="min-h-screen flex flex-col items-center justify-center font-mono"
-    style={{ backgroundColor: '#030005', color: '#ffae00' }}
-  >
-    <div className="mb-4 animate-spin" style={{ animationDuration: '20s' }}>
-      <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="#bc13fe" strokeWidth="1.5">
-        <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5" />
-      </svg>
-    </div>
-    <div 
-      className="text-xs tracking-widest animate-pulse"
-      style={{ letterSpacing: '0.5em' }}
-    >
-      {message}
-    </div>
-  </div>
-);
-
-/**
  * Modal - Overlay modal component
  */
 export const Modal = ({ isOpen, onClose, children }) => {
@@ -383,17 +361,3 @@ export const Modal = ({ isOpen, onClose, children }) => {
     </div>
   );
 };
-
-const SciFiUIComponents = {
-  HoloCard,
-  GlowButton,
-  TechBadge,
-  SectionHeader,
-  SectorFrame,
-  TabButton,
-  IconButton,
-  LoadingSpinner,
-  Modal
-};
-
-export default SciFiUIComponents;

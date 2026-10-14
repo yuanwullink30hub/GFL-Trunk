@@ -81,39 +81,20 @@ export default {
         nl: 'Ik geef uitdrukkelijke toestemming om een gedeeltelijk profiel in mijn account te bewaren: mijn archetype-naam, de render-only orb-geometrie, de genormaliseerde 12-punts vormvector, de scoreverdeling en de bijbehorende kaartteksten — psychologische kenmerken in de zin van artikel 9 AVG. Het bevat geen ruwe antwoorden en geen volledig rapport, blijft bewaard zolang mijn account bestaat, en verdwijnt zodra ik mijn account verwijder.',
         en: 'I give explicit consent to keep a partial profile in my account: my archetype name, the render-only orb geometry, the normalised 12-point shape vector, the score distribution and the accompanying card texts — psychological characteristics within the meaning of Article 9 GDPR. It contains no raw answers and no full report, it persists for as long as my account exists, and it is gone as soon as I delete my account.',
       },
+      // A report from the two-layer test (reading.schemaVersion v2_two_layer): what its kristal-code keeps —
+      // schemaVersion, mandjes12, extensionN (payload instruction v7 §8). DRAFT, Privacy_Texts_v2_DRAFT_v0_1 §B:
+      // the owner ratifies the wording. Old-test accounts keep the text above alone.
+      v2Kept: {
+        title: { nl: 'Wat we bij je kristal-code bewaren', en: 'What we keep with your kristal-code' },
+        body: {
+          nl: 'Met een kristal-code bewaren we een deel van je profiel, zodat je het later terug kunt zien: je scores per archetype, hoe elke score is opgebouwd (wat je zelf koos en wat via verwante archetypen meekwam) en het nummer van je archetype-combinatie. Je antwoorden, je antwoordstijl en het rapport zelf bewaren we niet. De gegevens staan op servers in de EU (Frankfurt) en blijven bewaard tot je je account verwijdert.',
+          en: 'With a kristal-code we keep part of your profile, so you can look at it again later: your scores per archetype, how each score was built up (what you chose yourself and what came in through related archetypes) and the number of your archetype combination. We do not keep your answers, your answering style or the report itself. The data is stored on servers in the EU (Frankfurt) and kept until you delete your account.',
+        },
+      },
       back: { nl: '← Terug', en: '← Back' },
       creating: { nl: 'Aanmaken…', en: 'Creating…' },
       enter: { nl: 'Betreed platform', en: 'Enter platform' },
 
-      // ── First step after the account exists: the local workstation (the desktop app +
-      //    one folder of their own). The explanation itself reuses clientOrb.workspace.*, which
-      //    tracks Terms art. 5a/5b and privacy art. 6. ──
-      workspaceTitle: { nl: 'Je eigen werkmap', en: 'Your own folder' },
-      workspaceIntro: {
-        nl: 'Je account staat. Eén ding vragen we je als eerste — en we leggen uit waarom.',
-        en: 'Your account is ready. There is one thing we ask you first — and we explain why.',
-      },
-      workspaceLocked: {
-        nl: 'De hulpmiddelen die met je persoonlijke gegevens werken gebruik je in onze applicatie, met je eigen werkmap. Je account, je openbare kaart en Verbonden werken meteen — ook hier op de website.',
-        en: 'The tools that work with your personal data are used in our application, with your own folder. Your account, your public card and Verbonden work straight away — here on the website too.',
-      },
-      workspaceInApp: {
-        nl: 'Je werkmap wordt klaargezet in je gebruikersmap. Het rapport dat je net hebt geüpload zetten we er meteen in, samen met een kopie van je gedeeltelijke profiel.',
-        en: 'Your folder is being set up in your user folder. The report you just uploaded goes straight into it, together with a copy of your partial profile.',
-      },
-      workspaceWhere: {
-        nl: (root) => `Je werkmap staat in ${root}. Verplaatsen kan later via Profiel → Werkruimte.`,
-        en: (root) => `Your folder is at ${root}. You can move it later via Profile → Workspace.`,
-      },
-      workspaceRetry: { nl: 'Opnieuw proberen', en: 'Try again' },
-      workspaceChoose: { nl: 'Werkmap kiezen', en: 'Choose folder' },
-      workspaceChoosing: { nl: 'Bezig…', en: 'Working…' },
-      workspaceDone: {
-        nl: (name) => (name ? `Werkmap gekoppeld — je rapport staat erin als ${name}.` : 'Werkmap gekoppeld.'),
-        en: (name) => (name ? `Folder connected — your report is in it as ${name}.` : 'Folder connected.'),
-      },
-      workspaceLater: { nl: 'Later', en: 'Later' },
-      workspaceContinue: { nl: 'Verder naar het platform', en: 'Continue to the platform' },
     },
 
     // ── LoginPage: a management account logged in on the website (no management UI ships here) ──

@@ -9,10 +9,7 @@
  *   5. Mysterie / Magie
  * 
  * Each layer contains 6–9 questions. Total: 36 questions.
- * Re-exports from the canonical assessmentTypes.js source where appropriate.
  */
-
-export { subjectMetadata } from '../../assessmentTypes';
 
 /**
  * Extended layer definitions with all display/scoring context.
@@ -85,12 +82,3 @@ export const LAYERS = [
     domains: ['mysterie', 'magie'],
   },
 ];
-
-/**
- * Get layer metadata by index (0-4).
- * @param {number} layerIndex
- * @returns {Object|undefined}
- */
-export function getLayer(layerIndex) {
-  return LAYERS.find(l => l.layerIndex === layerIndex);
-}

@@ -11,7 +11,6 @@ import assessmentIntroExtra from './assessmentIntroExtra.js';
 import profile from './profile.js';
 import directory from './directory.js';
 import clientOrb from './clientOrb.js';
-import reportLegal from './reportLegal.js';
 import eyedentityReport from './eyedentityReport.js';
 import auth from './auth.js';
 import misc from './misc.js';
@@ -27,7 +26,6 @@ export default {
   ...profile,
   ...directory,
   ...clientOrb,
-  ...reportLegal,
   ...eyedentityReport,
   ...auth,
   ...misc,

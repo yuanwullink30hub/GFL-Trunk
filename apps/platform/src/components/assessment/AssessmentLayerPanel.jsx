@@ -116,6 +116,7 @@ const SingleLayerPanel = ({
   staircaseStep = -1,
   assessmentLevel,
   isLowGpu = false,
+  twoLayer = false,
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const currentQuestionIndexRef = useRef(0);
@@ -478,6 +479,7 @@ const SingleLayerPanel = ({
         } : undefined}
         allAnswers={answers}
         levelConfig={computedLevelConfig}
+        twoLayer={twoLayer}
       />
     </div>
   );
@@ -498,31 +500,31 @@ const AssessmentLayerPanel = ({
   assessmentLevel,
   liveSubjects = [],
   isLowGpu = false,
+  // The two-layer Leerling test's plan (GET /api/questions/two-layer), locked at test start; null = the old test.
+  twoLayerPlan = null,
 }) => {
-  // Store answers for ALL layers persistently
+  // Store answers for ALL layers persistently. The ref follows every write synchronously, so a save in the
+  // same tick as the last answer (a timeout on the last question, DEV AUTO) hands over that answer too.
   const [allLayerAnswers, setAllLayerAnswers] = useState({});
+  const answersRef = useRef({});
   const [savedLayers, setSavedLayers] = useState([]);
-
-  // Handle answer selection for any layer — stores dual-pick arrays [firstPick, secondPick]
-  const handleAnswerSelect = useCallback((layerIndex, questionId, selections) => {
-    const picks = Array.isArray(selections) ? selections : (selections ? [selections] : []);
-    if (picks.length === 0) {
-      // Deselection — remove this question's answer
-      setAllLayerAnswers(prev => {
-        const layerData = { ...(prev[layerIndex] || {}) };
-        delete layerData[questionId];
-        return { ...prev, [layerIndex]: layerData };
-      });
-      return;
-    }
-    setAllLayerAnswers(prev => ({
-      ...prev,
-      [layerIndex]: {
-        ...(prev[layerIndex] || {}),
-        [questionId]: picks  // array: [firstPick] or [firstPick, secondPick]
-      }
-    }));
+  const writeAnswers = useCallback((next) => {
+    answersRef.current = next;
+    setAllLayerAnswers(next);
   }, []);
+
+  // Handle answer selection for any layer — the old test stores dual-pick arrays [firstPick, secondPick],
+  // the two-layer test its record per question ({ l1, l2, refusal, timeout }); null / [] removes it.
+  const handleAnswerSelect = useCallback((layerIndex, questionId, selections) => {
+    const value = twoLayerPlan
+      ? selections || null
+      : (Array.isArray(selections) ? selections : (selections ? [selections] : []));
+    const prev = answersRef.current;
+    const layerData = { ...(prev[layerIndex] || {}) };
+    if (!value || value.length === 0) delete layerData[questionId]; // Deselection — remove this question's answer
+    else layerData[questionId] = value;
+    writeAnswers({ ...prev, [layerIndex]: layerData });
+  }, [twoLayerPlan, writeAnswers]);
 
   // Handle save for a specific layer
   const handleSave = useCallback((layerIndex) => {
@@ -531,13 +533,13 @@ const AssessmentLayerPanel = ({
       console.log(`[SAVE] handleSave layer=${layerIndex} SKIPPED — already saved`);
       return;
     }
-    const layerAnswers = allLayerAnswers[layerIndex] || {};
+    const layerAnswers = answersRef.current[layerIndex] || {};
     onLayerComplete?.(layerIndex, layerAnswers);
     setSavedLayers(prev => [...prev, layerIndex]);
-    
+
     // If this is the last layer (index 4), trigger convergence
     if (layerIndex === 4) {
-      onAllLayersComplete?.(allLayerAnswers);
+      onAllLayersComplete?.(answersRef.current);
     } else {
       // Mark layer as animating — scroll stays disabled.
       // When animation completes, App.js will advance to next layer + enable scroll.
@@ -574,7 +576,8 @@ const AssessmentLayerPanel = ({
           key={layerIndex}
           layerIndex={layerIndex}
           layer={LAYERS[layerIndex]}
-          layerQuestions={liveSubjects[layerIndex]?.questions ?? []}
+          layerQuestions={(twoLayerPlan ? twoLayerPlan.subjects[layerIndex] : liveSubjects[layerIndex])?.questions ?? []}
+          twoLayer={Boolean(twoLayerPlan)}
           answers={allLayerAnswers[layerIndex] || {}}
           onAnswerSelect={handleAnswerSelect}
           isSaved={savedLayers.includes(layerIndex)}

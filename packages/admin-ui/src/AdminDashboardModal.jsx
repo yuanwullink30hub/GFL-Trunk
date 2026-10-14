@@ -11,10 +11,6 @@ import {
   downloadPdf,
   getPromptConfig,
   updatePromptConfig,
-  uploadPromptDocument,
-  getPromptDocuments,
-  deletePromptDocument,
-  verifyPromptDocuments,
   getQuestions,
   seedQuestions,
   updateQuestion,
@@ -62,32 +58,6 @@ import { AppUpdateControl } from './AppUpdate';
 // ── Responsive context ──
 const MobileCtx = React.createContext(false);
 const DashSizeCtx = React.createContext({});
-
-// Mobile-only tab style (standalone, no BTN spread)
-// eslint-disable-next-line no-unused-vars
-const MOBILE_TAB_STYLE = (active) => ({
-  fontSize: 'max(10px, 0.55vw)',
-  padding: '0.3rem 0',
-  letterSpacing: '0.02em',
-  width: '100%',
-  textAlign: 'center',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  overflow: 'visible',
-  background: active
-    ? 'linear-gradient(135deg, rgba(255, 174, 0, 0.2), rgba(255, 174, 0, 0.3))'
-    : 'linear-gradient(135deg, rgba(255, 174, 0, 0.03), rgba(255, 174, 0, 0.06))',
-  border: '1px solid',
-  borderColor: active ? 'rgba(255, 174, 0, 0.7)' : 'rgba(255, 174, 0, 0.2)',
-  color: C.gold,
-  borderRadius: 'max(2px, 0.15vw)',
-  cursor: 'pointer',
-  fontFamily: FONT,
-  transition: 'all 0.3s',
-  textTransform: 'uppercase',
-  fontWeight: 'bold',
-});
 
 // ═══════════════════════════════════════════════════════════
 // DashboardCard — inline-style version of HoloAuth's HoloCard
@@ -1328,39 +1298,34 @@ const AssessmentsTab = memo(({ adminEmail }) => {
   );
 });
 
+// One Master Prompt per level (apps/backend/services/promptRouting.js); Advanced is the Leerling prompt.
+const PROMPT_SLOT_TABS = [
+  { key: 'beginner', label: 'Beginner', hintKey: 'admin.dashboard.prompts.slotHint.locked' },
+  { key: 'intermediate', label: 'Intermediate', hintKey: 'admin.dashboard.prompts.slotHint.locked' },
+  { key: 'advanced', label: 'Advanced' },
+];
+
 const PromptsTab = memo(() => {
-  const { t } = useLanguage();
-  const [promptLevel, setPromptLevel] = useState('advanced');
+  const [slot, setSlot] = useState('advanced');
+  const tab = PROMPT_SLOT_TABS.find((x) => x.key === slot);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
-      {/* Level sub-tabs */}
-      <div style={{ display: 'flex', gap: '0.4rem' }}>
-        {LEVEL_TABS.map(({ key, label }) => (
-          <SciFiButton key={key} onClick={() => setPromptLevel(key)} active={promptLevel === key}>
+      {/* Slot sub-tabs */}
+      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+        {PROMPT_SLOT_TABS.map(({ key, label }) => (
+          <SciFiButton key={key} onClick={() => setSlot(key)} active={slot === key}>
             {label.toUpperCase()}
           </SciFiButton>
         ))}
       </div>
 
-      {/* Level content */}
-      {promptLevel === 'advanced' ? (
-        <PromptsTabContent />
-      ) : (
-        <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-          <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: C.gold, marginBottom: '0.8rem' }}>
-            PROMPTS — {promptLevel.toUpperCase()}
-          </div>
-          <div style={{ fontSize: 'max(11px, 0.55vw)', opacity: 0.4, maxWidth: '400px', margin: '0 auto' }}>
-            {t('admin.dashboard.prompts.levelInDevelopment')}
-          </div>
-        </div>
-      )}
+      <PromptsTabContent key={slot} slot={slot} hintKey={tab && tab.hintKey} />
     </div>
   );
 });
 
-const PromptsTabContent = memo(() => {
+const PromptsTabContent = memo(({ slot, hintKey }) => {
   const { t } = useLanguage();
   const isMobile = React.useContext(MobileCtx);
   const [config, setConfig] = useState(null);
@@ -1369,8 +1334,8 @@ const PromptsTabContent = memo(() => {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    getPromptConfig().then(setConfig).catch((e) => setError(e.message));
-  }, []);
+    getPromptConfig(slot).then(setConfig).catch((e) => setError(e.message));
+  }, [slot]);
 
   const handleSave = useCallback(async () => {
     setSaving(true);
@@ -1379,7 +1344,7 @@ const PromptsTabContent = memo(() => {
     try {
       const updated = await updatePromptConfig({
         systemPromptTemplate: config.systemPromptTemplate,
-      });
+      }, slot);
       setConfig(updated);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -1388,7 +1353,7 @@ const PromptsTabContent = memo(() => {
     } finally {
       setSaving(false);
     }
-  }, [config]);
+  }, [config, slot]);
 
   const update = (key, value) => setConfig((prev) => ({ ...prev, [key]: value }));
 
@@ -1404,6 +1369,11 @@ const PromptsTabContent = memo(() => {
       <div style={{ fontSize: isMobile ? '13px' : 'max(9px, 0.45vw)', opacity: 0.4 }}>
         These templates control what the AI model receives. Only admins can edit this.
       </div>
+      {hintKey && (
+        <div style={{ fontSize: isMobile ? '13px' : 'max(9px, 0.45vw)', color: C.gold, opacity: 0.8 }}>
+          {t(hintKey)}
+        </div>
+      )}
 
       {error && <ErrorBox msg={error} />}
 
@@ -1422,240 +1392,6 @@ const PromptsTabContent = memo(() => {
       <SciFiButton onClick={handleSave} disabled={saving} fullWidth size="lg" style={{ marginTop: '0.3rem' }} active={saved}>
         {saving ? 'SAVING...' : saved ? '✓ SAVED' : 'SAVE PROMPT CONFIG'}
       </SciFiButton>
-
-      {/* ── Context Documents Section ── */}
-      <div style={{ marginTop: '1.2rem', borderTop: '1px solid rgba(255,174,0,0.15)', paddingTop: '1rem' }}>
-        <div style={mLABEL}>{t('admin.dashboard.prompts.contextDocuments')}</div>
-        <div style={{ fontSize: isMobile ? '13px' : 'max(9px, 0.45vw)', opacity: 0.4, marginBottom: '0.5rem' }}>
-          {t('admin.dashboard.prompts.contextDocumentsHint')}
-        </div>
-
-        <ContextDocumentsSection />
-      </div>
-    </div>
-  );
-});
-
-// ── Context Documents Sub-component ──
-const ContextDocumentsSection = memo(() => {
-  const { t, tFunc } = useLanguage();
-  const isMobile = React.useContext(MobileCtx);
-  const [documents, setDocuments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
-  const [dragOver, setDragOver] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [verified, setVerified] = useState(null); // null | { verified, documents, totalChars }
-  const fileInputRef = React.useRef(null);
-
-  const loadDocuments = useCallback(async () => {
-    try {
-      setError('');
-      const { documents: docs } = await getPromptDocuments();
-      setDocuments(docs || []);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { loadDocuments(); }, [loadDocuments]);
-
-  const handleUpload = useCallback(async (files) => {
-    if (!files || files.length === 0) return;
-    setUploading(true);
-    setError('');
-    setVerified(null); // Reset verification status on new upload
-    try {
-      for (const file of files) {
-        await uploadPromptDocument(file);
-      }
-      await loadDocuments();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setUploading(false);
-    }
-  }, [loadDocuments]);
-
-  const handleDelete = useCallback(async (docId, filename) => {
-    if (!window.confirm(tFunc('admin.dashboard.prompts.confirmDeleteDoc')(filename))) return;
-    try {
-      setError('');
-      await deletePromptDocument(docId);
-      setDocuments((prev) => prev.filter((d) => d._id !== docId));
-      setVerified(null); // Reset verification status after change
-    } catch (err) {
-      setError(err.message);
-    }
-  }, []);
-
-  const handleVerify = useCallback(async () => {
-    setVerifying(true);
-    setError('');
-    setVerified(null);
-    try {
-      const result = await verifyPromptDocuments();
-      setVerified(result);
-      if (!result.verified && result.totalDocuments > 0) {
-        const invalid = result.documents.filter((d) => !d.hasText);
-        setError(tFunc('admin.dashboard.prompts.docsWithoutText')(invalid.length, invalid.map((d) => d.filename).join(', ')));
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setVerifying(false);
-    }
-  }, []);
-
-  const handleFileInput = (e) => {
-    handleUpload(Array.from(e.target.files));
-    e.target.value = '';
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragOver(false);
-    handleUpload(Array.from(e.dataTransfer.files));
-  };
-
-  const formatSize = (bytes) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / 1048576).toFixed(1)} MB`;
-  };
-
-  const fileIcon = (mimetype) => {
-    if (mimetype === 'application/pdf') return '📄';
-    if (mimetype?.includes('word')) return '📝';
-    return '📃';
-  };
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-      {error && <ErrorBox msg={error} />}
-
-      {/* Drop zone */}
-      <div
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-        style={{
-          border: `2px dashed ${dragOver ? 'rgba(255,174,0,0.7)' : 'rgba(255,174,0,0.2)'}`,
-          borderRadius: '8px',
-          padding: '1rem',
-          textAlign: 'center',
-          cursor: 'pointer',
-          background: dragOver ? 'rgba(255,174,0,0.05)' : 'transparent',
-          transition: 'all 0.2s',
-        }}
-      >
-        <div style={{ fontSize: 'max(18px, 1vw)', marginBottom: '0.3rem' }}>
-          {uploading ? '⏳' : '📁'}
-        </div>
-        <div style={{ fontSize: isMobile ? '14px' : 'max(10px, 0.5vw)', color: C.gold, opacity: 0.7 }}>
-          {uploading ? 'Uploading...' : t('admin.dashboard.prompts.dropZone')}
-        </div>
-        <div style={{ fontSize: isMobile ? '12px' : 'max(8px, 0.4vw)', opacity: 0.3, marginTop: '0.2rem' }}>
-          PDF, Word (.docx), TXT — max 20 MB
-        </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept=".pdf,.docx,.doc,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-          onChange={handleFileInput}
-          style={{ display: 'none' }}
-        />
-      </div>
-
-      {/* Document list */}
-      {loading ? (
-        <Loading />
-      ) : documents.length === 0 ? (
-        <div style={{ fontSize: isMobile ? '13px' : 'max(9px, 0.45vw)', opacity: 0.3, textAlign: 'center', padding: '0.5rem' }}>
-          {t('admin.dashboard.prompts.noDocuments')}
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-          {documents.map((doc) => (
-            <div
-              key={doc._id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.4rem 0.6rem',
-                background: 'rgba(255,174,0,0.04)',
-                border: '1px solid rgba(255,174,0,0.1)',
-                borderRadius: '6px',
-                fontSize: isMobile ? '13px' : 'max(9px, 0.45vw)',
-              }}
-            >
-              <span style={{ fontSize: isMobile ? '18px' : 'max(14px, 0.7vw)' }}>{fileIcon(doc.mimetype)}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ color: C.gold, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {doc.filename}
-                </div>
-                <div style={{ opacity: 0.4, fontSize: isMobile ? '12px' : 'max(8px, 0.38vw)' }}>
-                  {formatSize(doc.size)} · {doc.charCount?.toLocaleString()} tekens · {new Date(doc.uploadedAt).toLocaleDateString('nl-NL')}
-                </div>
-              </div>
-              <SciFiButton onClick={() => handleDelete(doc._id, doc.filename)} variant="danger" size="xs" padding="0.15rem 0.4rem" fontSize={isMobile ? '12px' : 'max(8px, 0.4vw)'}>✕</SciFiButton>
-            </div>
-          ))}
-          <div style={{ fontSize: isMobile ? '12px' : 'max(8px, 0.38vw)', opacity: 0.3, textAlign: 'right' }}>
-            {tFunc('admin.dashboard.prompts.docCountTotal')(documents.length, documents.reduce((s, d) => s + (d.charCount || 0), 0).toLocaleString())}
-          </div>
-        </div>
-      )}
-
-      {/* Verify / Save button */}
-      {documents.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.3rem' }}>
-              <SciFiButton
-                onClick={handleVerify}
-                disabled={verifying}
-                fullWidth size="lg"
-                color={verified?.verified ? '#00ff9d' : undefined}
-                rgb={verified?.verified ? '0, 255, 157' : undefined}
-                active={verified?.verified}
-              >
-                {verifying ? '⏳ VERIFYING...' : verified?.verified ? t('admin.dashboard.prompts.verified') : t('admin.dashboard.prompts.saveVerify')}
-              </SciFiButton>
-
-          {/* Verification result */}
-          {verified && verified.verified && (
-            <div style={{
-              padding: '0.5rem 0.7rem',
-              background: 'rgba(0,255,157,0.06)',
-              border: '1px solid rgba(0,255,157,0.2)',
-              borderRadius: '6px',
-              fontSize: isMobile ? '13px' : 'max(9px, 0.45vw)',
-            }}>
-              <div style={{ color: '#00ff9d', fontWeight: 600, marginBottom: '0.3rem' }}>
-                {tFunc('admin.dashboard.prompts.allVerified')(verified.totalDocuments)}
-              </div>
-              <div style={{ opacity: 0.5, fontSize: isMobile ? '12px' : 'max(8px, 0.4vw)' }}>
-                {tFunc('admin.dashboard.prompts.charsSentAsContext')(verified.totalChars?.toLocaleString())}
-              </div>
-              {verified.documents?.map((doc) => (
-                <div key={doc._id} style={{ marginTop: '0.3rem', padding: '0.3rem', background: 'rgba(0,255,157,0.03)', borderRadius: '4px' }}>
-                  <div style={{ color: C.gold, fontSize: isMobile ? '12px' : 'max(8px, 0.4vw)', fontWeight: 600 }}>
-                    {tFunc('admin.dashboard.prompts.docChars')(doc.filename, doc.charCount?.toLocaleString())}
-                  </div>
-                  <div style={{ opacity: 0.4, fontSize: isMobile ? '11px' : 'max(7px, 0.35vw)', marginTop: '0.1rem', fontStyle: 'italic' }}>
-                    "{doc.preview}"
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 });

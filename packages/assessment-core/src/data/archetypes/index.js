@@ -396,20 +396,6 @@ export const ARCHETYPE_GROUPS = {
 };
 
 /**
- * Ordered list of archetype keys for iteration.
- */
-export const ARCHETYPE_KEYS = Object.keys(ARCHETYPES);
-
-/**
- * Get archetype by key.
- * @param {string} key
- * @returns {Object|undefined}
- */
-export function getArchetype(key) {
-  return ARCHETYPES[key];
-}
-
-/**
  * Language-aware field accessor. Returns the `<field>En` variant when lang is
  * 'en' and that variant exists; otherwise the Dutch original.
  * @param {Object|string} archetype — archetype object or its key ("SAGE")
@@ -425,19 +411,4 @@ export function archetypeField(archetype, field, lang = 'nl') {
   if (en === undefined || en === null || en === '') return a[field];
   if (Array.isArray(en) && en.length === 0) return a[field];
   return en;
-}
-
-/**
- * Language-aware accessor for ARCHETYPE_GROUPS fields (e.g. 'axis').
- * @param {string} groupKey — 'Ruling' | 'Relational' | ...
- * @param {string} field
- * @param {string} [lang='nl']
- * @returns {*}
- */
-export function archetypeGroupField(groupKey, field, lang = 'nl') {
-  const g = ARCHETYPE_GROUPS[groupKey];
-  if (!g || !field) return undefined;
-  if (lang !== 'en' && lang !== 'EN') return g[field];
-  const en = g[`${field}En`];
-  return (en === undefined || en === null || en === '') ? g[field] : en;
 }

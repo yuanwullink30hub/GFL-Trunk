@@ -126,6 +126,55 @@ function devRandomExcluding(max, exclude) {
   return idx;
 }
 
+// ═══ TWO-LAYER TEST (Leerling, scoring_version v2_two_layer) ═══
+// Per question: Layer 1 shows the six group answers in the rotation sequence's slot order A–F (pick one or
+// two, or "Geen van deze past"); the card then switches to Layer 2, the archetype answers of the picked
+// group(s) — 2 or 4, shuffled at render, at most two picks, none is allowed. The next question switches
+// back to Layer 1. The record per question (App.jsx turns it into the response record the server scores):
+//   { l1: [{group, slot}], l2: [archetype], refusal: bool, timeout: bool }
+const EMPTY_TWO_LAYER = Object.freeze({ l1: [], l2: [], refusal: false, timeout: false });
+// The switch takes 1.5 s (owner, 13 Oct: the 3D turn distracted): only the content — the question and its
+// answers — fades out and back in, on one symmetric ease. The card itself, its header (number, layer,
+// timer, subject) and its buttons stay; the header's number and layer change at the swap, while the content
+// is invisible. A layer's timer and button lock start only once the content has settled.
+const FADE_OUT_MS = 750;
+const FADE_IN_MS = 750;
+const FADE_EASE = 'cubic-bezier(0.45, 0, 0.55, 1)';
+
+/** Layer 2 has no key: its order is shuffled once per question and pick, then kept while the card is shown. */
+function shuffled(items) {
+  const a = items.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const prefersReducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * DEV: answer this subject's questions towards one Main × Support, with some fallbacks and refusals. Like
+ * the old test's AUTO, the target is drawn on the first subject and kept for the others.
+ */
+function devTwoLayerRecords(questions, subjectIndex) {
+  if (subjectIndex === 0 || !devAutoFillTarget) devAutoFillTarget = devPickRandomTarget();
+  const title = (k) => k.charAt(0) + k.slice(1).toLowerCase();
+  const main = title(devAutoFillTarget.mainArchetype);
+  const support = title(devAutoFillTarget.supportArchetype);
+  console.log(`[DEV AUTO-FILL] two-layer target: ${main} × ${support} → "${devAutoFillTarget.extended}"`);
+  return questions.map((q) => {
+    const groupOf = (a) => q.l2.find((x) => x.archetype === a)?.group;
+    if (Math.random() < 0.03) return [q.id, { ...EMPTY_TWO_LAYER, refusal: true }];
+    const groups = [groupOf(main)];
+    if (Math.random() < 0.5 && groupOf(support) !== groups[0]) groups.push(groupOf(support));
+    const l1 = groups.map((g) => ({ group: g, slot: q.l1.find((a) => a.group === g).slot }));
+    const r = Math.random();
+    const l2 = r < 0.6 ? [main] : r < 0.85 ? [main, support].filter((a) => groups.includes(groupOf(a))) : [];
+    return [q.id, { ...EMPTY_TWO_LAYER, l1, l2 }];
+  });
+}
+
 /**
  * AssessmentCard - Question card matching SectorFrame styling
  * 
@@ -153,7 +202,9 @@ const AssessmentCard = ({
   onComplete,
   onJumpTo,
   allAnswers = {},
-  levelConfig = {}
+  levelConfig = {},
+  // Two-layer test: questions carry `l1` (slot order A–F) and `l2`, answers are two-layer records.
+  twoLayer = false,
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -211,12 +262,95 @@ const AssessmentCard = ({
     return [val]; // legacy single-value compat
   })();
 
-  // Trigger content animation when question changes
+  // ── Two-layer test: which layer is up, and the card turning over between faces ──
+  // The layer belongs to the question it was set on: a new question always opens on Layer 1.
+  const [layerState, setLayerState] = useState({ qid: null, layer: 1 });
+  const layer = twoLayer && currentQuestion && layerState.qid === currentQuestion.id ? layerState.layer : 1;
+  const recordOf = useCallback((qid) => {
+    const v = allAnswers[qid];
+    return v && !Array.isArray(v) ? v : EMPTY_TWO_LAYER;
+  }, [allAnswers]);
+  const currentRecord = twoLayer && currentQuestion ? recordOf(currentQuestion.id) : EMPTY_TWO_LAYER;
+
+  // `face` is what the card shows; it follows (question, layer) through the change. Phase 'out' fades the
+  // content out, it swaps while invisible, 'in-start' holds the new content at zero and 'in' fades it in.
+  // While a change runs, a newer target waits and is taken at the swap.
+  const [face, setFace] = useState({ q: currentQuestion, layer: 1 });
+  const [flip, setFlip] = useState('idle');
+  const targetRef = useRef({ q: currentQuestion, layer: 1 });
+  const flipTimers = useRef([]);
+  targetRef.current = { q: currentQuestion, layer };
+  useEffect(() => () => flipTimers.current.forEach(clearTimeout), []);
   useEffect(() => {
+    if (!twoLayer || !currentQuestion) return;
+    if (face.q?.id === currentQuestion.id && face.layer === layer) return;
+    if (flip !== 'idle') return; // the swap below takes the latest target
+    if (!face.q || prefersReducedMotion() || !started) { setFace(targetRef.current); return; }
+    setFlip('out');
+    flipTimers.current.push(setTimeout(() => {
+      setFace(targetRef.current);
+      setFlip('in-start');
+      requestAnimationFrame(() => requestAnimationFrame(() => setFlip('in')));
+      flipTimers.current.push(setTimeout(() => setFlip('idle'), FADE_IN_MS + 40));
+    }, FADE_OUT_MS));
+  }, [twoLayer, currentQuestion, layer, face, flip, started]);
+
+  const contentFade = !twoLayer || flip === 'idle' ? {} : {
+    opacity: flip === 'in' ? 1 : 0,
+    transition: flip === 'out' ? `opacity ${FADE_OUT_MS}ms ${FADE_EASE}`
+      : flip === 'in' ? `opacity ${FADE_IN_MS}ms ${FADE_EASE}` : 'none',
+    willChange: 'opacity',
+  };
+
+  /** Layer 1: one or two groups (a third replaces the second), or the refusal, which excludes them. */
+  const handleGroupClick = useCallback((answer) => {
+    const rec = recordOf(currentQuestion.id);
+    const l1 = rec.l1.slice();
+    const idx = l1.findIndex((p) => p.group === answer.group);
+    if (idx !== -1) l1.splice(idx, 1);
+    else if (l1.length < 2) l1.push({ group: answer.group, slot: answer.slot });
+    else l1[1] = { group: answer.group, slot: answer.slot };
+    const inGroups = (a) => l1.some((p) => p.group === currentQuestion.l2.find((x) => x.archetype === a)?.group);
+    onSelectAnswer(currentQuestion.id, l1.length ? { ...EMPTY_TWO_LAYER, l1, l2: rec.l2.filter(inGroups) } : null);
+  }, [currentQuestion, recordOf, onSelectAnswer]);
+
+  const handleRefusalClick = useCallback(() => {
+    const rec = recordOf(currentQuestion.id);
+    onSelectAnswer(currentQuestion.id, rec.refusal ? null : { ...EMPTY_TWO_LAYER, refusal: true });
+  }, [currentQuestion, recordOf, onSelectAnswer]);
+
+  /** Layer 2: at most two archetypes, all inside the picked groups (a third replaces the second). */
+  const handleArchetypeClick = useCallback((archetype) => {
+    const rec = recordOf(currentQuestion.id);
+    const l2 = rec.l2.slice();
+    const idx = l2.indexOf(archetype);
+    if (idx !== -1) l2.splice(idx, 1);
+    else if (l2.length < 2) l2.push(archetype);
+    else l2[1] = archetype;
+    onSelectAnswer(currentQuestion.id, { ...rec, l2 });
+  }, [currentQuestion, recordOf, onSelectAnswer]);
+
+  // The Layer-2 order per question and pick, shuffled once (Rotation Sequence §1: no key, never stored).
+  const l2Orders = useRef(new Map());
+  const layer2Answers = (q, rec) => {
+    const groups = rec.l1.map((p) => p.group);
+    const key = `${q.id}|${[...groups].sort().join(',')}`;
+    if (!l2Orders.current.has(key)) l2Orders.current.set(key, shuffled(q.l2.filter((a) => groups.includes(a.group))));
+    return l2Orders.current.get(key);
+  };
+
+  // Each layer of a two-layer question runs its own timer and button lock, starting only once the card has
+  // settled: no flip running and the face showing this question's current layer.
+  const timerKey = twoLayer ? `${currentQuestion?.id}:${layer}` : currentQuestion?.id;
+  const cardSettled = !twoLayer || (flip === 'idle' && face.q?.id === currentQuestion?.id && face.layer === layer);
+
+  // Trigger content animation when question changes (the two-layer card fades its content itself, above)
+  useEffect(() => {
+    if (twoLayer) return undefined;
     setIsAnimating(true);
     const timer = setTimeout(() => setIsAnimating(false), 250);
     return () => clearTimeout(timer);
-  }, [currentQuestion?.id]);
+  }, [currentQuestion?.id, twoLayer]);
 
   // Calculate and countdown timer based on level configuration
   const hasTimer = levelConfig.hasTimer !== false;
@@ -242,9 +376,10 @@ const AssessmentCard = ({
       // Fallback: 45 seconds
       initialTime = 45;
     }
-    
+
     setTimeRemaining(initialTime);
-    
+    if (!cardSettled) return undefined; // full time on show, counting starts when the flip has ended
+
     // Set up countdown interval
     const interval = setInterval(() => {
       setTimeRemaining(prev => {
@@ -257,11 +392,13 @@ const AssessmentCard = ({
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [currentQuestion?.id, currentSubjectIndex, hasTimer, started, levelConfig.timerType, levelConfig.fixedTimer, levelConfig.layerTimers]);
+  }, [timerKey, cardSettled, currentSubjectIndex, hasTimer, started, levelConfig.timerType, levelConfig.fixedTimer, levelConfig.layerTimers]);
 
   // Auto-advance when timer runs out (with or without answer selected)
   useEffect(() => {
-    if (hasTimer && timeRemaining !== null && timeRemaining === 0) {
+    if (hasTimer && timeRemaining !== null && timeRemaining === 0 && twoLayer) {
+      handleTwoLayerTimeout();
+    } else if (hasTimer && timeRemaining !== null && timeRemaining === 0) {
       if (isLastQuestion) {
         handleSave();
       } else if (onNext) {
@@ -276,6 +413,7 @@ const AssessmentCard = ({
     if (!started) return;
     if (process.env.NODE_ENV !== 'production') return; // disabled on localhost
     setButtonLockSeconds(3);
+    if (!cardSettled) return; // held at 3 while the card turns
     const interval = setInterval(() => {
       setButtonLockSeconds(prev => {
         if (prev <= 1) { clearInterval(interval); return 0; }
@@ -283,7 +421,7 @@ const AssessmentCard = ({
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [currentQuestion?.id, started]);
+  }, [timerKey, cardSettled, started]);
 
   // Answer click handler: dual-pick system (1st choice, then 2nd choice)
   const handleAnswerClick = useCallback((answerId) => {
@@ -312,6 +450,27 @@ const AssessmentCard = ({
     }, 700);
     if (onComplete) onComplete();
     pingBackend();
+  };
+
+  // ── Two-layer advance: Layer 1 → its Layer 2 (a refusal skips it), Layer 2 → the next question ──
+  const advanceQuestion = () => (isLastQuestion ? handleSave() : onNext && onNext());
+  const canContinueTwoLayer = layer === 2 || currentRecord.l1.length > 0 || currentRecord.refusal;
+  const handleTwoLayerNext = () => {
+    if (layer === 2 || currentRecord.refusal) advanceQuestion();
+    else if (currentRecord.l1.length) setLayerState({ qid: currentQuestion.id, layer: 2 });
+  };
+  // The layer's timer ran out: Layer 1 with a pick turns to its Layer 2; with nothing picked the question is
+  // recorded as a timeout (zero points, never the same as a refusal) and the test moves on.
+  const handleTwoLayerTimeout = () => {
+    if (layer === 1 && !currentRecord.l1.length && !currentRecord.refusal) {
+      onSelectAnswer(currentQuestion.id, { ...EMPTY_TWO_LAYER, timeout: true });
+      advanceQuestion();
+    } else {
+      handleTwoLayerNext();
+    }
+  };
+  const handleTwoLayerAutoFill = () => {
+    devTwoLayerRecords(questions, currentSubjectIndex).forEach(([qid, rec]) => onSelectAnswer(qid, rec));
   };
 
   // AUTO-fill all questions (DEV only) — 80/20 weighted toward a target outcome
@@ -444,7 +603,7 @@ const AssessmentCard = ({
                 textAlign: 'center',
                 lineHeight: 1.7,
               }}>
-                {renderOverlayText(t('assessmentCard.intro.picks'), subjectColor)}
+                {renderOverlayText(t(twoLayer ? 'assessmentCard.twoLayer.picks' : 'assessmentCard.intro.picks'), subjectColor)}
               </p>
 
               <p style={{
@@ -454,7 +613,7 @@ const AssessmentCard = ({
                 textAlign: 'center',
                 lineHeight: 1.7,
               }}>
-                {renderOverlayText(t('assessmentCard.intro.resonance'), subjectColor)}
+                {renderOverlayText(t(twoLayer ? 'assessmentCard.twoLayer.resonance' : 'assessmentCard.intro.resonance'), subjectColor)}
               </p>
 
               <p style={{
@@ -472,7 +631,7 @@ const AssessmentCard = ({
                   : <>111s → 90s → 72s → 60s → 49s</>
                 }
                 </span>
-                {renderOverlayText(t('assessmentCard.intro.timerOutro'), subjectColor)}
+                {renderOverlayText(t(twoLayer ? 'assessmentCard.twoLayer.timerOutro' : 'assessmentCard.intro.timerOutro'), subjectColor)}
               </p>
 
               <p style={{
@@ -752,11 +911,16 @@ const AssessmentCard = ({
                   fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
                 }}
               >
-                {String(questionNumber).padStart(2, '0')}
+                {String(twoLayer ? (face.q?.position ?? questionNumber) : questionNumber).padStart(2, '0')}
               </div>
               <div className="flex flex-col items-start gap-0.5">
                 <span className="text-xs" style={{ color: '#FFFEF0', opacity: 0.5, fontFamily: "'Figtree', sans-serif" }}>
-                  Q{questionNumber}/{totalQuestions}
+                  Q{twoLayer ? (face.q?.position ?? questionNumber) : questionNumber}/{totalQuestions}
+                  {twoLayer && (
+                    <span style={{ marginLeft: '0.5rem', color: subjectColor, opacity: 1, fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", letterSpacing: '0.12em', fontWeight: 'bold' }}>
+                      {tFunc('assessmentCard.twoLayer.layer')(face.layer)}
+                    </span>
+                  )}
                 </span>
                 {hasTimer && (
                 <div className="flex items-center gap-1.5" style={{ fontSize: s.badgeFont }}>
@@ -816,8 +980,109 @@ const AssessmentCard = ({
             ${isCollapsed ? 'opacity-0 h-0 py-0 overflow-hidden pointer-events-none' : 'opacity-100'}
             ${isAnimating && !isCollapsed ? 'opacity-0' : ''}
           `}
-          style={{ minHeight: isCollapsed ? 0 : s.contentMinH, padding: isCollapsed ? 0 : s.contentPad }}
+          style={{ minHeight: isCollapsed ? 0 : s.contentMinH, padding: isCollapsed ? 0 : s.contentPad, pointerEvents: twoLayer && flip !== 'idle' ? 'none' : undefined, ...contentFade }}
         >
+          {twoLayer ? face.q && (() => {
+            // ── Two-layer face: the question, then Layer 1 (six groups + refusal) or Layer 2 (2 or 4 archetypes) ──
+            const q = face.q;
+            const rec = recordOf(q.id);
+            const answerText = (r) => (language === 'en' && r.textEn) || r.text;
+            const renderLayer = (layerNo) => {
+            const rows = layerNo === 1
+              ? q.l1.map((a) => ({ key: a.slot, badge: a.slot, text: a.text, textEn: a.textEn, selected: rec.l1.some((p) => p.group === a.group), onClick: () => handleGroupClick(a) }))
+              : layer2Answers(q, rec).map((a, i) => ({ key: a.archetype, badge: String.fromCharCode(65 + i), text: a.text, textEn: a.textEn, selected: rec.l2.includes(a.archetype), onClick: () => handleArchetypeClick(a.archetype) }));
+            return (
+              <>
+                <div className="relative pl-3" style={{ minHeight: s.questionMinH }}>
+                  <div className="absolute left-0 top-1 bottom-1 w-[2px]" style={{ background: `linear-gradient(to bottom, ${subjectColor}, transparent)` }} />
+                  <p style={{ fontSize: s.questionFont, lineHeight: 1.5, color: '#FFFEF0', fontFamily: "'Figtree', sans-serif" }}>
+                    {stripMeta((language === 'en' && q.textEn) || q.text)}
+                  </p>
+                  <p style={{ fontSize: s.answerFont, marginTop: '0.35rem', color: `${subjectColor}`, opacity: 0.85, fontFamily: "'Figtree', sans-serif" }}>
+                    {t(layerNo === 1 ? 'assessmentCard.twoLayer.l1Hint' : 'assessmentCard.twoLayer.l2Hint')}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {rows.map((r) => (
+                    <button
+                      key={r.key}
+                      onClick={r.onClick}
+                      aria-pressed={r.selected}
+                      className={`relative group flex items-stretch text-left transition-all duration-200 w-full ${r.selected ? 'translate-x-1' : 'hover:translate-x-0.5'}`}
+                      style={{ minHeight: s.answerMinH }}
+                    >
+                      <div
+                        className="flex items-center justify-center font-bold border-y border-l rounded-l-sm transition-colors duration-300"
+                        style={{
+                          width: s.letterBadgeW,
+                          fontSize: s.answerFont,
+                          fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                          backgroundColor: r.selected ? subjectColor : 'rgba(8, 2, 12, 0.95)',
+                          color: r.selected ? '#000' : '#FFFEF0',
+                          borderColor: r.selected ? subjectColor : `${subjectColor}30`,
+                        }}
+                      >
+                        {r.badge}
+                      </div>
+                      <div className="w-5 border-y relative overflow-visible" style={{ borderColor: r.selected ? subjectColor : `${subjectColor}30`, backgroundColor: r.selected ? `${subjectColor}15` : 'transparent' }}>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-full h-[1px]" style={{ backgroundColor: r.selected ? subjectColor : `${subjectColor}20` }} />
+                        </div>
+                      </div>
+                      <div
+                        className="flex-1 px-3 py-2 border-y border-r rounded-r-sm flex items-center transition-all duration-300"
+                        style={{
+                          backgroundColor: r.selected ? `${subjectColor}20` : 'rgba(8, 2, 12, 0.95)',
+                          borderColor: r.selected ? subjectColor : `${subjectColor}30`,
+                          color: r.selected ? '#FFFEF0' : 'rgba(255, 254, 240, 0.7)',
+                          boxShadow: r.selected ? `0 0 12px ${subjectColor}30` : 'none',
+                        }}
+                      >
+                        <span style={{ fontSize: s.answerFont, fontFamily: "'Figtree', sans-serif" }}>
+                          {parseColoredText(answerText(r), null, null)}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                  {layerNo === 1 && (
+                    <button
+                      onClick={handleRefusalClick}
+                      aria-pressed={rec.refusal}
+                      className="w-full px-3 py-2 rounded-sm text-center transition-all duration-200"
+                      style={{
+                        minHeight: s.answerMinH,
+                        marginTop: '0.25rem',
+                        fontSize: s.answerFont,
+                        fontFamily: "'Figtree', sans-serif",
+                        border: `1px dashed ${rec.refusal ? '#f97316' : 'rgba(249, 115, 22, 0.35)'}`,
+                        backgroundColor: rec.refusal ? 'rgba(249, 115, 22, 0.15)' : 'rgba(8, 2, 12, 0.95)',
+                        color: rec.refusal ? '#FFFEF0' : 'rgba(255, 254, 240, 0.6)',
+                        boxShadow: rec.refusal ? '0 0 12px rgba(249, 115, 22, 0.25)' : 'none',
+                      }}
+                    >
+                      {t('assessmentCard.twoLayer.refusal')}
+                    </button>
+                  )}
+                </div>
+              </>
+            );
+            };
+            // Layer 2 keeps Layer 1's size (owner, 13 Oct): an invisible copy of this question's Layer 1 shares the
+            // grid cell, so the card holds the larger layer's height at every vw step, language and question length.
+            // visibility:hidden also takes the copy out of the tab order and out of reach of clicks.
+            return (
+              <div className="grid">
+                {face.layer === 2 && (
+                  <div aria-hidden="true" className="flex flex-col gap-3" style={{ gridArea: '1 / 1', visibility: 'hidden' }}>
+                    {renderLayer(1)}
+                  </div>
+                )}
+                <div className="flex flex-col gap-3" style={{ gridArea: '1 / 1' }}>
+                  {renderLayer(face.layer)}
+                </div>
+              </div>
+            );
+          })() : (<>
           {/* Question Text */}
             <div className="relative pl-3" style={{ minHeight: s.questionMinH }}>
             <div className="absolute left-0 top-1 bottom-1 w-[2px]" style={{ background: `linear-gradient(to bottom, ${subjectColor}, transparent)` }} />
@@ -902,6 +1167,7 @@ const AssessmentCard = ({
               );
             })}
           </div>
+          </>)}
         </div>
 
         {/* --- Footer --- */}
@@ -918,7 +1184,8 @@ const AssessmentCard = ({
               const isActive = idx === currentQuestionIndex;
               const qAnswers = allAnswers[q.id];
               const isAnswered = Array.isArray(qAnswers) ? qAnswers.length > 0 : qAnswers !== undefined;
-              const canClick = levelConfig.allowQuestionJump !== false; // Default to true if not specified
+              // The two-layer test only moves forward (and never skips a question), so its markers only show progress.
+              const canClick = !twoLayer && levelConfig.allowQuestionJump !== false; // Default to true if not specified
               return (
                 <button
                   key={q.id}
@@ -933,24 +1200,30 @@ const AssessmentCard = ({
                     borderRadius: '3px',
                     boxShadow: isActive ? `0 0 8px ${subjectColor}40` : 'none',
                     transform: isActive ? 'scale(1.15)' : 'scale(1)',
-                    opacity: canClick ? 1 : 0.5,
+                    opacity: canClick || twoLayer ? 1 : 0.5,
+                    cursor: twoLayer ? 'default' : undefined,
                   }}
                   disabled={!canClick}
                 >
-                  <span className="text-[10px] font-bold" style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif" }}>{idx + 1}</span>
+                  <span className="text-[10px] font-bold" style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif" }}>{twoLayer ? q.position : idx + 1}</span>
                 </button>
               );
             })}
           </div>
 
           {/* Next + AUTO Buttons — manual advance */}
-          {(!isAllAnswered || isLastQuestion) && (
+          {(twoLayer || !isAllAnswered || isLastQuestion) && (
             <div className="flex items-center justify-center gap-2">
               <button
                 onClick={() => {
                   if (process.env.NODE_ENV === 'production' && buttonLockSeconds > 0) return;
+                  if (twoLayer) {
+                    if (flip === 'idle' && canContinueTwoLayer) handleTwoLayerNext();
+                    return;
+                  }
                   isLastQuestion ? handleSave() : (onNext && onNext());
                 }}
+                disabled={twoLayer && !canContinueTwoLayer}
                 className="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded transition-all duration-200"
                 style={{
                   fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
@@ -961,8 +1234,11 @@ const AssessmentCard = ({
                   backgroundColor: `${subjectColor}15`,
                   border: `1px solid ${subjectColor}40`,
                   color: subjectColor,
+                  opacity: twoLayer && !canContinueTwoLayer ? 0.4 : 1,
+                  cursor: twoLayer && !canContinueTwoLayer ? 'not-allowed' : undefined,
                 }}
                 onMouseEnter={(e) => {
+                  if (e.currentTarget.disabled) return;
                   e.currentTarget.style.backgroundColor = `${subjectColor}30`;
                   e.currentTarget.style.borderColor = subjectColor;
                 }}
@@ -978,7 +1254,7 @@ const AssessmentCard = ({
               </button>
               {process.env.NODE_ENV !== 'production' && (
                 <button
-                  onClick={() => { handleAutoFill(); handleSave(); }}
+                  onClick={() => { if (twoLayer) handleTwoLayerAutoFill(); else handleAutoFill(); handleSave(); }}
                   className="flex items-center justify-center gap-1 px-3 py-1.5 rounded transition-all duration-200"
                   style={{
                     fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",

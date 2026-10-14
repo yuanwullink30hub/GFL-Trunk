@@ -25,17 +25,25 @@ const BASKETS = [
   ['Hero', 51, 10, 14, 2, 2, 0],
 ];
 
-/** SciFiRadarChart data: cumulative band boundaries, inside → out (as the scoring module builds them). */
+// The Ruling and Chaos pairs: their Blue partner is their sibling, so that Blue is own-hardware echo.
+const TETRAD = new Set(['Ruler', 'Judge', 'Outlaw', 'Trickster']);
+
+/**
+ * SciFiRadarChart data in the two-layer test's bands (rows flagged `v2`), inside → out. The report came from
+ * the old test, so these are its numbers regrouped, not rescored (a v1 session has no v2 scoring):
+ * nature core + culture core are both direct choices (one band; the Nature/Culture split is gone), every
+ * echo keeps its wheel relation, Blue between Ruling or Chaos siblings is own-hardware echo as in v2, and
+ * the old test had no Layer-1 fallback (passief 0). Totals are the report's own.
+ */
 export const OWNER_RADAR = BASKETS.map(([subject, nat, green, cult, blue, yellow, purple]) => {
-  const g = nat;
-  const l = g + green;
-  const o = l + cult;
-  const b = o + blue;
-  const y = b + yellow;
-  const p = y + purple;
+  const keuze = nat + cult;
+  const eigenEcho = green + (TETRAD.has(subject) ? blue : 0);
+  const blauw = TETRAD.has(subject) ? 0 : blue;
+  const bands = [keuze, 0, eigenEcho, blauw, yellow, purple];
+  const [g, l, o, b, y, p] = bands.reduce((acc, x) => [...acc, (acc[acc.length - 1] || 0) + x], []);
   return {
-    subject, green: g, lime: l, orange: o, blue: b, gold: y, purple: p,
-    nature_core: nat, green_hw: green, culture_core: cult, blue_fb: blue, yellow_cog: yellow, purple_shadow: purple,
+    subject, v2: true, green: g, lime: l, orange: o, blue: b, gold: y, purple: p,
+    keuze, passief: 0, eigen_echo: eigenEcho, blauw, geel: yellow, paars: purple,
     A: p, fullMark: 500,
   };
 });

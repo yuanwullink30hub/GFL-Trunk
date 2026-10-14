@@ -174,13 +174,6 @@ const introMobile = {
   footerBtnFont: '0.6rem',
 };
 
-export function getIntroSizes(windowWidth) {
-  if (windowWidth >= 1800) return introDesktop;
-  if (windowWidth >= 1079) return introLaptop(windowWidth);
-  if (windowWidth >= 768)  return introTablet;
-  return introMobile;
-}
-
 
 // ─────────────────────────────────────────────────────────────────────
 //  ASSESSMENT CARD
@@ -499,13 +492,6 @@ const adminMobile = {
   noteInputPad: 'max(0.6rem, 0.8vw) max(0.6rem, 0.9vw)',
   borderRadius: 'max(4px, 0.5vw)',
 };
-
-export function getAdminSizes(windowWidth) {
-  if (windowWidth >= 1800) return adminDesktop;
-  if (windowWidth >= 1079) return adminLaptop;
-  if (windowWidth >= 768)  return adminTablet;
-  return adminMobile;
-}
 
 
 // ─────────────────────────────────────────────────────────────────────

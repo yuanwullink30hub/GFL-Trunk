@@ -194,6 +194,19 @@ function warmAssessmentImages() {
   _warmedAssessmentImgs = ASSESSMENT_WARM_IMAGES.map((src) => { const img = new Image(); img.src = src; return img; });
 }
 
+/** The two-layer plan with every answer text emptied (Beginner / Gevorderd until their own sheets exist). */
+function withoutAnswerTexts(plan) {
+  if (!plan) return plan;
+  const blank = (a) => ({ ...a, text: '', ...(a.textEn !== undefined ? { textEn: '' } : {}) });
+  return {
+    ...plan,
+    subjects: plan.subjects.map((s) => ({
+      ...s,
+      questions: s.questions.map((q) => ({ ...q, l1: q.l1.map(blank), l2: q.l2.map(blank) })),
+    })),
+  };
+}
+
 const App = () => {
   const [mounted, setMounted] = useState(false);
   const [mountNebula, setMountNebula] = useState(false); // Mount nebula after imports are done
@@ -1111,7 +1124,9 @@ const App = () => {
     // Reset assessment state immediately (while intro shrinks)
     setAssessmentLevel(levelId);
     // Every level takes the two-layer test (owner, 15 Oct): the same cards; the levels differ in timer and Layer-2 back.
-    setActiveTwoLayerPlan(twoLayerPlanRef.current);
+    // Beginner and Gevorderd have no answer sheet of their own yet, so their cards show no written answers
+    // (owner, 16 Oct): the Leerling questions, every answer box empty.
+    setActiveTwoLayerPlan(levelId === 'deep' ? twoLayerPlanRef.current : withoutAnswerTexts(twoLayerPlanRef.current));
     setCurrentSubjectIndex(0);
     setCurrentQuestionIndex(0);
     setAssessmentAnswers([]);

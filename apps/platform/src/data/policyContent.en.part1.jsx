@@ -1,5 +1,5 @@
 import React from 'react';
-import { S, PolicyLink, TWO_LAYER_TEST_LIVE } from './policyShared.jsx';
+import { S, PolicyLink } from './policyShared.jsx';
 
 /** English policy documents, part 1 — mirrors the matching keys of POLICY_CONTENT_NL. */
 export const POLICY_EN_PART1 = {
@@ -296,13 +296,12 @@ export const POLICY_EN_PART1 = {
       </table>
       <p style={S.p}>Report generation runs exclusively through Claude (Anthropic). The platform configuration contains connections for other AI providers; these are not used in the production environment. Should that change, this list will be updated before they are put into use.</p>
       <p style={S.p}>If the user uploads a personality report (PDF, DOCX or TXT), the extracted text is likewise processed by Claude — after our server has removed names, email addresses, phone numbers, postcodes and dates of birth and given the file a neutral name. Images are not accepted and never go to the model. The automatic removal catches the common forms; personal information it does not recognise does reach Anthropic. Garden For Life is not responsible for the personal data that the user includes in uploaded files. Users are alerted to this in the consent screen and at the moment of upload.</p>
-      {TWO_LAYER_TEST_LIVE && (<>
-        {/* Privacy_Texts_v2_DRAFT_v0_1 §A — DRAFT, owner to ratify (privacy instruction §4.5, §4.8) */}
-        <h3 style={S.h3}>How your report is made</h3>
-        <p style={S.p}>Your report is written during your session by an AI service that works for us as a processor. For the Leerling test (the two-layer test), that service does not see your answers. It receives only what the test itself has calculated from them: your scores per archetype and how they were built up, and a few features of your answering style (for example, that you often chose both archetypes of a group). The questions, your answers and any free text you write are not sent to the AI service.</p>
-        <p style={S.p}>For the Beginner and Gevorderd tests, the AI service also receives your answers.</p>
-        <p style={S.p}>After your session we keep none of this, except what you choose to save with a kristal-code.</p>
-      </>)}
+      {/* Privacy_Texts_v2_DRAFT_v0_1 §A — DRAFT, owner to ratify (privacy instruction §4.5, §4.8). Shown since the
+          two-layer test went live (16 Oct). The draft's Beginner/Gevorderd sentence is left out: those levels take
+          the two-layer test too and send nothing to the AI service yet. */}
+      <h3 style={S.h3}>How your report is made</h3>
+      <p style={S.p}>Your report is written during your session by an AI service that works for us as a processor. For the Leerling test (the two-layer test), that service does not see your answers. It receives only what the test itself has calculated from them: your scores per archetype and how they were built up, and a few features of your answering style (for example, that you often chose both archetypes of a group). The questions, your answers and any free text you write are not sent to the AI service.</p>
+      <p style={S.p}>After your session we keep none of this, except what you choose to save with a kristal-code.</p>
       <h2 style={S.h2}>8. Your Rights</h2>
       <p style={S.p}>Under the GDPR you have the following rights:</p>
       <ul style={S.ul}>

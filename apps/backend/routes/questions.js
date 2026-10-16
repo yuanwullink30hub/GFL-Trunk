@@ -13,7 +13,6 @@
  */
 const { Router } = require('express');
 const { collections } = require('../db');
-const config = require('../config');
 const { twoLayerPlan, loadPublishedBank, bankSource, servedQuestion } = require('../services/twoLayerBank');
 const { publishQuestions } = require('../services/questionsPublisher');
 const bankStore = require('../services/questionBankStore');
@@ -45,11 +44,10 @@ router.get('/', async (_req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // GET /api/questions/two-layer — Public: the two-layer Leerling bank in this quarter's rotation order
-// (services/twoLayerBank.js). { enabled: false } while config.twoLayerTest is off.
+// (services/twoLayerBank.js). Always on: the owner switched the test live on 16 Oct, without a switch.
 // ─────────────────────────────────────────────────────────────
 
 router.get('/two-layer', (_req, res) => {
-  if (!config.twoLayerTest) return res.json({ enabled: false });
   try {
     res.json(twoLayerPlan());
   } catch (err) {

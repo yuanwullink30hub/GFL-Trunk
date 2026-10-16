@@ -21,7 +21,11 @@ test('plan → card records → response records → the server scores them', as
   const plan = await (await fetch(`${base}/api/questions/two-layer`)).json();
 
   assert.equal(plan.enabled, true);
-  assert.equal(plan.placeholder, true);
+  // the ratified Leerling bank v1.0 (16 Oct): 36 questions, 648 answers, real texts
+  assert.equal(plan.placeholder, false);
+  const all = plan.subjects.flatMap((s) => s.questions);
+  assert.equal(all.reduce((n, q) => n + q.l1.length + q.l2.length, 0), 648);
+  assert.equal(all.find((q) => q.id === 'leerling-zelf_zonde-01').text, 'Wat vergeef je jezelf het moeilijkst?');
   assert.match(plan.rotation_sequence_id, /^leerling:\d{4}-Q[1-4]:[0-9a-f]{12}$/);
   assert.deepEqual(plan.subjects.map((s) => s.questions.length), [9, 9, 6, 6, 6]);
   const questions = plan.subjects.flatMap((s) => s.questions);

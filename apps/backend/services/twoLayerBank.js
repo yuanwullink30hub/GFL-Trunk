@@ -8,7 +8,8 @@
  * Layer-1 answers come in display order A–F with their slot; Layer 2 carries no order (the screen
  * shuffles it at render, §1).
  *
- * The bank is still the placeholder (Bleed v2 gate G2): structure only, texts not for release.
+ * The bank is the ratified Leerling Question Bank v1.0 (owner, 16 Oct 2026: 648 answers accepted; Bleed v2
+ * gate G2). Its question ids are the placeholder's, so the rotation sequences — seeded on the ids — are unchanged.
  */
 
 'use strict';
@@ -22,7 +23,7 @@ const GROUPS = ['Ruling', 'Relational', 'Seeker', 'Chaos', 'Abstract', 'Agency']
 let bank = null;
 function loadBank() {
   if (bank) return bank;
-  const raw = require('../engine/data/question_bank_PLACEHOLDER_leerling_v0_1.json');
+  const raw = require('../engine/data/question_bank_leerling_v1_0.json');
   const bySubject = {};
   for (const q of raw.questions) (bySubject[q.subject] ||= []).push(q.question_id);
   const hash = crypto.createHash('sha256').update(JSON.stringify(raw.questions.map((q) => [q.subject, q.question_id]))).digest('hex').slice(0, 12);

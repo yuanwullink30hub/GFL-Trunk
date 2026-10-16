@@ -184,10 +184,11 @@ const SingleLayerPanel = ({
   }, [isSaved]); // eslint-disable-line react-hooks/exhaustive-deps
   
   const questions = useMemo(() => {
+    if (twoLayer) return layerQuestions; // the two-layer test: the plan's 36 questions at every level
     const cfg = LEVEL_CONFIGS[assessmentLevel];
     const limit = cfg?.questionsPerLayer || layerQuestions.length;
     return layerQuestions.slice(0, limit);
-  }, [layerQuestions, assessmentLevel]);
+  }, [layerQuestions, assessmentLevel, twoLayer]);
   const totalQuestions = questions.length;
   
   const answeredCount = questions.filter(q => {
@@ -385,6 +386,16 @@ const SingleLayerPanel = ({
     const baseConfig = LEVEL_CONFIGS[assessmentLevel];
     if (!baseConfig) return {};
 
+    // The two-layer test (owner, 15 Oct): every level runs Leerling's card — same cards, forward only from
+    // question to question. Beginner and Gevorderd may turn back from Layer 2 to Layer 1 of the same question;
+    // Beginner has no timer at all.
+    if (twoLayer) {
+      const leerling = { ...LEVEL_CONFIGS.deep, name: baseConfig.name, hasTimer: true, allowBacktrack: false, allowQuestionJump: false };
+      if (assessmentLevel === 'quick') return { ...leerling, hasTimer: false, timerType: 'none', layerTimers: undefined, allowLayerBack: true };
+      if (assessmentLevel === 'standard') return { ...leerling, allowLayerBack: true };
+      return leerling;
+    }
+
     // Beginner: timer only on the first layer (layer 0)
     if (assessmentLevel === 'quick') {
       return {
@@ -406,7 +417,7 @@ const SingleLayerPanel = ({
     }
     // Leerling: full restrictions on every layer
     return { ...baseConfig, hasTimer: true };
-  }, [assessmentLevel, layerIndex]);
+  }, [assessmentLevel, layerIndex, twoLayer]);
 
   // Answer selection handler - stores selections (no auto-advance)
   const handleAnswerSelect = useCallback((questionId, answerId) => {

@@ -617,7 +617,13 @@ export async function getAssessment(id) {
  * @param {(stage: number, message: string) => void} [onProgress] - Progress callback (stage 1-3)
  * @returns {Promise<{ analysis, provider, model, promptTokens, completionTokens, ... }>}
  */
-export async function analyzeAssessment(params, onProgress) {
+/**
+ * @param {object} params
+ * @param {(stage:number, message:string) => void} [onProgress]
+ * @param {(profile:object) => void} [onProfile]  two-layer test: the server's one scoring result (Main, Support,
+ *   totals, mandjes), sent before the model call — the results screen reads it; the browser never scores.
+ */
+export async function analyzeAssessment(params, onProgress, onProfile) {
   const response = await fetch(`${API_BASE}/ai/analyze`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -644,6 +650,8 @@ export async function analyzeAssessment(params, onProgress) {
   const handleEvent = (eventType, data) => {
     if (eventType === 'progress' && onProgress) {
       onProgress(data.stage, data.message);
+    } else if (eventType === 'profile') {
+      if (onProfile) onProfile(data);
     } else if (eventType === 'result') {
       result = data;
     } else if (eventType === 'error') {

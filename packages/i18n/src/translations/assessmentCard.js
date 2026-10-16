@@ -134,6 +134,21 @@ export default {
         nl: '\n \nElke laag heeft zijn eigen timer. Loopt die af, dan gaat de kaart door met wat je tot dan koos.\nJe kunt altijd zelf doorklikken, niet terug,\nhier alleen voorwaartse beweging.',
         en: '\n \nEach layer has its own timer. When it runs out, the card moves on with what you chose so far.\nYou can always click ahead yourself, not back,\nonly forward movement here.',
       },
+      // Gevorderd (owner, 15 Oct): the timer stays; from Layer 2 one step back to Layer 1 of the same question.
+      timerOutroBack: {
+        nl: '\n \nElke laag heeft zijn eigen timer. Loopt die af, dan gaat de kaart door met wat je tot dan koos.\nVan laag 2 kun je terug naar laag 1 van dezelfde vraag,\nnooit naar een eerdere vraag: alleen voorwaartse beweging.',
+        en: '\n \nEach layer has its own timer. When it runs out, the card moves on with what you chose so far.\nFrom layer 2 you can go back to layer 1 of the same question,\nnever to an earlier question: forward movement only.',
+      },
+      // Beginner (owner, 15 Oct): no timer at all, and the same step back from Layer 2 to Layer 1.
+      noTimer: {
+        nl: '36 vragen over 5 onderwerpen, zonder timer: neem de tijd die je nodig hebt.\nVan laag 2 kun je terug naar laag 1 van dezelfde vraag,\nnooit naar een eerdere vraag: alleen voorwaartse beweging.',
+        en: '36 questions across 5 subjects, without a timer: take the time you need.\nFrom layer 2 you can go back to layer 1 of the same question,\nnever to an earlier question: forward movement only.',
+      },
+      // The step back from Layer 2 to Layer 1 (Beginner, Gevorderd)
+      back: {
+        nl: 'Terug',
+        en: 'Back',
+      },
     },
   },
 };

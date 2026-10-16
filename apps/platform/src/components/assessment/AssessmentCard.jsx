@@ -371,6 +371,8 @@ const AssessmentCard = ({
 
   // Calculate and countdown timer based on level configuration
   const hasTimer = levelConfig.hasTimer !== false;
+  // Two-layer test: seconds left per question layer (`${id}:${layer}`), so a layer turned back to resumes.
+  const layerTimeLeft = useRef(new Map());
 
   useEffect(() => {
     const cfg = levelConfigRef.current;
@@ -394,22 +396,24 @@ const AssessmentCard = ({
       initialTime = 45;
     }
 
-    setTimeRemaining(initialTime);
+    // A two-layer layer resumes the time it had left: turning back from Layer 2 to Layer 1 never adds time.
+    const key = timerKey;
+    const resumed = twoLayer ? layerTimeLeft.current.get(key) : undefined;
+    setTimeRemaining(resumed ?? initialTime);
     if (!cardSettled) return undefined; // full time on show, counting starts when the flip has ended
 
     // Set up countdown interval
     const interval = setInterval(() => {
       setTimeRemaining(prev => {
-        if (prev !== null && prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev !== null ? prev - 1 : null;
+        const next = prev !== null && prev <= 1 ? 0 : prev !== null ? prev - 1 : null;
+        if (twoLayer && next !== null) layerTimeLeft.current.set(key, next);
+        if (next === 0) clearInterval(interval);
+        return next;
       });
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [timerKey, cardSettled, currentSubjectIndex, hasTimer, started, levelConfig.timerType, levelConfig.fixedTimer, levelConfig.layerTimers]);
+  }, [timerKey, cardSettled, currentSubjectIndex, hasTimer, started, twoLayer, levelConfig.timerType, levelConfig.fixedTimer, levelConfig.layerTimers]);
 
   // Auto-advance when timer runs out (with or without answer selected)
   useEffect(() => {
@@ -478,6 +482,14 @@ const AssessmentCard = ({
   const handleTwoLayerNext = () => {
     if (layer === 2 || currentRecord.refusal) advanceQuestion();
     else if (currentRecord.l1.length) setLayerState({ qid: currentQuestion.id, layer: 2 });
+  };
+  // Beginner and Gevorderd (owner, 15 Oct): from Layer 2 back to Layer 1 of the same question — never to an
+  // earlier question. Offered while Layer 1 still has time (its timer resumes; a Layer 1 that ran out is done).
+  const canTurnBack = twoLayer && levelConfig.allowLayerBack === true && layer === 2 && currentQuestion
+    && (!hasTimer || (layerTimeLeft.current.get(`${currentQuestion.id}:1`) ?? 1) > 0);
+  const handleTwoLayerBack = () => {
+    if (flip !== 'idle' || !canTurnBack) return;
+    setLayerState({ qid: currentQuestion.id, layer: 1 });
   };
   // The layer's timer ran out: Layer 1 with a pick turns to its Layer 2; with nothing picked the question is
   // recorded as a timeout (zero points, never the same as a refusal) and the test moves on.
@@ -646,6 +658,8 @@ const AssessmentCard = ({
                 textAlign: 'center',
                 lineHeight: 1.7,
               }}>
+                {/* Beginner (two-layer, no timer): the count and the rule, without a timer line (owner, 15 Oct) */}
+                {twoLayer && !hasTimer ? renderOverlayText(t('assessmentCard.twoLayer.noTimer'), subjectColor) : (<>
                 {renderOverlayText(t('assessmentCard.intro.timerIntro'), subjectColor)}
                 <br />
                 <span style={{ color: '#a855f7' }}>
@@ -654,7 +668,9 @@ const AssessmentCard = ({
                   : <>111s → 90s → 72s → 60s → 49s</>
                 }
                 </span>
-                {renderOverlayText(t(twoLayer ? 'assessmentCard.twoLayer.timerOutro' : 'assessmentCard.intro.timerOutro'), subjectColor)}
+                {renderOverlayText(t(!twoLayer ? 'assessmentCard.intro.timerOutro'
+                  : levelConfig.allowLayerBack ? 'assessmentCard.twoLayer.timerOutroBack' : 'assessmentCard.twoLayer.timerOutro'), subjectColor)}
+                </>)}
               </p>
 
               <p style={{
@@ -1019,15 +1035,21 @@ const AssessmentCard = ({
             const rows = layerNo === 1
               ? q.l1.map((a) => ({ key: a.slot, badge: a.slot, text: a.text, textEn: a.textEn, selected: rec.l1.some((p) => p.group === a.group), onClick: () => handleGroupClick(a) }))
               : layer2Answers(q, rec).map((a, i) => ({ key: a.archetype, badge: String.fromCharCode(65 + i), text: a.text, textEn: a.textEn, selected: rec.l2.includes(a.archetype), onClick: () => handleArchetypeClick(a.archetype) }));
+            // Layer 1: the list. Layer 2: the game-show square (owner, 15 Oct) — A B on top, C D below; two answers
+            // are one row, A left and B right. Rectangles, never stretched square; one column on a phone.
+            const square = layerNo === 2;
             return (
-                <div className="flex flex-col gap-2">
+                <div
+                  className={square ? 'grid' : 'flex flex-col gap-2'}
+                  style={square ? { gridTemplateColumns: `repeat(${s.l2Columns}, minmax(0, 1fr))`, gap: s.l2Gap } : undefined}
+                >
                   {rows.map((r) => (
                     <button
                       key={r.key}
                       onClick={r.onClick}
                       aria-pressed={r.selected}
-                      className={`relative group flex items-stretch text-left transition-all duration-200 w-full ${r.selected ? 'translate-x-1' : 'hover:translate-x-0.5'}`}
-                      style={{ minHeight: s.answerMinH }}
+                      className={`relative group flex items-stretch text-left transition-all duration-200 w-full ${square ? '' : r.selected ? 'translate-x-1' : 'hover:translate-x-0.5'}`}
+                      style={{ minHeight: square ? s.l2AnswerMinH : s.answerMinH }}
                     >
                       <div
                         className="flex items-center justify-center font-bold border-y border-l rounded-l-sm transition-colors duration-300"
@@ -1083,7 +1105,11 @@ const AssessmentCard = ({
                       {renderAnswers(1)}
                     </div>
                   )}
-                  <div style={{ gridArea: '1 / 1' }}>
+                  {/* Layer 2 sits centred in the room Layer 1 holds. */}
+                  <div style={face.layer === 2
+                    ? { gridArea: '1 / 1', display: 'flex', flexDirection: 'column', justifyContent: 'center' }
+                    : { gridArea: '1 / 1' }}
+                  >
                     {renderAnswers(face.layer)}
                   </div>
                 </div>
@@ -1221,6 +1247,31 @@ const AssessmentCard = ({
           {/* Next + AUTO Buttons — manual advance */}
           {(twoLayer || !isAllAnswered || isLastQuestion) && (
             <div className="flex items-center justify-center gap-2">
+              {/* Beginner / Gevorderd: back from Layer 2 to Layer 1 of this question, in Geen's grey (owner, 15 Oct). */}
+              {canTurnBack && face.layer === 2 && (
+                <button
+                  type="button"
+                  onClick={handleTwoLayerBack}
+                  className="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded transition-all duration-200"
+                  style={{
+                    fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                    fontSize: s.answerFont,
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.45)',
+                    color: 'rgba(255, 255, 255, 0.45)',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'; }}
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="#FFFEF0">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  {t('assessmentCard.twoLayer.back')}
+                </button>
+              )}
               {/* Two-layer "Geen", left of Doorgaan, on both layers: on Layer 1 the refusal ("Geen van deze
                   past"), on Layer 2 none of the refinements (the Layer-1 choice stands). It follows the face, so it
                   changes with the content at the fade's midpoint. */}

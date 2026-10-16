@@ -82,6 +82,22 @@ function kaartRequestV2({ en, main, support }) {
 }
 
 /**
+ * The session's one result as the browser reads it (owner, 14 Oct): Main, Support, the twelve totals and the
+ * seven mandjes per archetype, in points. The browser never scores the test itself — the results screen,
+ * the radar and every hook that needs Main × Support read this. The same values the data block prints.
+ * @param {object} s  scoreV2(responses)
+ */
+function profileOf(s) {
+  return {
+    scoring_version: V2,
+    main: s.main,
+    support: s.support,
+    totals: { ...s.totals },
+    mandjes: Object.fromEntries(B.NAMES.map((n) => [n, Object.fromEntries(B.BASKETS.map((b) => [b, B.toPoints(s.mandjes_u[n][b])]))])),
+  };
+}
+
+/**
  * Score a two-layer session. Throws bleedV2.BleedInputError on malformed responses (the route answers 400).
  * @param {object[]} responses
  */
@@ -182,10 +198,11 @@ function buildV2Request({ system, responses, session = null, language = 'nl', oc
     dataBlock,
     promptVersion: promptVersion(system),
     // What the browser receives: the two register curves, the Keuze/Echo graph (§1), the polarisation
-    // (computed once, shown, never derived) — no geometry echo, no mandjes, no tags.
+    // (computed once, shown, never derived), and the profile — no geometry echo, no tags.
     client: {
       enginePayload: { ...(clientPayload(out.payload) || {}), keuze_echo: s.group_view },
       polarization: { polarizationIndex: pts(s.polarizationIndex), polarizationPct: s.polarizationPct, polarizationLevel: s.polarizationLevel },
+      profile: profileOf(s),
     },
     // For the orb code-gen (points, like v1) and the logs.
     archetypeDetails: B.NAMES.map((n) => ({ key: n.toUpperCase(), total: s.totals[n] })),

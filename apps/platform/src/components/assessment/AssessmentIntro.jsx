@@ -1078,7 +1078,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
           <div style={{ marginBottom: s.levelsMb, marginTop: '1rem' }}>
             <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'}`} style={{ gap: s.levelsGap }}>
               {levels.map((level) => {
-                const isLocked = level.id === 'quick' || level.id === 'standard';
+                const isLocked = false; // all three levels open (owner, 15 Oct)
                 return (
                   <div key={level.id} style={{ position: 'relative', width: '90%', margin: '0 auto' }}>
                     {/* Info pop-up — platform glass, intro-card text size; same message on every card */}

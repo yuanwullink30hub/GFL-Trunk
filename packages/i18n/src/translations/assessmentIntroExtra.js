@@ -56,8 +56,28 @@ export default {
       en: 'Manual',
     },
     levelInfo: {
-      nl: 'Level keuze is irrelevant voor vergelijking en wordt niet opgeslagen, deze keuze stemt de vragen af naar jouw verhouding.',
-      en: 'Your level choice is irrelevant for comparison and is not stored; it only tunes the questions to your relationship to the material.',
+      nl: 'Level keuze is irrelevant voor vergelijking en is geen sociale maatstaf, deze keuze stemt de vragenlijst af naar jouw verhouding.',
+      en: 'Your level choice is irrelevant for comparison and is not a social measure; it tunes the questionnaire to your relationship to the material.',
+    },
+    // The purple info per level card (owner, 16 Oct): who should pick this level.
+    levelWho: {
+      title: {
+        nl: 'Voor wie is dit niveau?',
+        en: 'Who is this level for?',
+      },
+      // NL: the owner's text (16 Oct), verbatim. EN: translation, draft.
+      quick: {
+        nl: 'Kies dit als je net begint met jezelf onderzoeken. Bijvoorbeeld omdat het voor werk of school moet, omdat anderen het deden, uit nieuwsgierigheid, of omdat er iets groots in je leven veranderde.',
+        en: 'Choose this if you are just starting to explore yourself. For example because work or school asks for it, because others did it, out of curiosity, or because something big changed in your life.',
+      },
+      standard: {
+        nl: 'Kies dit als je al bewust met jezelf bezig bent en je patronen en triggers een beetje kent. Maar als het erop aankomt, reageer je vaak nog sneller dan je kiest.',
+        en: 'Choose this if you are already consciously working on yourself and know your patterns and triggers a little. But when it comes down to it, you often still react faster than you choose.',
+      },
+      deep: {
+        nl: 'Kies dit als je al langer, uit jezelf, aan je schaduwkanten werkt. Je kent je eigen reacties in specifieke situaties en zoekt de diepste vragen over jezelf op.',
+        en: 'Choose this if you have been working on your shadow sides for a while, of your own accord. You know your own reactions in specific situations and seek out the deepest questions about yourself.',
+      },
     },
 
     // ── Leave-the-test confirmation ──

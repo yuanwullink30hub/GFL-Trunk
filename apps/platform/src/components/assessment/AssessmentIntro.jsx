@@ -116,7 +116,20 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
     oceanInfoTimer.current = setTimeout(() => setShowOceanInfo(false), 200);
   }, []);
   useEffect(() => () => clearTimeout(oceanInfoTimer.current), []);
-  const [infoLevel, setInfoLevel] = useState(null); // which level's info pop-up is open (per card)
+  // The level cards' info (owner, 16 Oct): one purple icon per card — who this level is for, then the shared note
+  // that the level choice is not stored or compared. Like the OCEAN pop-up it closes a moment after the pointer
+  // leaves, so the pointer can move into it.
+  const [whoLevel, setWhoLevel] = useState(null);
+  const whoLevelTimer = useRef(null);
+  const openWhoLevel = useCallback((id) => {
+    clearTimeout(whoLevelTimer.current);
+    setWhoLevel(id);
+  }, []);
+  const closeWhoLevelSoon = useCallback(() => {
+    clearTimeout(whoLevelTimer.current);
+    whoLevelTimer.current = setTimeout(() => setWhoLevel(null), 200);
+  }, []);
+  useEffect(() => () => clearTimeout(whoLevelTimer.current), []);
   const [showOceanInput, setShowOceanInput] = useState(false);
   const [oceanOrigin, setOceanOrigin] = useState('center center');
   const [oceanManualScores, setOceanManualScores] = useState(null);
@@ -1074,43 +1087,56 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
             })()}
           </div>
 
-          {/* Level Selection — each card carries the same info pop-up (beginner, gevorderd, diep). */}
+          {/* Level Selection — each card carries one purple info pop-up: who it is for, then the shared level note. */}
           <div style={{ marginBottom: s.levelsMb, marginTop: '1rem' }}>
             <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'}`} style={{ gap: s.levelsGap }}>
               {levels.map((level) => {
                 const isLocked = false; // all three levels open (owner, 15 Oct)
                 return (
                   <div key={level.id} style={{ position: 'relative', width: '90%', margin: '0 auto' }}>
-                    {/* Info pop-up — platform glass, intro-card text size; same message on every card */}
+                    {/* Who-is-this-for pop-up — top-right like every info icon on the intro card, purple, its own text per level; built like the OCEAN
+                        upload pop-up: a transparent strip bridges the gap so the pointer can move into it. */}
                     <span
-                      onMouseEnter={() => setInfoLevel(level.id)}
-                      onMouseLeave={() => setInfoLevel(null)}
+                      onMouseEnter={() => openWhoLevel(level.id)}
+                      onMouseLeave={closeWhoLevelSoon}
+                      onClick={(e) => { e.stopPropagation(); whoLevel === level.id ? setWhoLevel(null) : openWhoLevel(level.id); }}
                       style={{
                         position: 'absolute', top: '-0.55rem', right: '-0.55rem', zIndex: 30,
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                         width: '1.15rem', height: '1.15rem', borderRadius: '50%',
-                        backgroundColor: 'rgba(2,0,3,0.9)', border: '1px solid rgba(249,115,22,0.6)',
-                        color: '#f97316', fontSize: '0.68rem', fontWeight: 700, fontStyle: 'italic',
+                        backgroundColor: 'rgba(2,0,3,0.9)', border: '1px solid rgba(167,139,250,0.6)',
+                        color: '#a78bfa', fontSize: '0.68rem', fontWeight: 700, fontStyle: 'italic',
                         cursor: 'pointer', lineHeight: 1,
                       }}
-                      title={t('assessmentIntroExtra.infoTitle')}
+                      title={t('assessmentIntroExtra.levelWho.title')}
                     >
                       i
-                      {infoLevel === level.id && (
+                      {whoLevel === level.id && (
                         <div
-                          style={{
-                            position: 'absolute', bottom: 'calc(100% + 0.4rem)', right: 0,
-                            width: '21.6rem', maxWidth: '80vw', padding: '0.84rem 1.08rem', borderRadius: '0.5rem',
-                            backgroundColor: isLowGpu ? 'rgba(10, 3, 18, 0.9)' : 'rgba(2, 0, 3, 0.55)',
-                            backdropFilter: laptopBlur, WebkitBackdropFilter: laptopBlur,
-                            border: '1px solid rgba(249,115,22,0.35)',
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.45)', zIndex: 50,
-                            color: 'rgba(255,254,240,0.85)', fontSize: s.descFontSize, lineHeight: 1.6,
-                            fontStyle: 'normal', fontWeight: 400, textAlign: 'left', whiteSpace: 'normal',
-                            cursor: 'default',
-                          }}
+                          onMouseEnter={() => openWhoLevel(level.id)}
+                          onMouseLeave={closeWhoLevelSoon}
+                          style={{ position: 'absolute', bottom: '100%', right: 0, paddingBottom: '0.4rem', zIndex: 50 }}
                         >
-                          {renderCopy(t('assessmentIntroExtra.levelInfo'))}
+                          <div
+                            style={{
+                              position: 'relative',
+                              width: '21.6rem', maxWidth: '80vw', padding: '0.84rem 1.08rem', borderRadius: '0.5rem',
+                              // near-opaque (owner, 16 Oct): the intro text behind must not show through
+                              backgroundColor: isLowGpu ? 'rgba(10, 3, 18, 0.9)' : 'rgba(2, 0, 3, 0.9)',
+                              backdropFilter: laptopBlur, WebkitBackdropFilter: laptopBlur,
+                              border: '1px solid rgba(167,139,250,0.35)',
+                              boxShadow: '0 4px 20px rgba(0,0,0,0.45)', zIndex: 50,
+                              color: 'rgba(255,254,240,0.85)', fontSize: s.descFontSize, lineHeight: 1.6,
+                              fontStyle: 'normal', fontWeight: 400, textAlign: 'left', whiteSpace: 'normal',
+                              cursor: 'default',
+                            }}
+                          >
+                            {renderCopy(t(`assessmentIntroExtra.levelWho.${level.id}`))}
+                            {/* the former orange info, the same on every level (owner, 16 Oct: one icon per card) */}
+                            <span style={{ display: 'block', marginTop: '0.5rem', color: 'rgba(255,254,240,0.6)' }}>
+                              {renderCopy(t('assessmentIntroExtra.levelInfo'))}
+                            </span>
+                          </div>
                         </div>
                       )}
                     </span>

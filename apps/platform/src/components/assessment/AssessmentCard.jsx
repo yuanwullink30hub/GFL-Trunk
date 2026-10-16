@@ -1035,21 +1035,16 @@ const AssessmentCard = ({
             const rows = layerNo === 1
               ? q.l1.map((a) => ({ key: a.slot, badge: a.slot, text: a.text, textEn: a.textEn, selected: rec.l1.some((p) => p.group === a.group), onClick: () => handleGroupClick(a) }))
               : layer2Answers(q, rec).map((a, i) => ({ key: a.archetype, badge: String.fromCharCode(65 + i), text: a.text, textEn: a.textEn, selected: rec.l2.includes(a.archetype), onClick: () => handleArchetypeClick(a.archetype) }));
-            // Layer 1: the list. Layer 2: the game-show square (owner, 15 Oct) — A B on top, C D below; two answers
-            // are one row, A left and B right. Rectangles, never stretched square; one column on a phone.
-            const square = layerNo === 2;
+            // Both layers use the same list of long tabs (owner, 16 Oct: the game-show square of 15 Oct read worse).
             return (
-                <div
-                  className={square ? 'grid' : 'flex flex-col gap-2'}
-                  style={square ? { gridTemplateColumns: `repeat(${s.l2Columns}, minmax(0, 1fr))`, gap: s.l2Gap } : undefined}
-                >
+                <div className="flex flex-col gap-2">
                   {rows.map((r) => (
                     <button
                       key={r.key}
                       onClick={r.onClick}
                       aria-pressed={r.selected}
-                      className={`relative group flex items-stretch text-left transition-all duration-200 w-full ${square ? '' : r.selected ? 'translate-x-1' : 'hover:translate-x-0.5'}`}
-                      style={{ minHeight: square ? s.l2AnswerMinH : s.answerMinH }}
+                      className={`relative group flex items-stretch text-left transition-all duration-200 w-full ${r.selected ? 'translate-x-1' : 'hover:translate-x-0.5'}`}
+                      style={{ minHeight: s.answerMinH }}
                     >
                       <div
                         className="flex items-center justify-center font-bold border-y border-l rounded-l-sm transition-colors duration-300"
@@ -1105,11 +1100,7 @@ const AssessmentCard = ({
                       {renderAnswers(1)}
                     </div>
                   )}
-                  {/* Layer 2 sits centred in the room Layer 1 holds. */}
-                  <div style={face.layer === 2
-                    ? { gridArea: '1 / 1', display: 'flex', flexDirection: 'column', justifyContent: 'center' }
-                    : { gridArea: '1 / 1' }}
-                  >
+                  <div style={{ gridArea: '1 / 1' }}>
                     {renderAnswers(face.layer)}
                   </div>
                 </div>

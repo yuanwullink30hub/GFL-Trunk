@@ -7,8 +7,8 @@
  *
  * The file holds what GET /api/questions and GET /api/questions/two-layer return today:
  *   layers     the old test's question layers from the database (read-only since 16 Oct), without internal fields
- *   twoLayer   { enabled: false } while config.twoLayerTest is off; otherwise the bank's plan for the current
- *              quarter and the seven after it (plans by quarter label), so a quarter switch needs no backend
+ *   twoLayer   { enabled: true, plans }: the bank's plan for the current quarter and the seven after it
+ *              (plans by quarter label), so a quarter switch needs no backend
  *              either — the platform picks the plan for its own quarter (Europe/Amsterdam)
  *
  * Without R2 configured (services/r2.js) publishing is a logged no-op and the platform keeps asking the backend.
@@ -16,7 +16,6 @@
 
 'use strict';
 
-const config = require('../config');
 const { collections } = require('../db');
 const { putObject, r2Enabled } = require('./r2');
 const { twoLayerPlanFor, quartersFrom } = require('./twoLayerBank');
@@ -29,11 +28,8 @@ const QUARTERS_AHEAD = 8;
 async function buildQuestionsFile(now = new Date()) {
   const layers = (await collections.questions().find({}).sort({ layerIndex: 1 }).toArray())
     .map(({ _id, updatedAt, updatedBy, createdAt, ...rest }) => rest);
-  let twoLayer = { enabled: false };
-  if (config.twoLayerTest) {
-    const plans = Object.fromEntries(quartersFrom(now, QUARTERS_AHEAD).map((q) => [q, twoLayerPlanFor(q)]));
-    twoLayer = { enabled: true, plans };
-  }
+  const plans = Object.fromEntries(quartersFrom(now, QUARTERS_AHEAD).map((q) => [q, twoLayerPlanFor(q)]));
+  const twoLayer = { enabled: true, plans };
   return { schema: 1, publishedAt: now.toISOString(), layers, seeded: layers.length > 0, twoLayer };
 }
 

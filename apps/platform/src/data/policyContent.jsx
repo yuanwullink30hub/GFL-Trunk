@@ -1,5 +1,5 @@
 import React from 'react';
-import { S, PolicyLink, RetentionForm, TWO_LAYER_TEST_LIVE } from './policyShared.jsx';
+import { S, PolicyLink, RetentionForm } from './policyShared.jsx';
 
 /**
  * Dutch policy documents. The English set lives in policyContent.en.jsx and
@@ -302,13 +302,12 @@ export const POLICY_CONTENT_NL = {
       </table>
       <p style={S.p}>Rapportgeneratie verloopt uitsluitend via Claude (Anthropic). De configuratie van het platform bevat aansluitingen voor andere AI-aanbieders; die worden in de productieomgeving niet gebruikt. Mocht dat veranderen, dan wordt deze lijst bijgewerkt vóórdat zij in gebruik worden genomen.</p>
       <p style={S.p}>Indien de gebruiker een persoonlijkheidsrapport uploadt (PDF, DOCX of TXT), wordt de geëxtraheerde tekst eveneens verwerkt door Claude — nadat onze server daar namen, e-mailadressen, telefoonnummers, postcodes en geboortedata uit heeft verwijderd en het bestand een neutrale naam heeft gegeven. Afbeeldingen worden niet geaccepteerd en gaan nooit naar het model. De automatische verwijdering vangt de gangbare vormen af; persoonlijke informatie die zij niet herkent, bereikt Anthropic wel. Garden For Life is niet verantwoordelijk voor de persoonsgegevens die de gebruiker opneemt in geüploade bestanden. Gebruikers worden hierop gewezen in het toestemmingsscherm en bij het uploadmoment.</p>
-      {TWO_LAYER_TEST_LIVE && (<>
-        {/* Privacy_Texts_v2_DRAFT_v0_1 §A — DRAFT, owner to ratify (privacy instruction §4.5, §4.8) */}
-        <h3 style={S.h3}>Hoe je rapport wordt gemaakt</h3>
-        <p style={S.p}>Je rapport wordt tijdens je sessie geschreven door een AI-dienst die voor ons werkt als verwerker. Bij de Leerling-test (de test in twee lagen) krijgt die dienst je antwoorden niet te zien. Hij ontvangt alleen wat de test zelf uit je antwoorden heeft berekend: je scores per archetype en hoe die zijn opgebouwd, en een paar kenmerken van je antwoordstijl (bijvoorbeeld dat je vaak beide archetypen van een groep koos). De vragen, je antwoorden en eventuele vrije tekst gaan niet naar de AI-dienst.</p>
-        <p style={S.p}>Bij de Beginner- en de Gevorderd-test ontvangt de AI-dienst ook je antwoorden.</p>
-        <p style={S.p}>Na je sessie bewaren wij niets hiervan, behalve wat je met een kristal-code laat opslaan.</p>
-      </>)}
+      {/* Privacy_Texts_v2_DRAFT_v0_1 §A — DRAFT, owner to ratify (privacy instruction §4.5, §4.8). Shown since the
+          two-layer test went live (16 Oct). The draft's Beginner/Gevorderd sentence is left out: those levels take
+          the two-layer test too and send nothing to the AI service yet. */}
+      <h3 style={S.h3}>Hoe je rapport wordt gemaakt</h3>
+      <p style={S.p}>Je rapport wordt tijdens je sessie geschreven door een AI-dienst die voor ons werkt als verwerker. Bij de Leerling-test (de test in twee lagen) krijgt die dienst je antwoorden niet te zien. Hij ontvangt alleen wat de test zelf uit je antwoorden heeft berekend: je scores per archetype en hoe die zijn opgebouwd, en een paar kenmerken van je antwoordstijl (bijvoorbeeld dat je vaak beide archetypen van een groep koos). De vragen, je antwoorden en eventuele vrije tekst gaan niet naar de AI-dienst.</p>
+      <p style={S.p}>Na je sessie bewaren wij niets hiervan, behalve wat je met een kristal-code laat opslaan.</p>
       <h2 style={S.h2}>8. Je Rechten</h2>
       <p style={S.p}>Onder de AVG heb je de volgende rechten:</p>
       <ul style={S.ul}>

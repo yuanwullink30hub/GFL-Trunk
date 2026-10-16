@@ -90,11 +90,4 @@ module.exports = {
     || (process.env.NODE_ENV === 'production' ? 'https://api.gardenforlife.nl' : `http://localhost:${parseInt(process.env.PORT, 10) || 8080}`)
   ).replace(/\/+$/, ''),
 
-  // The two-layer Leerling test (scoring_version v2_two_layer): GET /api/questions/two-layer serves its
-  // bank in the quarter's rotation order. The ratified bank v1.0 is in (gate G2, 16 Oct); production stays off
-  // until the owner switches the test live; LEERLING_TWO_LAYER=1 or 0 overrides either way.
-  twoLayerTest: process.env.LEERLING_TWO_LAYER
-    ? process.env.LEERLING_TWO_LAYER === '1'
-    : process.env.NODE_ENV !== 'production',
-
 };

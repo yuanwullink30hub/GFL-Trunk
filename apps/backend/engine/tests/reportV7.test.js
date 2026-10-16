@@ -14,7 +14,7 @@ const sessions = require('./bleed_v2_session_fixtures_v0_1.json').cases;
 
 const SYSTEM = 'AI MASTER PROMPT v7.0 — DELTAWERKEN RAPPORTGENERATOR (gate fixture)\nW1 · …';
 const build = (name, extra = {}) => V.buildV2Request({ system: SYSTEM, responses: sessions[name].questions, language: 'en', ...extra });
-const OLD_TEST = /Culture-layer reading|Cultuur-laag lezing|Culture pick|Cultuur-keuze|Scenario A\/B\/C|Nature picks|Natuur-keuzes|Yellow = Culture|Geel = Cultuur/;
+const OLD_TEST = /Culture-layer reading|Cultuur-laag lezing|Culture pick|Cultuur-keuze|Scenario A\/B\/C|Nature picks|Natuur-keuzes|Yellow = Culture|Geel = Cultuur|decomposes them|ontleedt ze|names which is which|benoemt welke welke is/;
 
 test('P1–P4, test 5: seven mandjes, no answer sheet, no Nature/Culture, no Authenticity Index, no culture-pick flag', () => {
   for (const name of Object.keys(sessions)) {
@@ -92,6 +92,17 @@ test('§7, test 12: the data block is the server\'s, from the same values; the b
   assert.deepEqual(Object.keys(r.client.enginePayload).sort(), ['keuze_echo', 'main']);
   assert.deepEqual(r.client.enginePayload.keuze_echo, r.session.group_view);
   assert.deepEqual(Object.keys(r.client.polarization).sort(), ['polarizationIndex', 'polarizationLevel', 'polarizationPct']);
+  // the one scoring result the browser reads (owner, 14 Oct: the browser never scores the test itself)
+  assert.deepEqual(Object.keys(r.client).sort(), ['enginePayload', 'polarization', 'profile']);
+  const p = r.client.profile;
+  assert.deepEqual(Object.keys(p).sort(), ['main', 'mandjes', 'scoring_version', 'support', 'totals']);
+  assert.equal(p.main, r.session.main);
+  assert.equal(p.support, r.session.support);
+  assert.deepEqual(p.totals, r.session.totals);
+  for (const [n, m] of Object.entries(p.mandjes)) {
+    assert.deepEqual(Object.keys(m), ['keuze', 'passief', 'groen', 'blauw', 'blauw_intern', 'paars', 'geel'], n);
+    assert.ok(Math.abs(Object.values(m).reduce((a, b) => a + b, 0) - p.totals[n]) < 1e-9, `${n}: the mandjes make up the total`);
+  }
   assert.ok(r.user.includes(V.CLOSING_LINE) && !/machine block|machineblok/i.test(r.user.split('═══ CARD MICROCOPY')[0]));
 });
 

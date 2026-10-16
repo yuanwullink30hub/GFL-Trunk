@@ -1110,7 +1110,8 @@ const App = () => {
   const handleAssessmentStart = useCallback((levelId) => {
     // Reset assessment state immediately (while intro shrinks)
     setAssessmentLevel(levelId);
-    setActiveTwoLayerPlan(levelId === 'deep' ? twoLayerPlanRef.current : null);
+    // Every level takes the two-layer test (owner, 15 Oct): the same cards; the levels differ in timer and Layer-2 back.
+    setActiveTwoLayerPlan(twoLayerPlanRef.current);
     setCurrentSubjectIndex(0);
     setCurrentQuestionIndex(0);
     setAssessmentAnswers([]);

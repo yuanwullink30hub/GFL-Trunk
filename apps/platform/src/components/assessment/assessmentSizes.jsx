@@ -193,6 +193,10 @@ const cardDesktop = {
   answerMinH: '3.5rem',
   answerFont: '0.875rem',
   letterBadgeW: '2.5rem',
+  // Layer 2 of the two-layer card: the game-show square (A B / C D), or one column on a phone
+  l2Columns: 2,
+  l2AnswerMinH: 'calc(3.5rem * 2.25)',
+  l2Gap: '0.75rem',
   footerPad: '0.75rem 1.25rem',
   indicatorSize: '1.75rem',
   // Intro overlay sizes (Subject 0 / Layer intros)
@@ -225,6 +229,10 @@ const cardLaptop = {
   answerMinH: '3.21vw',
   answerFont: '0.94vw',
   letterBadgeW: '2.08vw',
+  // Layer 2 of the two-layer card: the game-show square (A B / C D), or one column on a phone
+  l2Columns: 2,
+  l2AnswerMinH: 'calc(3.21vw * 2.25)',
+  l2Gap: '0.63vw',
   footerPad: '0.63vw 1.04vw',
   indicatorSize: '1.46vw',
   // Intro overlay sizes (Subject 0 / Layer intros)
@@ -257,6 +265,10 @@ const cardTablet = {
   answerMinH: '2.3rem',
   answerFont: '0.7rem',
   letterBadgeW: '1.6rem',
+  // Layer 2 of the two-layer card: the game-show square (A B / C D), or one column on a phone
+  l2Columns: 2,
+  l2AnswerMinH: 'calc(2.3rem * 2.25)',
+  l2Gap: '0.5rem',
   footerPad: '0.5rem 0.8rem',
   indicatorSize: '1.15rem',
   // Intro overlay sizes
@@ -289,6 +301,10 @@ const cardMobile = {
   answerMinH: '2.6rem',
   answerFont: '0.75rem',
   letterBadgeW: '1.75rem',
+  // Layer 2 of the two-layer card: the game-show square (A B / C D), or one column on a phone
+  l2Columns: 1,
+  l2AnswerMinH: 'calc(2.6rem * 1.25)',
+  l2Gap: '0.5rem',
   footerPad: '0.45rem 0.65rem',
   indicatorSize: '1.25rem',
   // Intro overlay sizes

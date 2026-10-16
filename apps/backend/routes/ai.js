@@ -428,7 +428,7 @@ router.post('/analyze', analyzeLimit, uploadCaps, scoringVersionGate, promptGate
 
     // The request plan. Both branches yield the model input (user, cachedContext) and what the browser
     // draws (engine curves, polarisation, data block), plus the orb code.
-    let user, cachedContext, orbCode, clientEngine, clientPolarization, dataBlock = null;
+    let user, cachedContext, orbCode, clientEngine, clientPolarization, dataBlock = null, clientProfile = null;
     // Who the report is about: v2 reads the server's own scoring, v1 the client's fields.
     let reportMain = archetypeKey, reportSupportGroup = supportGroup, reportExtension = extendedArchetypeName;
     if (req.v2) {
@@ -443,6 +443,10 @@ router.post('/analyze', analyzeLimit, uploadCaps, scoringVersionGate, promptGate
         `style tags ${v7.styleTags.join(', ') || 'none'}; Support-bewerking ${v7.supportEdit}; Support-herkomst ${s.support_herkomst}; ` +
         `prompt_version=${v7.promptVersion} stamps ${JSON.stringify(v7.payload.stamps)}`);
       if (s.tie_breaks.length) console.log('[AI] v2 tie-breaks (logged, never sent):', JSON.stringify(s.tie_breaks));
+      // The one scoring result, to the browser before the long model call: the results screen reads it (and
+      // keeps it when the report fails); the browser never scores the test itself (owner, 14 Oct).
+      clientProfile = v7.client.profile;
+      sendEvent('profile', clientProfile);
       user = v7.user;
       cachedContext = v7.cachedContext;
       clientEngine = v7.client.enginePayload;
@@ -653,6 +657,8 @@ router.post('/analyze', analyzeLimit, uploadCaps, scoringVersionGate, promptGate
       enginePayload: clientEngine,
       // v2: the data block for the last page, built here from the payload (never by the model).
       dataBlock,
+      // v2: the scoring's one result (Main, Support, totals, mandjes) — the same values as the early event.
+      profile: clientProfile,
       // The polarisation (index, %, band) — computed once, above; the browser shows it, never derives it.
       polarization: clientPolarization,
       // Authoritative orb profile code (LC_ORB3_…), radial+purple-gated with the one polar_norm —

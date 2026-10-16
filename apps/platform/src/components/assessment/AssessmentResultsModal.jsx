@@ -28,7 +28,7 @@ import {
   archetypeField,
   ARCHETYPE_RADAR_LABELS,
 } from '@gfl/assessment-core';
-import { scoreTwoLayer, toResponseRecords } from '@gfl/assessment-core/data/scoring/twoLayer.js';
+import { toResponseRecords } from '@gfl/assessment-core/data/scoring/twoLayer.js';
 import { isNatureSlot } from '@gfl/assessment-core/assessmentData';
 import { getArchetypeImage, resolvePortrait, DEFAULT_PORTRAIT_VARIANT } from '@gfl/assessment-core/data/archetypeImages';
 import PaywallModal from './PaywallModal';
@@ -227,14 +227,21 @@ const AssessmentResultsModal = ({
     [twoLayerPlan, layerAnswers],
   );
 
+  // The two-layer test is scored once, by the server; its result (Main, Support, totals, mandjes) arrives
+  // before the report is written (the analyze stream's `profile` event) and with it. Until then: no result.
+  const [serverProfile, setServerProfile] = useState(null);
+  // Beginner and Gevorderd take the two-layer test too (owner, 15 Oct), but only Leerling has a report yet:
+  // the other two levels end on a notice, and their answers never leave the browser.
+  const reportAvailable = !twoLayerPlan || assessmentLevel === 'deep';
+
   // Compute archetype result from layer answers
   const result = useMemo(() => {
-    if (twoLayerResponses) return computeResultFromTwoLayer(twoLayerResponses, language);
+    if (twoLayerResponses) return serverProfile ? computeResultFromProfile(serverProfile, language) : null;
     const keys = layerAnswers ? Object.keys(layerAnswers) : [];
     const totalAnswers = keys.reduce((sum, k) => sum + Object.keys(layerAnswers[k] || {}).length, 0);
     console.log('[GFL] computeResultFromAnswers — layers:', keys.length, 'totalAnswers:', totalAnswers, 'sample:', JSON.stringify(layerAnswers).slice(0, 300));
     return computeResultFromAnswers(layerAnswers, liveSubjects, language);
-  }, [layerAnswers, liveSubjects, language, twoLayerResponses]);
+  }, [layerAnswers, liveSubjects, language, twoLayerResponses, serverProfile]);
   
   // Ref for the scroll container
   const scrollRef = useRef(null);
@@ -469,7 +476,9 @@ const AssessmentResultsModal = ({
 
   // ── Fire AI analysis during loading phase (with SSE progress) ──
   useEffect(() => {
-    if (!result || aiReady || aiCalledRef.current) return;
+    // The two-layer test starts without a result: the server's scoring is what this call brings back.
+    if ((!result && !twoLayerResponses) || aiReady || aiCalledRef.current) return;
+    if (!reportAvailable) return; // Beginner / Gevorderd: no report yet — nothing is sent (owner, 15 Oct)
     aiCalledRef.current = true;
 
     const runAnalysis = async () => {
@@ -521,7 +530,8 @@ const AssessmentResultsModal = ({
       // Warm the archetype image now — we know it before the ~5s AI call, so kicking off
       // the fetch here means it's decoded and cached by the time the result card renders
       // (otherwise the card appears first and the image pops in ~2s later).
-      for (const v of ['female', 'male']) {
+      // (Two-layer test: no result yet — the loading screen preloads the portrait once the profile arrives.)
+      if (result) for (const v of ['female', 'male']) {
         const u = resolvePortrait(result.mainArchetype, result.secondaryArchetype || result._secondaryKey, v).url;
         if (u) { const warmImg = new Image(); warmImg.src = u; warmImg.decode?.().catch(() => {}); }
       }
@@ -531,7 +541,7 @@ const AssessmentResultsModal = ({
         const __replay = (typeof window !== 'undefined' && window.__GFL_PDF_REPLAY) || null;
         let aiResult;
         if (__replay) {
-          aiResult = { analysis: __replay.analysis, enginePayload: __replay.enginePayload, polarization: __replay.polarization, dataBlock: __replay.dataBlock, uploadedOceanScores: __replay.uploadedOceanScores, sealedOrbCode: __replay.sealedOrbCode, kaart: __replay.kaart };
+          aiResult = { analysis: __replay.analysis, enginePayload: __replay.enginePayload, polarization: __replay.polarization, dataBlock: __replay.dataBlock, uploadedOceanScores: __replay.uploadedOceanScores, sealedOrbCode: __replay.sealedOrbCode, kaart: __replay.kaart, profile: __replay.profile };
         } else {
         aiResult = await analyzeAssessment(twoLayerResponses ? {
           // The two-layer test: only the response records go up; the server scores them and the report
@@ -572,14 +582,12 @@ const AssessmentResultsModal = ({
         }, (stage, message) => {
           setAiStage(stage);
           console.log(`[GFL] AI stage ${stage}: ${message}`);
-        });
+        }, (profile) => setServerProfile(profile));
         }
         // Stage 3: frontend integration
         setAiStage(3);
-        // The screen names the Main from the display mirror of the v2 scoring; the report is the server's.
-        if (twoLayerResponses && aiResult.archetypeKey && aiResult.archetypeKey !== result.mainArchetype) {
-          console.warn(`[GFL] two-layer Main differs: server ${aiResult.archetypeKey}, screen ${result.mainArchetype}`);
-        }
+        // Two-layer test: the server's one scoring result, again with the report (the early event carried it too).
+        if (aiResult.profile) setServerProfile(aiResult.profile);
         if (aiResult.uploadedOceanScores) setUploadedOceanScores(aiResult.uploadedOceanScores);
         setEnginePayload(aiResult.enginePayload || null);
         setPolarization(aiResult.polarization || null);
@@ -630,6 +638,7 @@ const AssessmentResultsModal = ({
               analysis: aiResult.analysis, enginePayload: aiResult.enginePayload,
               polarization: aiResult.polarization, dataBlock: aiResult.dataBlock,
               uploadedOceanScores: aiResult.uploadedOceanScores, sealedOrbCode: aiResult.sealedOrbCode, kaart: aiResult.kaart,
+              profile: aiResult.profile,
               savedAt: Date.now(),
             }));
           }
@@ -3549,6 +3558,54 @@ const AssessmentResultsModal = ({
           }} />
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+            {!reportAvailable ? (
+              /* Beginner / Gevorderd: no report for this level yet — a notice and a way out (owner, 15 Oct) */
+              <>
+                <p style={{
+                  fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                  fontSize: 'max(0.875rem, 0.73vw)',
+                  fontWeight: 700,
+                  color: '#ffae00',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.15em',
+                  margin: 0,
+                }}>
+                  {t('resultsModal.ui.levelNoReportTitle')}
+                </p>
+                <p style={{
+                  fontFamily: "'Figtree', sans-serif",
+                  fontSize: '0.95rem',
+                  color: 'rgba(255, 254, 240, 0.8)',
+                  margin: 0,
+                  lineHeight: '1.6',
+                  maxWidth: '320px',
+                }}>
+                  {t('resultsModal.ui.levelNoReportBody')}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => onClose && onClose()}
+                  style={{
+                    padding: '0.6rem 1.5rem',
+                    borderRadius: '0.15rem',
+                    background: 'rgba(255, 174, 0, 0.1)',
+                    border: '1px solid rgba(255, 174, 0, 0.5)',
+                    color: '#ffae00',
+                    fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                    fontSize: 'max(0.8rem, 0.67vw)',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.12em',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#ffae00'; e.currentTarget.style.color = '#000'; e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 174, 0, 0.5)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 174, 0, 0.1)'; e.currentTarget.style.color = '#ffae00'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  {t('resultsModal.ui.close')}
+                </button>
+              </>
+            ) : (<>
             {/* Spinner */}
             <div className="keep-spinning" style={{
               width: '3rem',
@@ -3583,9 +3640,10 @@ const AssessmentResultsModal = ({
             }}>
               {t(aiOverdue ? 'resultsModal.ui.timeOverdue' : 'resultsModal.ui.timeEstimate')}
             </p>
+            </>)}
 
             {/* N1 refusal cards: opt-in, only for the two-layer test, never in the report's way */}
-            {twoLayerPlan && !aiFailed && <RefusalCards plan={twoLayerPlan} layerAnswers={layerAnswers} />}
+            {twoLayerPlan && reportAvailable && !aiFailed && <RefusalCards plan={twoLayerPlan} layerAnswers={layerAnswers} />}
 
             {/* Persistent preload: load + decode the archetype portrait during the wait so it's
                 already cached when the result card paints (otherwise the card shows first and the
@@ -3632,7 +3690,8 @@ const AssessmentResultsModal = ({
                   >
                     {t('resultsModal.ui.retry')}
                   </button>
-                  <button
+                  {/* Only with a result to show: the two-layer test has one once the server scored it. */}
+                  {result && <button
                     onClick={() => {
                       setAiReady(true);
                       if (onAiReady) onAiReady();
@@ -3654,7 +3713,7 @@ const AssessmentResultsModal = ({
                     onMouseLeave={e => e.target.style.opacity = '1'}
                   >
                     {t('resultsModal.ui.continueWithoutAi')}
-                  </button>
+                  </button>}
                 </div>
               </div>
             )}
@@ -4996,13 +5055,12 @@ function identityResult({ mainKey, supportKey, advanced, subgroups, archetypeSco
 }
 
 /**
- * The two-layer test's result for the screen, from the display mirror of the server's v2 scoring
- * (@gfl/assessment-core/data/scoring/twoLayer.js; held to engine/bleedV2.js by its backend test). The
- * radar draws the seven mandjes as six bands (eigen echo = groen + blauw intern); the old test's
- * nature/culture indices and its answer sheet do not exist here.
+ * The two-layer test's result for the screen, read from the server's one scoring result (the analyze
+ * stream's `profile`: Main, Support, totals and mandjes in points; apps/backend/engine/reportV7.js). Nothing
+ * is scored here. The radar draws the seven mandjes as six bands (eigen echo = groen + blauw intern); the
+ * old test's nature/culture indices and its answer sheet do not exist here.
  */
-function computeResultFromTwoLayer(responses, lang = 'nl') {
-  const s = scoreTwoLayer(responses);
+function computeResultFromProfile(s, lang = 'nl') {
   const KEY = (name) => name.toUpperCase();
   const round1 = (x) => Math.round(x * 10) / 10;
   const radarData = ARCHETYPE_RADAR_LABELS.map((label) => {

@@ -128,6 +128,14 @@ export default {
       },
       retry: { nl: 'Probeer opnieuw', en: 'Try again' },
       continueWithoutAi: { nl: 'Doorgaan zonder AI', en: 'Continue without AI' },
+      // Beginner and Gevorderd take the two-layer test, but their reports are not written yet (owner, 15 Oct):
+      // nothing is sent, nothing is kept.
+      levelNoReportTitle: { nl: 'Rapport volgt binnenkort', en: 'Report coming soon' },
+      levelNoReportBody: {
+        nl: 'Het rapport voor dit niveau is nog in de maak. Je antwoorden zijn niet verstuurd en niet bewaard. Wil je nu een rapport, maak dan de test op niveau Leerling.',
+        en: 'The report for this level is still being made. Your answers were not sent and not kept. If you want a report now, take the test at the Apprentice level.',
+      },
+      close: { nl: 'Sluiten', en: 'Close' },
 
       // Meta-disclaimer above the AI sections
       metaDisclaimerLabel: { nl: 'Meta-Disclaimer:', en: 'Meta-Disclaimer:' },

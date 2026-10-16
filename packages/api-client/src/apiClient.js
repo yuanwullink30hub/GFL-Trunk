@@ -1120,107 +1120,47 @@ export async function submitRefusalTexts(consentVersion, cards) {
   }
 }
 
-/**
- * Seed the default questions into MongoDB (admin only).
- * @param {{ force?: boolean }} opts — pass force:true to wipe & re-seed
- */
-export async function seedQuestions({ force = false } = {}) {
-  const url = force
-    ? `${API_BASE}/questions/seed?force=1`
-    : `${API_BASE}/questions/seed`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: authHeaders(),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Seed failed (${response.status})`);
-  }
-  return response.json();
-}
+// ── The two-layer question bank editor (admin) ──
 
-/**
- * Export all questions as clean JSON (admin only).
- * @returns {Promise<Array>} — array of layer objects without _id fields
- */
-export async function exportQuestions() {
-  const response = await fetch(`${API_BASE}/questions/export`, {
-    headers: authHeaders(),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Export failed (${response.status})`);
-  }
-  return response.json();
-}
-
-/**
- * Bulk import questions (admin only). Replaces ALL existing questions.
- * @param {Array} layers — array of layer objects
- */
-export async function importQuestions(layers) {
-  const response = await fetch(`${API_BASE}/questions/import`, {
-    method: 'POST',
+async function bankRequest(path, init = {}) {
+  const response = await fetch(`${API_BASE}/questions/bank/${path}`, {
+    ...init,
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ layers }),
   });
+  const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Import failed (${response.status})`);
+    const err = new Error(body.error || `Question bank request failed (${response.status})`);
+    err.status = response.status;
+    if (body.current) err.current = body.current;   // 409: the draft as it is stored now
+    if (body.problems) err.problems = body.problems; // 400 on publish: what is still empty
+    throw err;
   }
-  return response.json();
+  return body;
 }
 
 /**
- * Update a single question (admin only).
- * @param {number} questionId — 1-60
- * @param {{ text?: string, domain?: string, answers?: Array<{ text: string }> }} data
+ * A level's question bank drafts (admin): { level, groups, archetypes, questions, published, serving }.
+ * Each question: { question_id, subject, position, text, l1 {group: text}, l2 {archetype: text}, version, live }.
  */
-export async function updateQuestion(questionId, data) {
-  const response = await fetch(`${API_BASE}/questions/${questionId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Question update failed (${response.status})`);
-  }
-  return response.json();
+export function getQuestionBank(level) {
+  return bankRequest(encodeURIComponent(level));
 }
 
 /**
- * Export questions as Word document (.docx) — admin only.
- * Returns a Blob for download.
+ * Save part of one question, pinned to the version the editor last saw:
+ * patch = { text } | { l1: { <group>: text } } | { l2: { <archetype>: text } }. Resolves { question }.
+ * A stale version throws with status 409 and `current` (the stored draft).
  */
-export async function exportQuestionsDocx() {
-  const response = await fetch(`${API_BASE}/questions/export/docx`, {
-    headers: authHeaders(),
+export function saveQuestionBankEntry(level, questionId, version, patch) {
+  return bankRequest(`${encodeURIComponent(level)}/${encodeURIComponent(questionId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ ...patch, version }),
   });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `DOCX export failed (${response.status})`);
-  }
-  return response.blob();
 }
 
-/**
- * Import questions from a Word document (.docx) — admin only.
- * @param {File} file — .docx file
- */
-export async function importQuestionsDocx(file) {
-  const formData = new FormData();
-  formData.append('file', file);
-  const response = await fetch(`${API_BASE}/questions/import/docx`, {
-    method: 'POST',
-    headers: authHeaders(),
-    body: formData,
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `DOCX import failed (${response.status})`);
-  }
-  return response.json();
+/** Make the drafts the live bank. Throws with status 400 and `problems` while an answer is empty. */
+export function publishQuestionBank(level) {
+  return bankRequest(`${encodeURIComponent(level)}/publish`, { method: 'POST' });
 }
 
 // ── Form Email (Formulieren) — instant send only, no server storage ──

@@ -10,6 +10,8 @@
  *
  * The bank is the ratified Leerling Question Bank v1.0 (owner, 16 Oct 2026: 648 answers accepted; Bleed v2
  * gate G2). Its question ids are the placeholder's, so the rotation sequences — seeded on the ids — are unchanged.
+ * Once the admin editor publishes, the published texts replace the file's (useBank / loadPublishedBank); the
+ * question ids never change, so neither do the sequences.
  */
 
 'use strict';
@@ -21,17 +23,48 @@ const LEVEL = 'leerling';
 const GROUPS = ['Ruling', 'Relational', 'Seeker', 'Chaos', 'Abstract', 'Agency']; // group number 1..6
 
 let bank = null;
-function loadBank() {
-  if (bank) return bank;
-  const raw = require('../engine/data/question_bank_leerling_v1_0.json');
+const cache = new Map(); // quarter → screen payload
+
+function indexBank(raw, source) {
   const bySubject = {};
   for (const q of raw.questions) (bySubject[q.subject] ||= []).push(q.question_id);
   const hash = crypto.createHash('sha256').update(JSON.stringify(raw.questions.map((q) => [q.subject, q.question_id]))).digest('hex').slice(0, 12);
-  bank = { raw, bySubject, hash, byId: new Map(raw.questions.map((q) => [q.question_id, q])), placeholder: /PLACEHOLDER/.test(raw._note || '') };
+  return { raw, bySubject, hash, byId: new Map(raw.questions.map((q) => [q.question_id, q])), placeholder: /PLACEHOLDER/.test(raw._note || ''), source };
+}
+
+function loadBank() {
+  if (bank) return bank;
+  bank = indexBank(require('../engine/data/question_bank_leerling_v1_0.json'), { kind: 'file' });
   return bank;
 }
 
-const cache = new Map(); // quarter → screen payload
+/**
+ * Serve another bank from now on: the one the admin editor published (services/questionBankStore.js). Its
+ * question ids must be the ratified file's, so the rotation sequences — seeded on the ids — stay the same.
+ */
+function useBank(raw, source) {
+  const file = indexBank(require('../engine/data/question_bank_leerling_v1_0.json'), { kind: 'file' });
+  const next = indexBank(raw, source);
+  if (next.hash !== file.hash) throw new Error('the published bank does not have the ratified question ids');
+  bank = next;
+  cache.clear();
+}
+
+/**
+ * Load the Leerling bank the editor last published, if any (at startup and after each publish). This instance
+ * serves it from then on; another instance picks it up on its next start.
+ */
+async function loadPublishedBank() {
+  const snap = await require('./questionBankStore').getPublished('leerling');
+  if (snap && snap.bank) useBank(snap.bank, { kind: 'published', revision: snap.revision, publishedAt: snap.publishedAt });
+  return bankSource();
+}
+
+/** Where the served bank comes from: { kind: 'file' } or { kind: 'published', revision, publishedAt }. */
+const bankSource = () => loadBank().source;
+
+/** The served bank's question, by id (bank-file format). */
+const servedQuestion = (questionId) => loadBank().byId.get(questionId) || null;
 
 /** The test screen's plan for one quarter label ('2026-Q4'). Throws when the sequence does not validate. */
 function twoLayerPlanFor(quarter) {
@@ -80,4 +113,4 @@ function quartersFrom(now = new Date(), count = 8) {
   return Array.from({ length: count }, () => { const label = `${y}-Q${q}`; q += 1; if (q > 4) { q = 1; y += 1; } return label; });
 }
 
-module.exports = { twoLayerPlan, twoLayerPlanFor, quartersFrom };
+module.exports = { twoLayerPlan, twoLayerPlanFor, quartersFrom, useBank, loadPublishedBank, bankSource, servedQuestion };

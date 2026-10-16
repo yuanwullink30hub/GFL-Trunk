@@ -1,11 +1,12 @@
 /**
  * Publish the assessment questions as one public file, so the platform loads them for every visitor without the
- * backend having to be up (owner, 14 Oct). On every admin save of the questions (routes/questions.js), and on
- * demand (POST /api/questions/publish), this writes questions/questions.json to R2 — served at
+ * backend having to be up (owner, 14 Oct). When the admin editor publishes the two-layer bank
+ * (POST /api/questions/bank/:level/publish), and on demand (POST /api/questions/publish), this writes
+ * questions/questions.json to R2 — served at
  * https://downloads.gardenforlife.nl/questions/questions.json (QUESTIONS_PUBLIC_URL to override).
  *
  * The file holds what GET /api/questions and GET /api/questions/two-layer return today:
- *   layers     the question layers from the database (the admin's edits), without internal fields
+ *   layers     the old test's question layers from the database (read-only since 16 Oct), without internal fields
  *   twoLayer   { enabled: false } while config.twoLayerTest is off; otherwise the bank's plan for the current
  *              quarter and the seven after it (plans by quarter label), so a quarter switch needs no backend
  *              either — the platform picks the plan for its own quarter (Europe/Amsterdam)
@@ -38,7 +39,7 @@ async function buildQuestionsFile(now = new Date()) {
 
 /**
  * Build and upload the file. Resolves { published: true, bytes } or { published: false, reason }; never throws,
- * so a failed publish never fails the admin's save (the save itself is in the database already).
+ * so a failed file upload never undoes a publish (the published bank is in the database already).
  */
 async function publishQuestions() {
   if (!r2Enabled()) return { published: false, reason: 'R2 is not configured' };
@@ -57,9 +58,4 @@ async function publishQuestions() {
   }
 }
 
-/** After a save: publish in the background, logged; the response does not wait for it. */
-function publishAfterSave() {
-  publishQuestions().catch(() => {});
-}
-
-module.exports = { buildQuestionsFile, publishQuestions, publishAfterSave, PUBLIC_URL };
+module.exports = { buildQuestionsFile, publishQuestions, PUBLIC_URL };

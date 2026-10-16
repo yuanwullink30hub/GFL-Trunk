@@ -301,6 +301,13 @@ const OLD_TEST_STRIP = {
     ],
     sentences: [' The Culture-layer reading (Scenario A/B/C) indicates how the engine distinguishes elevation via Yellow bleed from Nature core.'],
     row: 'Culture-layer reading', // (1) the per-archetype row in every TNM entry
+    // (4) the frame's Nature & Culture section, which stays as a concept (v7 L5), minus its claim that the
+    // matrix decomposes a profile into Nature and Culture (owner, 14 Oct) and the sentence built on it.
+    natureCulture: [
+      ' The matrix reads both and decomposes them: a high signal on a cognitive triangle may be a learned lens (Culture-dominant), a biological identity (Nature-dominant), or the common mixed case where one has built a cognitive network atop the biology one already was.',
+      ' This decomposition is meaningful only because the framework established that crystallisation is a rate and that the deep floor and the fluid upper tiers are different depths of one pattern [ENTRY-2].',
+      ' The cold data names which is which; the philosophy says why the distinction is real.',
+    ],
   },
   nl: {
     paragraphs: [
@@ -310,10 +317,15 @@ const OLD_TEST_STRIP = {
     ],
     sentences: [' De Cultuur-laag lezing (Scenario A/B/C) geeft aan hoe de motor verhoging via Gele bleed onderscheidt van Natuur-kern.'],
     row: 'Cultuur-laag lezing',
+    natureCulture: [
+      ' De matrix leest beide en ontleedt ze: een hoog signaal op een cognitieve driehoek kan een aangeleerde lens zijn (Cultuur-dominant), een biologische identiteit (Natuur-dominant), of het gangbare gemengde geval waarin men een cognitief netwerk heeft opgebouwd bovenop de biologie die men al was.',
+      ' Deze ontleding is alleen betekenisvol omdat het raamwerk heeft vastgesteld dat kristallisatie een snelheid is en dat de diepe bodem en de vloeibare bovenlagen verschillende diepten van één patroon zijn [ENTRY-2].',
+      ' De koude data benoemt welke welke is; de filosofie zegt waarom het onderscheid reëel is.',
+    ],
   },
 };
 
-/** A TNM document's text with the old test's Nature/Culture readings cut (P13). Throws when a target misses. */
+/** A TNM or Nature & Culture document's text with the old test's readings cut (P13). Throws when a target misses. */
 function stripOldTestReadings(id, text, lang) {
   const T = OLD_TEST_STRIP[lang];
   const once = (n, what) => { if (n !== 1) throw new Error(`corpusResolver P13: ${id} (${lang}) — ${what} matched ${n}× (expected 1)`); };
@@ -331,6 +343,11 @@ function stripOldTestReadings(id, text, lang) {
     const re = new RegExp(`^\\| ${T.row} \\|[^\\n]*\\n?`, 'gm');
     once((text.match(re) || []).length, `the "${T.row}" row`);
     return text.replace(re, '');
+  }
+  if (id === 'always/nature_culture') {
+    let out = text;
+    for (const s of T.natureCulture) { once(out.split(s).length - 1, `sentence "${s.trim().slice(0, 40)}…"`); out = out.replace(s, ''); }
+    return out;
   }
   return text;
 }

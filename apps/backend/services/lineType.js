@@ -1,7 +1,7 @@
 /**
  * Garden For Life — Main↔Support line-type resolver
  * ==================================================
- * The colour of the line between Main and Support (Groen/Paars/Blauw/Rood) is a pure
+ * The colour of the line between Main and Support (Groen/Paars/Blauw/Rood/Geel) is a pure
  * function of the two wheel positions. The model kept mis-deriving it (Green vs Blue),
  * so the backend resolves it deterministically here and ships the AI the resolved tag,
  * pre-computed, inside the user payload (`formatLineTypeBlock`), plus the Main's own links
@@ -33,7 +33,7 @@ const posOf = (key) => POSITIONS[String(key || '').toUpperCase()] || null;
 /**
  * Resolve the Main→Support line-type. Top-down, first match wins (order matters because
  * Judge+Ruler and Outlaw+Trickster are BOTH same-group AND sum-13 — same-group wins).
- * @returns {'Groene Lijn'|'Paarse Lijn'|'Blauwe Lijn'|'Rode Lijn'|'(geen kanonieke lijn)'|null}
+ * @returns {'Groene Lijn'|'Paarse Lijn'|'Blauwe Lijn'|'Rode Lijn'|'Gele Lijn'|'(geen kanonieke lijn)'|null}
  */
 function resolveLineType(mainKey, supportKey) {
   const a = posOf(mainKey);
@@ -47,7 +47,10 @@ function resolveLineType(mainKey, supportKey) {
   if (a + b === 13) return 'Blauwe Lijn';
   // 4. RODE LIJN — hardware seam / blindspot: positions sum to 7 (mod 12)
   if ((a + b) % 12 === 7) return 'Rode Lijn';
-  // 5. none of the canonical lines
+  // 5. GELE LIJN — cognitive synergy: the same yellow triangle (positions 4 apart; Master Prompt v7 R-a).
+  //    Parity keeps it apart from Blue and Red (odd sums); it is never same-group or 180°.
+  if (Math.abs(a - b) % 4 === 0) return 'Gele Lijn';
+  // 6. none of the canonical lines
   return '(geen kanonieke lijn)';
 }
 

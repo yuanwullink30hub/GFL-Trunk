@@ -254,7 +254,7 @@ export const SCORING_TIERS = {
  * RATIFIED (all 132 names unique in both languages): #43 The Guardian / De Wachter, #71 The
  * Agent / De Spion, #76 The Protector / De Beschermer, #90 The Usurper / De Troonrover,
  * #130 The Source / De Bron.
- * Canon's lowercase 'De padvinder' (#66) is title-cased here like every other name, and
+ * #66 De Padvinder is title-cased in the canon too since 14 Oct 2026 (it read 'De padvinder'), and
  * #102 keeps a straight apostrophe (The Devil's Advocate).
  *
  * Replaces the old 72-outcome matrix that was keyed on the 6 hardware groups

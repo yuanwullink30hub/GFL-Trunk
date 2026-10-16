@@ -11,13 +11,6 @@ import {
   downloadPdf,
   getPromptConfig,
   updatePromptConfig,
-  getQuestions,
-  seedQuestions,
-  updateQuestion,
-  exportQuestions,
-  importQuestions,
-  exportQuestionsDocx,
-  importQuestionsDocx,
   getApiStatus,
   getProviders,
   sendFormDirect,
@@ -54,6 +47,7 @@ import {
   HOLO_PAGE_BG, HOLO_PAGE_BG_SIZE, HOLO_BAR, HOLO_PANEL, HOLO_TABLE_HEAD, CHROME, gradientText, TITLE_GRADIENT, PURPLE,
 } from './holo';
 import { AppUpdateControl } from './AppUpdate';
+import QuestionBankEditor from './QuestionBankEditor';
 
 // ── Responsive context ──
 const MobileCtx = React.createContext(false);
@@ -1396,10 +1390,13 @@ const PromptsTabContent = memo(({ slot, hintKey }) => {
   );
 });
 
+// The level sub-tabs. Leerling opens the two-layer question bank editor (QuestionBankEditor.jsx); Beginner and
+// Gevorderd take the same Leerling questions for now (owner, 15 Oct), so they have no bank of their own yet.
+// The old test's editor was removed (owner, 16 Oct 2026).
 const LEVEL_TABS = [
   { key: 'beginner', label: 'Beginner' },
-  { key: 'intermediate', label: 'Intermediate' },
-  { key: 'advanced', label: 'Advanced' },
+  { key: 'intermediate', label: 'Gevorderd' },
+  { key: 'advanced', label: 'Leerling' },
 ];
 
 const QuestionsTab = memo(() => {
@@ -1417,373 +1414,18 @@ const QuestionsTab = memo(() => {
         ))}
       </div>
 
-      {/* Level content */}
       {level === 'advanced' ? (
-        <QuestionsTabAdvanced />
+        <QuestionBankEditor level="leerling" />
       ) : (
         <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
           <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: C.gold, marginBottom: '0.8rem' }}>
-            {t('admin.dashboard.questions.heading')} — {level.toUpperCase()}
+            {t('admin.dashboard.questions.heading')} — {(LEVEL_TABS.find((l) => l.key === level) || {}).label?.toUpperCase()}
           </div>
           <div style={{ fontSize: 'max(11px, 0.55vw)', opacity: 0.4, maxWidth: '400px', margin: '0 auto' }}>
-            {t('admin.dashboard.questions.levelInDevelopment')}
+            {t('admin.dashboard.questions.levelShared')}
           </div>
         </div>
       )}
-    </div>
-  );
-});
-
-const QuestionsTabAdvanced = memo(() => {
-  const { t, tFunc } = useLanguage();
-  const [data, setData] = useState(null);
-  const [error, setError] = useState('');
-  const [seeding, setSeeding] = useState(false);
-  const [expandedLayer, setExpandedLayer] = useState(null);
-  const [editingQuestion, setEditingQuestion] = useState(null); // { layerIndex, question }
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [showImport, setShowImport] = useState(false);
-  const [importJson, setImportJson] = useState('');
-  const [importing, setImporting] = useState(false);
-  const [exportingDocx, setExportingDocx] = useState(false);
-  const [importingDocx, setImportingDocx] = useState(false);
-
-  const load = useCallback(() => {
-    setError('');
-    getQuestions().then(setData).catch((e) => setError(e.message));
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  const handleSeed = useCallback(async () => {
-    setSeeding(true);
-    setError('');
-    try {
-      await seedQuestions();
-      load();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSeeding(false);
-    }
-  }, [load]);
-
-  const handleForceReseed = useCallback(async () => {
-    if (!window.confirm('This will WIPE all current questions and replace them with the backend defaults. Continue?')) return;
-    setSeeding(true);
-    setError('');
-    try {
-      await seedQuestions({ force: true });
-      load();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSeeding(false);
-    }
-  }, [load]);
-
-  const handleExport = useCallback(async () => {
-    setError('');
-    try {
-      const layers = await exportQuestions();
-      const json = JSON.stringify(layers, null, 2);
-      // Copy to clipboard + download
-      navigator.clipboard?.writeText(json);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `gfl-questions-${Date.now()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      setError(err.message);
-    }
-  }, []);
-
-  const handleImport = useCallback(async () => {
-    setImporting(true);
-    setError('');
-    try {
-      const parsed = JSON.parse(importJson);
-      const layers = Array.isArray(parsed) ? parsed : parsed.layers;
-      if (!layers) throw new Error('JSON must be an array of layers or { layers: [...] }');
-      await importQuestions(layers);
-      setShowImport(false);
-      setImportJson('');
-      load();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setImporting(false);
-    }
-  }, [importJson, load]);
-
-  const handleExportDocx = useCallback(async () => {
-    setExportingDocx(true);
-    setError('');
-    try {
-      const blob = await exportQuestionsDocx();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `gfl-vragen-${Date.now()}.docx`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setExportingDocx(false);
-    }
-  }, []);
-
-  const handleImportDocx = useCallback(async (file) => {
-    if (!file) return;
-    if (!window.confirm(t('admin.dashboard.questions.confirmImportDocx'))) return;
-    setImportingDocx(true);
-    setError('');
-    try {
-      const result = await importQuestionsDocx(file);
-      load();
-      window.alert(tFunc('admin.dashboard.questions.importedAlert')(result.layersImported, result.questionsImported));
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setImportingDocx(false);
-    }
-  }, [load]);
-
-  const startEdit = useCallback((layerIndex, question) => {
-    setEditingQuestion({
-      layerIndex,
-      questionId: question.id,
-      text: question.text,
-      domain: question.domain,
-      answers: question.answers.map(a => ({ ...a })),
-    });
-    setSaved(false);
-  }, []);
-
-  const updateEditField = useCallback((field, value) => {
-    setEditingQuestion(prev => ({ ...prev, [field]: value }));
-  }, []);
-
-  const updateAnswerText = useCallback((answerIndex, text) => {
-    setEditingQuestion(prev => {
-      const answers = [...prev.answers];
-      answers[answerIndex] = { ...answers[answerIndex], text };
-      return { ...prev, answers };
-    });
-  }, []);
-
-  const handleSaveQuestion = useCallback(async () => {
-    if (!editingQuestion) return;
-    setSaving(true);
-    setSaved(false);
-    setError('');
-    try {
-      await updateQuestion(editingQuestion.questionId, {
-        text: editingQuestion.text,
-        domain: editingQuestion.domain,
-        answers: editingQuestion.answers.map(a => ({ text: a.text })),
-      });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-      load(); // refresh data
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  }, [editingQuestion, load]);
-
-  if (error && !data) return <ErrorBox msg={error} />;
-  if (!data) return <Loading />;
-
-  // Not seeded yet — show seed button
-  if (!data.seeded || data.layers.length === 0) {
-    return (
-      <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-        <div style={{ ...LABEL, marginBottom: '0.8rem' }}>QUESTIONS NOT YET IN DATABASE</div>
-        <div style={{ fontSize: 'max(10px, 0.5vw)', opacity: 0.5, marginBottom: '1rem' }}>
-          Click below to import the 60 default questions into MongoDB.
-          <br />Once seeded, you can edit them directly from this panel.
-        </div>
-        <SciFiButton onClick={handleSeed} disabled={seeding} size="lg">
-          {seeding ? 'SEEDING...' : 'SEED DEFAULT QUESTIONS'}
-        </SciFiButton>
-        {error && <div style={{ marginTop: '0.5rem' }}><ErrorBox msg={error} /></div>}
-      </div>
-    );
-  }
-
-  // Editing a single question
-  if (editingQuestion) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={LABEL}>EDITING Q{editingQuestion.questionId}</div>
-          <SciFiButton onClick={() => setEditingQuestion(null)} size="xs" padding="0.2rem 0.6rem" fontSize="max(8px, 0.4vw)">← BACK</SciFiButton>
-        </div>
-
-        {error && <ErrorBox msg={error} />}
-
-        <div>
-          <div style={LABEL}>QUESTION TEXT</div>
-          <textarea
-            value={editingQuestion.text}
-            onChange={(e) => updateEditField('text', e.target.value)}
-            style={{ ...TEXTAREA, minHeight: '80px' }}
-          />
-        </div>
-
-        <div>
-          <div style={LABEL}>DOMAIN</div>
-          <input
-            value={editingQuestion.domain}
-            onChange={(e) => updateEditField('domain', e.target.value)}
-            style={INPUT_SM}
-          />
-        </div>
-
-        <div style={LABEL}>ANSWERS (A-F)</div>
-        {editingQuestion.answers.map((a, i) => (
-          <div key={a.id} style={{ display: 'flex', gap: '0.4rem', alignItems: 'flex-start', marginBottom: '0.3rem' }}>
-            <div style={{
-              minWidth: '55px', padding: '0.3rem 0.4rem',
-              fontSize: 'max(8px, 0.4vw)', opacity: 0.5,
-              border: '1px solid rgba(255, 174, 0, 0.1)',
-              borderRadius: '0.2rem', textAlign: 'center',
-            }}>
-              {String.fromCharCode(65 + i)} · {a.archetype}
-            </div>
-            <textarea
-              value={a.text}
-              onChange={(e) => updateAnswerText(i, e.target.value)}
-              style={{ ...TEXTAREA, minHeight: '50px', flex: 1 }}
-            />
-          </div>
-        ))}
-
-        <SciFiButton onClick={handleSaveQuestion} disabled={saving} fullWidth size="lg" style={{ marginTop: '0.3rem' }} active={saved}>
-          {saving ? 'SAVING...' : saved ? '✓ SAVED' : 'SAVE QUESTION'}
-        </SciFiButton>
-      </div>
-    );
-  }
-
-  // Import JSON view
-  if (showImport) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={LABEL}>IMPORT QUESTIONS (JSON)</div>
-          <SciFiButton onClick={() => { setShowImport(false); setImportJson(''); }} size="xs" padding="0.2rem 0.6rem" fontSize="max(8px, 0.4vw)">← BACK</SciFiButton>
-        </div>
-        <div style={{ fontSize: 'max(9px, 0.45vw)', opacity: 0.4 }}>
-          Paste the full JSON export below. This will REPLACE all existing questions.
-        </div>
-        {error && <ErrorBox msg={error} />}
-        <textarea
-          value={importJson}
-          onChange={(e) => setImportJson(e.target.value)}
-          placeholder='[{ "layerIndex": 0, "name": "...", "questions": [...] }, ...]'
-          style={{ ...TEXTAREA, minHeight: '200px', fontFamily: 'monospace', fontSize: 'max(9px, 0.45vw)' }}
-        />
-        <SciFiButton onClick={handleImport} disabled={importing || !importJson.trim()} fullWidth size="lg">
-          {importing ? 'IMPORTING...' : 'IMPORT & REPLACE ALL'}
-        </SciFiButton>
-      </div>
-    );
-  }
-
-  // Layer list view
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={LABEL}>{tFunc('admin.dashboard.questions.advancedTotal')(data.layers.reduce((s, l) => s + l.questions.length, 0))}</div>
-      </div>
-
-      {/* Toolbar: export / import / force re-seed */}
-      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-        <SciFiButton onClick={handleExportDocx} disabled={exportingDocx} variant="purple" size="sm" padding="0.3rem 0.7rem" fontSize="max(8px, 0.4vw)">
-          {exportingDocx ? t('admin.dashboard.questions.exporting') : '📄 EXPORT WORD'}
-        </SciFiButton>
-        <label style={{ display: 'inline-flex' }}>
-          <input type="file" accept=".docx" style={{ display: 'none' }}
-            onChange={(e) => { handleImportDocx(e.target.files[0]); e.target.value = ''; }}
-            disabled={importingDocx} />
-          <span style={{ ...BTN, padding: '0.3rem 0.7rem', fontSize: 'max(8px, 0.4vw)',
-            borderColor: 'rgba(188, 19, 254, 0.5)', opacity: importingDocx ? 0.4 : 1,
-            cursor: importingDocx ? 'wait' : 'pointer', display: 'inline-block' }}
-            onMouseEnter={(e) => { e.target.style.background = 'rgba(255, 174, 0, 0.15)'; }}
-            onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>
-            {importingDocx ? t('admin.dashboard.questions.importing') : '📄 IMPORT WORD'}
-          </span>
-        </label>
-        <div style={{ borderLeft: '1px solid rgba(255,174,0,0.15)', margin: '0 0.1rem' }} />
-        <SciFiButton onClick={handleExport} size="sm" padding="0.3rem 0.7rem" fontSize="max(8px, 0.4vw)" style={{ opacity: 0.6 }}>EXPORT JSON</SciFiButton>
-        <SciFiButton onClick={() => setShowImport(true)} size="sm" padding="0.3rem 0.7rem" fontSize="max(8px, 0.4vw)" style={{ opacity: 0.6 }}>IMPORT JSON</SciFiButton>
-        <SciFiButton onClick={handleForceReseed} disabled={seeding} variant="danger" size="sm" padding="0.3rem 0.7rem" fontSize="max(8px, 0.4vw)">
-          {seeding ? 'RE-SEEDING...' : 'FORCE RE-SEED'}
-        </SciFiButton>
-      </div>
-
-      {error && <ErrorBox msg={error} />}
-
-      {data.layers.map((layer) => (
-        <div key={layer.layerIndex} style={{
-          border: '1px solid rgba(255, 174, 0, 0.12)',
-          borderRadius: '0.3rem',
-          overflow: 'hidden',
-        }}>
-          {/* Layer header — click to expand */}
-          <button
-            onClick={() => setExpandedLayer(expandedLayer === layer.layerIndex ? null : layer.layerIndex)}
-            style={{
-              width: '100%', padding: '0.5rem 0.7rem',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              background: 'rgba(255, 174, 0, 0.04)',
-              border: 'none', color: '#FFFEF0', cursor: 'pointer',
-              fontFamily: "'Lexend Mega', Arial, sans-serif",
-              fontSize: 'max(10px, 0.5vw)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{
-                width: '10px', height: '10px', borderRadius: '50%',
-                backgroundColor: layer.color, display: 'inline-block',
-              }} />
-              <span style={{ fontWeight: 'bold' }}>{layer.name}</span>
-              <span style={{ opacity: 0.4 }}>{layer.title}</span>
-            </div>
-            <span style={{ opacity: 0.3 }}>
-              {expandedLayer === layer.layerIndex ? '▼' : '►'} {layer.questions.length} Q
-            </span>
-          </button>
-
-          {/* Expanded: show questions */}
-          {expandedLayer === layer.layerIndex && (
-            <div style={{ padding: '0.3rem 0.5rem' }}>
-              {layer.questions.map((q) => (
-                <div key={q.id} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '0.3rem 0.4rem', marginBottom: '0.2rem',
-                  border: '1px solid rgba(255, 174, 0, 0.06)',
-                  borderRadius: '0.2rem', fontSize: 'max(9px, 0.45vw)',
-                }}>
-                  <div style={{ flex: 1 }}>
-                    <span style={{ opacity: 0.4, marginRight: '0.4rem' }}>Q{q.id}</span>
-                    {q.text.length > 80 ? q.text.slice(0, 80) + '...' : q.text}
-                  </div>
-                  <SciFiButton onClick={() => startEdit(layer.layerIndex, q)} size="xs" padding="0.15rem 0.5rem" fontSize="max(8px, 0.4vw)" style={{ marginLeft: '0.4rem' }}>EDIT</SciFiButton>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
     </div>
   );
 });

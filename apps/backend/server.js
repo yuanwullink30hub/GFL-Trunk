@@ -279,6 +279,14 @@ async function start() {
     // N1 retention: texts 12 months past their month are deleted (no-op without the N1 store).
     require('./services/refusalTextStore').startRetentionJob();
 
+    // The two-layer test serves the bank the admin editor last published (the ratified file until then).
+    try {
+      const src = await require('./services/twoLayerBank').loadPublishedBank();
+      console.log(`[GFL-API] Two-layer bank: ${src.kind === 'published' ? `published revision ${src.revision}` : 'ratified file'}`);
+    } catch (e) {
+      console.error('[GFL-API] Two-layer bank: the published bank could not be loaded, serving the ratified file:', e.message);
+    }
+
     // Which Stripe pieces are present for the active mode (never the values).
     const d = require('./services/paymentConfig').paymentDiagnostics();
     const mark = (ok) => (ok ? '✓' : '✗');

@@ -177,24 +177,67 @@ export default {
       /* ── Questions tab ── */
       questions: {
         heading: { nl: 'VRAGEN', en: 'QUESTIONS' },
-        levelInDevelopment: {
-          nl: 'Dit vragenset is nog in ontwikkeling en wordt binnenkort toegevoegd.',
-          en: 'This question set is still in development and will be added soon.',
+        levelShared: {
+          nl: 'Beginner en Gevorderd gebruiken voorlopig dezelfde vragen als Leerling. Hun eigen vragenbank volgt.',
+          en: 'Beginner and Intermediate use the Apprentice questions for now. Their own question bank will follow.',
         },
-        confirmImportDocx: {
-          nl: 'Dit vervangt ALLE bestaande vragen met het Word-document. Doorgaan?',
-          en: 'This will replace ALL existing questions with the Word document. Continue?',
+      },
+
+      /* ── The two-layer question bank editor (QuestionBankEditor.jsx) ── */
+      questionBank: {
+        title: { nl: (level) => `Vragenbank · ${level}`, en: (level) => `Question bank · ${level}` },
+        lede: {
+          nl: 'Op laag 1 biedt elke vraag zes richtingen, één per hardwaregroep. Elke richting splitst op laag 2 in zijn twee archetypen. Alles wat je typt wordt vanzelf opgeslagen als concept; de test verandert pas als je publiceert.',
+          en: 'On layer 1 every question offers six directions, one per hardware group. On layer 2 each direction splits into its two archetypes. Everything you type is saved as a draft on its own; the test only changes when you publish.',
         },
-        importedAlert: {
-          nl: (layers, questions) => `✓ Geïmporteerd: ${layers} lagen, ${questions} vragen`,
-          en: (layers, questions) => `✓ Imported: ${layers} layers, ${questions} questions`,
+        publish: { nl: 'Publiceer naar de test', en: 'Publish to the test' },
+        publishing: { nl: 'Publiceren…', en: 'Publishing…' },
+        confirmPublish: {
+          nl: (n) => `${n} gewijzigde ${n === 1 ? 'vraag' : 'vragen'} live zetten in de test?`,
+          en: (n) => `Make ${n} changed ${n === 1 ? 'question' : 'questions'} live in the test?`,
         },
-        advancedTotal: {
-          nl: (total) => `VRAGEN — ADVANCED (${total} total)`,
-          en: (total) => `QUESTIONS — ADVANCED (${total} total)`,
+        published: {
+          nl: (rev, file) => `Gepubliceerd als versie ${rev}. ${file ? 'Het vragenbestand is bijgewerkt.' : 'Het vragenbestand kon niet worden bijgewerkt; de test haalt de vragen tot dan bij de server.'}`,
+          en: (rev, file) => `Published as version ${rev}. ${file ? 'The questions file is updated.' : 'The questions file could not be updated; until then the test fetches the questions from the server.'}`,
         },
-        exporting: { nl: 'EXPORTEREN...', en: 'EXPORTING...' },
-        importing: { nl: 'IMPORTEREN...', en: 'IMPORTING...' },
+        publishBlocked: { nl: 'Publiceren kan nog niet. Deze velden zijn leeg:', en: 'Cannot publish yet. These fields are empty:' },
+        andMore: { nl: (n) => `en nog ${n}`, en: (n) => `and ${n} more` },
+        waitForSaves: { nl: 'Even wachten tot alles is opgeslagen.', en: 'Wait until everything is saved.' },
+        copyJson: { nl: 'Kopieer als JSON', en: 'Copy as JSON' },
+        copied: { nl: 'De vragenbank staat als JSON op je klembord.', en: 'The question bank is on your clipboard as JSON.' },
+        copyFallback: { nl: 'Selecteer en kopieer de JSON hieronder.', en: 'Select and copy the JSON below.' },
+        servingFile: { nl: 'Live: de geratificeerde vragenbank v1.0', en: 'Live: the ratified question bank v1.0' },
+        servingPublished: {
+          nl: (rev, when) => `Live: gepubliceerde versie ${rev} · ${when}`,
+          en: (rev, when) => `Live: published version ${rev} · ${when}`,
+        },
+        answers: { nl: 'antwoorden', en: 'answers' },
+        layer1Count: { nl: 'Laag 1', en: 'Layer 1' },
+        layer2Count: { nl: 'Laag 2', en: 'Layer 2' },
+        complete: { nl: 'vragen compleet', en: 'questions complete' },
+        unpublished: {
+          nl: (n) => `${n === 1 ? 'vraag' : 'vragen'} niet gepubliceerd`,
+          en: (n) => `${n === 1 ? 'question' : 'questions'} not published`,
+        },
+        subjectRange: {
+          nl: (from, to, n) => `Q${from}–Q${to} · ${n} vragen`,
+          en: (from, to, n) => `Q${from}–Q${to} · ${n} questions`,
+        },
+        layer1: { nl: 'Laag 1 · richting (6)', en: 'Layer 1 · direction (6)' },
+        layer2: { nl: 'Laag 2 · verfijning (12)', en: 'Layer 2 · refinement (12)' },
+        refusal: { nl: 'Geen van deze past · vaste optie op laag 1, zonder laag 2', en: 'None of these fit · fixed option on layer 1, no layer 2' },
+        saving: { nl: 'opslaan…', en: 'saving…' },
+        saved: { nl: 'opgeslagen', en: 'saved' },
+        notSaved: { nl: 'niet opgeslagen', en: 'not saved' },
+        notLive: { nl: 'niet gepubliceerd', en: 'not published' },
+        saveFailed: {
+          nl: (q, msg) => `Q${q} kon niet worden opgeslagen (${msg}). Je tekst staat nog in het veld en wordt opnieuw verstuurd bij je volgende wijziging.`,
+          en: (q, msg) => `Q${q} could not be saved (${msg}). Your text is still in the field and is sent again with your next change.`,
+        },
+        unsavedLeave: { nl: 'Er is nog niet alles opgeslagen.', en: 'Not everything is saved yet.' },
+        questionPlaceholder: { nl: 'De vraag', en: 'The question' },
+        l1Placeholder: { nl: (g) => `Richting voor ${g}`, en: (g) => `Direction for ${g}` },
+        l2Placeholder: { nl: (a) => `Verfijning voor ${a}`, en: (a) => `Refinement for ${a}` },
       },
 
       /* ── Formulieren (forms) tab ── */

@@ -88,7 +88,7 @@ const LABELS = {
 };
 
 /** The line type the server writes, in the report language: "Groene Lijn" → "Green Line" (labels file §2). */
-const LINE_TYPE_EN = { 'Groene Lijn': 'Green Line', 'Blauwe Lijn': 'Blue Line', 'Paarse Lijn': 'Purple Line', 'Rode Lijn': 'Red Line', '(geen kanonieke lijn)': '(no canonical line)' };
+const LINE_TYPE_EN = { 'Groene Lijn': 'Green Line', 'Blauwe Lijn': 'Blue Line', 'Paarse Lijn': 'Purple Line', 'Rode Lijn': 'Red Line', 'Gele Lijn': 'Yellow Line','(geen kanonieke lijn)': '(no canonical line)' };
 
 /**
  * @param {object} p
@@ -150,7 +150,9 @@ function buildDataBlock({ session: s, payload, supportEdit, styleTags = [], ocea
     `${L.yellow}: ${triangle.map((n) => `${n} ${p1(toPoints(s.mandjes_u[n].geel))}`).join(' | ')}`,
   ]);
 
-  const codrivers = payload.codrivers.map((c) => `${c.name} (${c.role})`);
+  // Roles as the report names them (owner, 14 Oct): main, support, co-drivers. The engine's role tag
+  // ("support" for every pull member) is a storage role, not the Support.
+  const codrivers = payload.codrivers.map((c) => `${c.name} (${c.name === support ? 'support' : 'co-driver'})`);
   block('HARDWARE SIGNALEN', [
     `register_baseline_pct: ${STATES.map((d, i) => `${d} ${signed(reg.register_baseline_pct[i])}`).join(' · ')}`,
     `register_transform_pct: ${STATES.map((d, i) => `${d} ${signed(reg.register_transform_pct[i])}`).join(' · ')}`,

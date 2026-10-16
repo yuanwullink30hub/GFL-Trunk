@@ -11,7 +11,7 @@ const assert = require('node:assert/strict');
 const crypto = require('crypto');
 const R = require('../rotationSequence');
 const ref = require('./rotation_sequence_reference_v0_2.json');
-const bank = require('../data/question_bank_PLACEHOLDER_leerling_v0_1.json');
+const bank = require('../data/question_bank_leerling_v1_0.json');
 
 const bySubject = {};
 for (const q of bank.questions) (bySubject[q.subject] ||= []).push(q.question_id);

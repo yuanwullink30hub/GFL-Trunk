@@ -88,12 +88,12 @@ function monthsBefore(month, n) {
 }
 
 /**
- * The question ids a text may name: the two-layer bank's (the same file services/twoLayerBank.js serves; when
- * the real Leerling bank replaces the placeholder, both read the new file).
+ * The question ids a text may name: the two-layer bank's (the same file services/twoLayerBank.js serves, the
+ * ratified Leerling bank v1.0).
  */
 let bankIds = null;
 function knownQuestionIds() {
-  if (!bankIds) bankIds = new Set(require('../engine/data/question_bank_PLACEHOLDER_leerling_v0_1.json').questions.map((q) => q.question_id));
+  if (!bankIds) bankIds = new Set(require('../engine/data/question_bank_leerling_v1_0.json').questions.map((q) => q.question_id));
   return bankIds;
 }
 

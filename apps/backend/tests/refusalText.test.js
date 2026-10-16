@@ -16,7 +16,7 @@ before(h.start);
 after(async () => { await N1.close(); await h.stop(); });
 
 const VERSION = N1.CURRENT_CONSENT.nl;
-const Q = require('../engine/data/question_bank_PLACEHOLDER_leerling_v0_1.json').questions.map((q) => q.question_id);
+const Q = require('../engine/data/question_bank_leerling_v1_0.json').questions.map((q) => q.question_id);
 const ok = (texts) => ({ consent: true, consentVersion: VERSION, cards: texts.map((text, i) => ({ question_id: Q[i], text })) });
 
 test('§4.2: obvious direct identifiers are stripped — e-mail, phone, URL — and ordinary numbers stay', () => {

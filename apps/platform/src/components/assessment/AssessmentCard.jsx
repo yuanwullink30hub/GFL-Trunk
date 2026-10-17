@@ -738,7 +738,7 @@ const AssessmentCard = ({
                   textAlign: 'center',
                   lineHeight: '1.7',
                 }}>
-                  <span style={{ color: subjectColor }}>{tFunc('assessmentCard.layerIntro.secondsPerQuestion')(levelConfig.layerTimers[currentSubjectIndex] || 30)}</span>
+                  <span style={{ color: subjectColor }}>{tFunc(twoLayer ? 'assessmentCard.layerIntro.secondsPerLayer' : 'assessmentCard.layerIntro.secondsPerQuestion')(levelConfig.layerTimers[currentSubjectIndex] || 30)}</span>
                   {' · '}{tFunc('assessmentCard.layerIntro.questionCount')(totalQuestions)}
                 </div>
               )}
@@ -838,7 +838,7 @@ const AssessmentCard = ({
                 textAlign: 'center',
                 lineHeight: '1.7',
               }}>
-                <span style={{ color: subjectColor }}>{tFunc('assessmentCard.layerIntro.secondsPerQuestion')(levelConfig.layerTimers[currentSubjectIndex] || 30)}</span>
+                <span style={{ color: subjectColor }}>{tFunc(twoLayer ? 'assessmentCard.layerIntro.secondsPerLayer' : 'assessmentCard.layerIntro.secondsPerQuestion')(levelConfig.layerTimers[currentSubjectIndex] || 30)}</span>
                 {' · '}{tFunc('assessmentCard.layerIntro.questionCount')(totalQuestions)}
               </div>
             )}

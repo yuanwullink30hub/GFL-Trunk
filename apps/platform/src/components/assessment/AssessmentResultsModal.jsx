@@ -353,6 +353,8 @@ const AssessmentResultsModal = ({
   const [polarization, setPolarization] = useState(null);
   // v2 sessions: the data block for the last page, built by our backend (engine/dataBlock.js) — printed as is.
   const [dataBlock, setDataBlock] = useState(null);
+  // v2: the cognitive-triangle figure's facts (Main triangle + band, other carrying triangles) — server-built.
+  const [triangleFigure, setTriangleFigure] = useState(null);
   const morphChart = enginePayload?.main?.register
     ? { baseline: enginePayload.main.register.register_baseline_pct, transform: enginePayload.main.register.register_transform_pct }
     : null;
@@ -541,7 +543,7 @@ const AssessmentResultsModal = ({
         const __replay = (typeof window !== 'undefined' && window.__GFL_PDF_REPLAY) || null;
         let aiResult;
         if (__replay) {
-          aiResult = { analysis: __replay.analysis, enginePayload: __replay.enginePayload, polarization: __replay.polarization, dataBlock: __replay.dataBlock, uploadedOceanScores: __replay.uploadedOceanScores, sealedOrbCode: __replay.sealedOrbCode, kaart: __replay.kaart, profile: __replay.profile };
+          aiResult = { analysis: __replay.analysis, enginePayload: __replay.enginePayload, polarization: __replay.polarization, dataBlock: __replay.dataBlock, uploadedOceanScores: __replay.uploadedOceanScores, sealedOrbCode: __replay.sealedOrbCode, kaart: __replay.kaart, profile: __replay.profile, triangle: __replay.triangle, promptVersion: __replay.promptVersion };
         } else {
         aiResult = await analyzeAssessment(twoLayerResponses ? {
           // The two-layer test: only the response records go up; the server scores them and the report
@@ -592,16 +594,18 @@ const AssessmentResultsModal = ({
         setEnginePayload(aiResult.enginePayload || null);
         setPolarization(aiResult.polarization || null);
         setDataBlock(Array.isArray(aiResult.dataBlock) ? aiResult.dataBlock : null);
+        // v2 (Master Prompt v7.2 page 5.7b): the triangle figure's facts, from the server — never derived here.
+        setTriangleFigure(aiResult.triangle || null);
         sealedOrbCodeRef.current = aiResult.sealedOrbCode || ''; // opaque until unlock
         kaartRef.current = aiResult.kaart || null;
         orbCodeRef.current = '';
         // The report reader: sections for the card and the PDF, plus a ledger that accounts for every
         // line of the model's text (placed, or discarded by a named rule) — logged, so nothing is
         // lost or moved without a trace. It strips the Kaart microcopy itself, onto that ledger.
-        const { sections, ledger: readerLedger } = readReport(aiResult.analysis || '');
+        const { sections, ledger: readerLedger } = readReport(aiResult.analysis || '', { promptVersion: aiResult.promptVersion });
         logReaderLedger(readerLedger);
         // A v2 report (it carries the server's data block) is checked for completeness: the closing
-        // line [EINDE RAPPORT] and all 19 sections (payload instruction v7 §7). An incomplete report
+        // line [EINDE RAPPORT] and all its sections — 19, 21 from v7.2 (payload instruction v7 §7). An incomplete report
         // still renders what came, as before; the gap is logged.
         if (Array.isArray(aiResult.dataBlock)) {
           const c = readerLedger.completeness;
@@ -638,7 +642,7 @@ const AssessmentResultsModal = ({
               analysis: aiResult.analysis, enginePayload: aiResult.enginePayload,
               polarization: aiResult.polarization, dataBlock: aiResult.dataBlock,
               uploadedOceanScores: aiResult.uploadedOceanScores, sealedOrbCode: aiResult.sealedOrbCode, kaart: aiResult.kaart,
-              profile: aiResult.profile,
+              profile: aiResult.profile, triangle: aiResult.triangle, promptVersion: aiResult.promptVersion,
               savedAt: Date.now(),
             }));
           }
@@ -969,6 +973,10 @@ const AssessmentResultsModal = ({
       const blue      = [59, 130, 246];
       const mutedGray = [100, 116, 139];
       const cardBg    = [12, 12, 29];
+      // The triangle page's yellow (Master Prompt v7.2 page 5.7b): the canon's --yellow #EAB308, so the figure
+      // and the section titles read as one page (Backend Task "Triangle Page" v0.1 §2).
+      const triYellow = [234, 179, 8];
+      const cream     = [255, 254, 240];
 
       // ── Track which pages have real content (to prune empty pages at the end) ──
       const pagesWithContent = new Set([1]); // page 1 (cover) always has content
@@ -1121,6 +1129,94 @@ const AssessmentResultsModal = ({
         pdf.addPage(); paintBg(); markPage();
         y = margin;
         await renderFn(() => {});
+      };
+
+      // ── The triangle figure (Master Prompt v7.2 page 5.7b; Backend Task "Triangle Page" v0.1 §3) ──
+      // The 12-point wheel, position 1 (Rechter) at the top and clockwise; the four yellow triangles faint; the
+      // Main's triangle highlighted, its fill set by its band (draagt 15 % · neutraal 8 % · stil outline only),
+      // solid outline in all three; every other carrying triangle dashed, no fill. The band never shows as a
+      // word or number. The page colour is solid, so each "opacity" is the exact mix with it, drawn opaque in
+      // an order that covers nothing. Caption: the Main triangle's name, its members, and a dimmed line for a
+      // dashed triangle. Takes ≈ 38 % of the content height plus the caption; moves `y` below it.
+      const TRI_POSITIONS = { D1: [1, 5, 9], D2: [2, 6, 10], D3: [3, 7, 11], D4: [4, 8, 12] };
+      const WHEEL_KEYS = ['judge', 'lover', 'caregiver', 'innocent', 'explorer', 'outlaw', 'trickster', 'sage', 'artist', 'magician', 'hero', 'ruler'];
+      const mixBg = (c, a) => c.map((v, i) => Math.round(bg[i] + (v - bg[i]) * a));
+      const drawTriangleFigure = (fig) => {
+        const labels = tArray('resultsModal.pdf.triangle.wheel');
+        const local = (name) => labels[WHEEL_KEYS.indexOf(String(name).toLowerCase())] || name;
+        const boxH = (H - 2 * margin) * 0.38;
+        const r = boxH * 0.36;                                  // room around the wheel for the labels
+        const cx = W / 2, cy = y + boxH / 2;
+        const at = (p, rad) => { const a = ((p - 1) * Math.PI) / 6; return [cx + rad * Math.sin(a), cy - rad * Math.cos(a)]; };
+        const triangle = (ps, style) => { const [a, b, c] = ps.map((p) => at(p, r)); pdf.triangle(a[0], a[1], b[0], b[1], c[0], c[1], style); };
+        const mainPs = TRI_POSITIONS[fig.main.id];
+        const otherIds = (fig.others || []).map((o) => o.id).filter((id) => TRI_POSITIONS[id]);
+        markPage();
+
+        pdf.setLineDashPattern([], 0);
+        pdf.setDrawColor(...mixBg(white, 0.16)); pdf.setLineWidth(0.2);
+        pdf.circle(cx, cy, r, 'S');
+        const fill = { draagt: 0.15, neutraal: 0.08 }[fig.main.band];
+        if (fill) { pdf.setFillColor(...mixBg(triYellow, fill)); triangle(mainPs, 'F'); }
+        pdf.setDrawColor(...mixBg(triYellow, 0.35)); pdf.setLineWidth(0.3);
+        for (const [id, ps] of Object.entries(TRI_POSITIONS)) if (id !== fig.main.id && !otherIds.includes(id)) triangle(ps, 'S');
+        pdf.setDrawColor(...triYellow); pdf.setLineWidth(0.4);
+        pdf.setLineDashPattern([1.6, 1.2], 0);
+        for (const id of otherIds) triangle(TRI_POSITIONS[id], 'S');
+        pdf.setLineDashPattern([], 0);
+        pdf.setLineWidth(0.6);
+        triangle(mainPs, 'S');
+
+        // The profile's three highest totals (owner, 17 Oct): a purple ring at each, a purple point where it is not a
+        // member of the Main's triangle — so a yellow point in a purple ring is where score and triangle meet.
+        const topPs = (fig.top || []).map((n) => WHEEL_KEYS.indexOf(String(n).toLowerCase()) + 1).filter((p) => p > 0);
+        for (let p = 1; p <= 12; p++) {
+          const member = mainPs.includes(p);
+          const top = topPs.includes(p);
+          const dashedMember = !member && otherIds.some((id) => TRI_POSITIONS[id].includes(p));
+          const [x, yy] = at(p, r);
+          if (top) { pdf.setDrawColor(...purple); pdf.setLineWidth(0.55); pdf.circle(x, yy, 2.15, 'S'); }
+          pdf.setFillColor(...(member ? triYellow : top ? purple : mixBg(white, 0.4)));
+          pdf.circle(x, yy, member || top ? 1.25 : 0.85, 'F');
+          // "N Name": the number yellow on a member, purple on a top score, grey elsewhere; the name bold cream
+          // (member), cream (top score or dashed member), grey
+          const sin = Math.sin(((p - 1) * Math.PI) / 6);
+          const [lx, ly] = at(p, r + 4.2);
+          const num = String(p), name = ` ${local(WHEEL_KEYS[p - 1])}`;
+          pdf.setFontSize(8);
+          pdf.setFont('helvetica', 'bold'); const wNum = pdf.getTextWidth(num);
+          pdf.setFont('helvetica', member ? 'bold' : 'normal'); const wName = pdf.getTextWidth(name);
+          const x0 = sin > 0.2 ? lx : sin < -0.2 ? lx - wNum - wName : lx - (wNum + wName) / 2;
+          const baseline = ly + (p === 1 ? -0.6 : p === 7 ? 2.6 : 1.1);
+          pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...(member ? triYellow : top ? purple : mutedGray));
+          pdf.text(num, x0, baseline);
+          pdf.setFont('helvetica', member ? 'bold' : 'normal'); pdf.setTextColor(...(member || top || dashedMember ? cream : mutedGray));
+          pdf.text(name, x0 + wNum, baseline);
+        }
+        y += boxH + 1;
+
+        // Caption: the synergy name, its three members in wheel order, and a dimmed line per dashed triangle.
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10.5); pdf.setTextColor(...cream);
+        pdf.text(sanitizePdf(fig.main.name || ''), W / 2, y, { align: 'center' }); y += 4.6;
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(...dimWhite);
+        // " · " is in WinAnsi (0xB7), so it prints as itself — the names come from our own label list
+        pdf.text(mainPs.map((p) => local(WHEEL_KEYS[p - 1])).join(' · '), W / 2, y, { align: 'center' }); y += 4.2;
+        if (topPs.length) {
+          // the key to the purple points: a small ringed point, then the line, centred together
+          const key = sanitizePdf(t('resultsModal.pdf.triangle.top'));
+          pdf.setFontSize(7.5); pdf.setFont('helvetica', 'normal');
+          const kw = 4 + pdf.getTextWidth(key);
+          const kx = W / 2 - kw / 2;
+          pdf.setDrawColor(...purple); pdf.setLineWidth(0.35); pdf.circle(kx + 1.3, y - 0.95, 1.25, 'S');
+          pdf.setFillColor(...purple); pdf.circle(kx + 1.3, y - 0.95, 0.7, 'F');
+          pdf.setTextColor(...dimWhite); pdf.text(key, kx + 4, y); y += 3.8;
+        }
+        const dashedNames = (fig.others || []).map((o) => o.name).filter(Boolean);
+        if (dashedNames.length) {
+          pdf.setFontSize(7.5); pdf.setTextColor(...mutedGray);
+          pdf.text(sanitizePdf(tFunc('resultsModal.pdf.triangle.dashed')(dashedNames.join(', '))), W / 2, y, { align: 'center' }); y += 3.8;
+        }
+        y += 3;
       };
 
       // ── Helper: key-value line ──
@@ -2464,13 +2560,14 @@ const AssessmentResultsModal = ({
       const endDualCore = trackBlock('dual_core');
       await justifiedPage(async (gap) => {
       const savedNPBdc = noPageBreak; noPageBreak = true; // no bottom padding — let text flow to edge
+      // Orange titles on this page (owner, 17 Oct 2026): yellow belongs to De Cognitieve Driehoek's page now.
       const keuzeEcho = enginePayload?.keuze_echo;
       if (keuzeEcho) {
-        sectionHeading(t('resultsModal.pdf.keuzeEcho.title'), amber);
+        sectionHeading(t('resultsModal.pdf.keuzeEcho.title'), orange);
         drawKeuzeEcho(keuzeEcho);
         hr();
       } else if (result.subgroups && result.subgroups.length > 0) {
-        sectionHeading(t('resultsModal.pdf.dualCore.title'), amber);
+        sectionHeading(t('resultsModal.pdf.dualCore.title'), orange);
 
         // Legend
         const legY = y;
@@ -2608,6 +2705,7 @@ const AssessmentResultsModal = ({
         const yellowOnPage = (displaySections || [])
           .filter(s => {
             const t = cleanTitle(s.title || '').toLowerCase();
+            if (/cognitieve\s*driehoek/.test(t)) return false; // its own page, even with "alchemie" in a subtitle
             return t.includes('alchemie') || t.includes('schakelbord') || t.includes('evolutie') || t.includes('ontologi');
           })
           .sort((a, b) => {
@@ -2618,7 +2716,7 @@ const AssessmentResultsModal = ({
           });
         yellowOnPage.forEach((section, i) => {
           gap();
-          renderSection(shownTitle(section),section.content, amber);
+          renderSection(shownTitle(section),section.content, orange);
           if (i < yellowOnPage.length - 1) hr();
         });
       }
@@ -2682,7 +2780,6 @@ const AssessmentResultsModal = ({
           !s.isResonantie &&
           !s.title?.toLowerCase().includes('groep dynamiek') &&
           !s.title?.toLowerCase().includes('neurobiologische interpretatie') &&
-          !/cognitieve\s*driehoek|aangeleerde\s*lens/i.test(s.title || '') &&
           !COMPARISON_TITLE.test(s.title || '') &&
           !/^1[23]\s*[ab][\s.:]/i.test(s.title || '') &&
           !/professionele\s+resonantie|creatieve\s+resonantie/i.test(s.title || '') &&
@@ -2716,7 +2813,8 @@ const AssessmentResultsModal = ({
             if (t.includes('blindspot')) return red;
             if (t.startsWith('trait ') || /\bvorm\b/.test(t) || /hardware|onder\s+druk/.test(t) || /\bovergang\b/.test(t) || /morfologie/.test(t)) return cyan;
             if (/\b(reflectie|motivatie|beweging)\b/.test(t)) return purple;
-            if (t.includes('alchemie') || t.includes('schakelbord') || t.includes('evolutie') || t.includes('ontologi')) return amber;
+            if (/cognitieve\s*driehoek|drogredenen\s+van\s+de\s+driehoek/.test(t)) return triYellow;
+            if (t.includes('alchemie') || t.includes('schakelbord') || t.includes('evolutie') || t.includes('ontologi')) return orange;
             if (t.includes('resonantie')) return green;
             return green; // fallback
           };
@@ -2764,16 +2862,22 @@ const AssessmentResultsModal = ({
             // contains these words; "De Overgang naar de Stille Stem" is a morphology read.
             return /\b(reflectie|motivatie|beweging)\b/.test(t);
           };
-          const group1aSections = regularSections.filter(s => isGroup1a(s.title));
-          const group1bSections = regularSections.filter(s => isGroup1b(s.title));
-          const group2Sections  = regularSections.filter(s => isGroup2(s.title));
-          const morphSections   = regularSections.filter(s => isMorph(s.title));
-          const stilleSections  = regularSections.filter(s => isStille(s.title));
+          // De Cognitieve Driehoek (owner, 17 Oct 2026): its own page, after De Stille Stem.
+          const isTriangle = (title) => /cognitieve\s*driehoek|drogredenen\s+van\s+de\s+driehoek/.test(cleanTitle(title || '').toLowerCase());
+          // The triangle claims its section first: a subtitle may name a superpower ("Emotionele alchemie")
+          // that the keyword collectors below would otherwise also claim.
+          const triangleSections = regularSections.filter(s => isTriangle(s.title));
+          const pageSections    = regularSections.filter(s => !isTriangle(s.title));
+          const group1aSections = pageSections.filter(s => isGroup1a(s.title));
+          const group1bSections = pageSections.filter(s => isGroup1b(s.title));
+          const group2Sections  = pageSections.filter(s => isGroup2(s.title));
+          const morphSections   = pageSections.filter(s => isMorph(s.title));
+          const stilleSections  = pageSections.filter(s => isStille(s.title));
           // STRICT ALLOWLIST: every real v4.3 narrative section is claimed by a specific page
-          // collector (identity/essence/shadow/OCEAN-traits/morph/stille/resonance/yellow/ai-prompt).
+          // collector (identity/essence/shadow/OCEAN-traits/morph/stille/triangle/resonance/yellow/ai-prompt).
           // Anything left over is NOT part of the spec — a fabricated/echoed section — so we DROP it
           // entirely rather than render it on a stray "others" page.
-          const otherSections = regularSections.filter(s =>
+          const otherSections = pageSections.filter(s =>
             !isGroup1a(s.title) && !isGroup1b(s.title) && !isGroup2(s.title) &&
             !isMorph(s.title) && !isStille(s.title));
           if (otherSections.length > 0) {
@@ -2927,6 +3031,25 @@ const AssessmentResultsModal = ({
           }
           endStille();
 
+          // ── Page 6b (Master Prompt v7.2 page 5.7b; Backend Task "Triangle Page" v0.1 §2–3): between De Stille
+          //    Stem and the Hardware Data page — the triangle figure on top (≈ 38 % of the content height, as the
+          //    radar on the resonance page), its caption, then DE COGNITIEVE DRIEHOEK and DE DROGREDENEN VAN DE
+          //    DRIEHOEK with yellow titles. Overflow as on the resonance page: the figure keeps its size and the
+          //    text spills onto the next page, flowing (never leaving this page half empty). No section from the
+          //    model, no page; no triangle facts from the server (an older replay), no figure. ──
+          const endTriangle = trackBlock('nb_triangle');
+          if (triangleSections.length > 0) {
+            const triOrder = (s) => (/drogredenen/i.test(cleanTitle(s.title || '')) ? 1 : 0);
+            await justifiedPage(async () => {
+              if (triangleFigure?.main) drawTriangleFigure(triangleFigure);
+              triangleSections.slice().sort((a, b) => triOrder(a) - triOrder(b)).forEach((section, i) => {
+                if (i > 0) hr();
+                renderSectionFlow(shownTitle(section), section.content, triYellow);
+              });
+            });
+          }
+          endTriangle();
+
           // ── Resonantie page (§5.7): the radar wheel at the top (moved here from the
           //    Schaduw/Blindspot page, same size), then De Extensie + Creatieve Resonantie. The
           //    Main/Support portrait circles below only draw when room is left above the text —
@@ -3066,8 +3189,8 @@ const AssessmentResultsModal = ({
             pdf.addPage();
             paintBg(); markPage();
             y = margin;
-            // Fixed heading in orange
-            sectionHeading(t('resultsModal.pdf.prompt.heading'), orange);
+            // Fixed heading in the body-text white (owner, 17 Oct 2026: orange went to the Hardware Data page)
+            sectionHeading(t('resultsModal.pdf.prompt.heading'), white);
             // Instruction tip in purple
             pdf.setFontSize(8); pdf.setFont('helvetica', 'italic'); pdf.setTextColor(...purple);
             pdf.splitTextToSize(t('resultsModal.pdf.prompt.tip'), contentW - 4).forEach(line => { pdf.text(line, margin + 2, y); y += 4.5; });
@@ -3090,10 +3213,10 @@ const AssessmentResultsModal = ({
               // intro instead. The prompt's block titles arrive as subheadings — groupSubsections.)
               // Collapse 3+ consecutive blank lines down to one blank line
               promptContent = promptContent.replace(/\n{3,}/g, '\n\n');
-              writePdfMarkdown(promptContent, margin + 2, contentW - 4);
+              writePdfMarkdown(promptContent, margin + 2, contentW - 4, white); // block titles white too
             } else {
               // Model omitted its prompt section — render the deterministic fallback instead.
-              writePdfMarkdown(buildFallbackAgentPrompt(), margin + 2, contentW - 4);
+              writePdfMarkdown(buildFallbackAgentPrompt(), margin + 2, contentW - 4, white);
             }
           }
 
@@ -3378,7 +3501,7 @@ const AssessmentResultsModal = ({
         // The Master Prompt's emit order (v6.2.x DEEL 5, the numbered checklist) is the page order:
         // 1-4 Identiteit/Verklaring/Essentie/Vermenigvuldiging · 5-6 Schaduw/Blindspot · 7-8 Extensie +
         // Creatieve Resonantie (the radar page, §5.4) · 9 OCEAN · 10-12 Vorm/Hardware/Overgang ·
-        // 13-15 De Stille Stem · 16-18 Alchemie/Schakelbord/Evolutie · 19 AI-prompt + machineblok.
+        // 13-15 De Stille Stem · De Cognitieve Driehoek · 16-18 Alchemie/Schakelbord/Evolutie · 19 AI-prompt + machineblok.
         const desiredBlockOrder = [
           'group1a',       // 1-4: Identiteit/Verklaring + Essentie/Vermenigvuldiging
           'group1b',       // 5-6: Schaduw + Blindspot
@@ -3386,7 +3509,8 @@ const AssessmentResultsModal = ({
           'ocean_core',    // 9:   PERSOONLIJKHEIDSRAPPORT VERGELIJKING — one section, one flow
           'nb_morphology', // 10-12: D-curve chart + Vorm / Hardware / Overgang
           'nb_stille',     // 13-15: De Stille Stem (Reflectie/Motivatie/Beweging)
-          'dual_core',     // 16-18: Dual-Core chart + Alchemie/Schakelbord/Ontologie
+          'nb_triangle',   // De Cognitieve Driehoek, yellow titles (owner, 17 Oct 2026)
+          'dual_core',     // 16-18: Hardware Data chart + Alchemie/Schakelbord/Ontologie, orange titles
           'others',        // any remaining ungrouped AI sections (safety net)
           'groep_radar',   // (legacy) usually empty in v4.1
           'ai_prompt',     // 19: the AI prompt, a page of its own
@@ -3470,7 +3594,7 @@ const AssessmentResultsModal = ({
       setIsGeneratingPdf(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, displaySections, uploadedFiles, language, enginePayload, polarization, dataBlock, t, tArray, tFunc, portrait, portraitVariant, paidPaymentId]);
+  }, [result, displaySections, uploadedFiles, language, enginePayload, polarization, dataBlock, triangleFigure, t, tArray, tFunc, portrait, portraitVariant, paidPaymentId]);
 
   // Dev PDF live-preview: once the (replayed) analysis is ready, auto-build the PDF
   // and hand the blob URL back to the harness instead of downloading.
@@ -3967,7 +4091,8 @@ const AssessmentResultsModal = ({
                     on-card radar above can clip at narrow breakpoints). Real layout, off-canvas. */}
                 <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', top: 0, width: '620px', height: '360px', background: '#060612' }}>
                   <div ref={pdfRadarRef} style={{ width: '100%', height: '100%' }}>
-                    <SciFiRadarChart data={result.radarData} shadow={result.shadowArchetype} blindspot={result.blindspotArchetype} mainArchetype={result.overallArchetype} supportArchetype={result.supportArchetype} />
+                    {/* fillHeight: the legend drops to the box's bottom edge, off the lowest wheel label (Outlaw) */}
+                    <SciFiRadarChart fillHeight data={result.radarData} shadow={result.shadowArchetype} blindspot={result.blindspotArchetype} mainArchetype={result.overallArchetype} supportArchetype={result.supportArchetype} />
                   </div>
                 </div>
 

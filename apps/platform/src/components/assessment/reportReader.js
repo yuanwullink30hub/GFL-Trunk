@@ -25,7 +25,7 @@
 
 import {
   NARRATIVE_TAGS, matchNarrativeTag, normalizeTagLine, canonicalTitle, stripPageLabel,
-  bareHeading, isOceanMemberHeading, isContractSubheading, REPORT_V7_SLOTS,
+  bareHeading, isOceanMemberHeading, isContractSubheading, reportSlotsFor,
 } from './v4Parser.js';
 
 // ── Title helpers (shared with the renderer) ─────────────────────────────────────────────────────
@@ -76,18 +76,20 @@ const EMIT_ORDER = [
   'extension', 'prof_resonance', 'creative_resonance',
   'ocean', 'ocean_o', 'ocean_c', 'ocean_e', 'ocean_a', 'ocean_n',
   'morph_vorm', 'morph_hardware', 'morph_overgang',
-  'stille_reflectie', 'stille_motivatie', 'stille_beweging',
+  'stille_reflectie', 'stille_motivatie', 'stille_beweging', 'cognitive_triangle', 'triangle_fallacies',
   'alchemy', 'neural_board', 'ontological', 'ai_prompt',
 ];
 const orderOf = (slot) => EMIT_ORDER.indexOf(slot);
 
 // Blocks the model writes that are deliberately NOT report sections — they keep splitting off, and
 // the renderer's filters drop them, now on the ledger: the machine block, Kaart microcopy, echoes of
-// the prompt's page labels, and legacy (v3/v4) headings.
+// the prompt's page labels, and legacy (v3/v4) headings. The v4 "Cognitieve Driehoek" / "Aangeleerde
+// Lens" headings left this list on 17 Oct 2026: DE COGNITIEVE DRIEHOEK is a section again (its own PDF
+// page), and a heading like "Aangeleerde lens" inside it is a subheading, never a block to drop.
 const DISCARD_BOUNDARY = [
   RENDER_SIDE_TITLE, RADAR_READING_TITLE, STRAY_TITLE, V3_ELEMENTS_TITLE, COMPARISON_SUBSECTION,
   /leerling\s+ontologisch|^(?:introductie|inleiding|introduction)$|(?:kaart|card)\s*microcopy|profiel\s*(?:dynamiek|element)|(?:5|vijf)\s*element/i,
-  /groep\s+dynamiek|neurobiologische\s+interpretatie|cognitieve\s*driehoek|aangeleerde\s*lens|^1[23]\s*[ab][\s.:]/i,
+  /groep\s+dynamiek|neurobiologische\s+interpretatie|^1[23]\s*[ab][\s.:]/i,
   /plastische\s+morfologie|^(?:\d+(?:\.\d+)?\s+)?pagina\b|dual.?core|^de\s+stille\s+stem$|^the\s+quiet\s+voice$|de\s+support\s+die\s+de\s+kern\s+bewerkt/i,
 ];
 const isDiscardBoundary = (title) => DISCARD_BOUNDARY.some((re) => re.test(cleanTitle(title || '')));
@@ -577,7 +579,7 @@ export function liftStilleLabels(content) {
  * line — `recovered` (a lost first heading), `fuzzy` (a heading read through drift), `demoted` (a
  * heading kept as a subheading), `discarded` ({ rule, title, text }), `unaccounted` (should be empty).
  */
-export function readReport(analysisText) {
+export function readReport(analysisText, { promptVersion = null } = {}) {
   const ledger = { recovered: [], fuzzy: [], demoted: [], discarded: [], unaccounted: [] };
   const raw = String(analysisText || '');
   const sections = parseAiSections(stripKaartFields(raw, ledger), ledger) || [];
@@ -603,12 +605,13 @@ export function readReport(analysisText) {
       if (m) ledger.discarded.push({ rule: "the model's machine block after the AI prompt — the renderer prints its own", title: s.title, text: m[0], byRenderer: true });
     }
   }
-  // Payload instruction v7 §7: a v7 report is complete when the closing line came and all 19 sections are
-  // here. Read by the renderer for v2 reports (a v1 report has no closing line by design).
+  // Payload instruction v7 §7: a v7 report is complete when the closing line came and all its sections are
+  // here — 19, or 21 from Master Prompt v7.2 (the triangle page). Read by the renderer for v2 reports (a v1
+  // report has no closing line by design).
   const slots = new Set(sections.map((s) => (matchNarrativeTag(s.title || '') || {}).slot).filter(Boolean));
   ledger.completeness = {
     closingLine: ledger.discarded.some((d) => d.rule === 'closing line (v7 completion marker)'),
-    missing: REPORT_V7_SLOTS.filter((x) => !slots.has(x)),
+    missing: reportSlotsFor(promptVersion).filter((x) => !slots.has(x)),
   };
   return { sections, ledger };
 }

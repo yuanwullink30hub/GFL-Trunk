@@ -37,7 +37,7 @@ const TITLES_EN = {
   'AFGELEIDE INDICES': 'DERIVED INDICES',
   ANTWOORDSTIJL: 'RESPONSE STYLE',
   'OCEAN PROFIEL (EXTERN GEUPLOAD)': 'OCEAN PROFILE (EXTERNAL UPLOAD)',
-  'COGNITIEVE DRIEHOEK (YELLOW)': 'COGNITIVE TRIANGLE (YELLOW)',
+  'COGNITIEVE DRIEHOEK': 'COGNITIVE TRIANGLE',
   'HARDWARE SIGNALEN': 'HARDWARE SIGNALS',
   'EXTENDED ARCHETYPE PROFIEL': 'EXTENDED ARCHETYPE PROFILE',
   'SHADOW INTEGRATIE': 'SHADOW INTEGRATION',
@@ -60,7 +60,9 @@ const LABELS = {
     polarisation: (pct, m, sh, band) => `Polarisatie: ${pct}% van Main (Main ${m} − Shadow ${sh}) → band: ${band}`,
     polarBand: { HIGH_POLARIZATION: 'schaduw onderdrukt', MODERATE: 'gezonde spanning', HIGH_INDIVIDUATION: 'actieve integratie' },
     ocean: [['O', 'Openheid'], ['C', 'Consciëntieusheid'], ['E', 'Extraversie'], ['A', 'Meegaandheid'], ['N', 'Neuroticisme']],
-    triangle: 'Driehoek', yellow: 'geel',
+    // -- COGNITIEVE DRIEHOEK -- (Master Prompt v7.2 5.10; Backend Task "Triangle Page" v0.1 §5)
+    mainTriangle: 'Main-driehoek', members: 'leden', mainRole: 'Main-rol', counterTriangle: 'Tegendriehoek',
+    otherTriangle: 'Andere driehoek', yellow: 'geel', triangleBand: { draagt: 'draagt', neutraal: 'neutraal', stil: 'stil' },
     empty: 'leeg', inversions: 'inversies', none: 'geen', bandsBaseline: 'banden (baseline)', bandsTransform: 'banden (transform)',
     bandsMissing: 'banden: ontbreken (register_bands niet geleverd)', activeSet: 'actieve_set', stamps: 'stempels',
     registerBand: {},
@@ -77,7 +79,9 @@ const LABELS = {
     polarisation: (pct, m, sh, band) => `Polarisation: ${pct}% of Main (Main ${m} − Shadow ${sh}) → band: ${band}`, // frame *
     polarBand: { HIGH_POLARIZATION: 'shadow suppressed', MODERATE: 'healthy tension', HIGH_INDIVIDUATION: 'active integration' },
     ocean: [['O', 'Openness'], ['C', 'Conscientiousness'], ['E', 'Extraversion'], ['A', 'Agreeableness'], ['N', 'Neuroticism']], // *
-    triangle: 'Triangle', yellow: 'yellow', // *
+    // the task's EN table (§5)
+    mainTriangle: 'Main triangle', members: 'members', mainRole: 'Main role', counterTriangle: 'Counter-triangle',
+    otherTriangle: 'Other triangle', yellow: 'yellow', triangleBand: { draagt: 'carries', neutraal: 'neutral', stil: 'quiet' },
     // * — the HARDWARE SIGNALEN inner labels (labels file §4)
     empty: 'empty', inversions: 'inversions', none: 'none', bandsBaseline: 'bands (baseline)', bandsTransform: 'bands (transform)',
     bandsMissing: 'bands: missing (register_bands not supplied)', activeSet: 'active_set', stamps: 'stamps',
@@ -91,19 +95,39 @@ const LABELS = {
 const LINE_TYPE_EN = { 'Groene Lijn': 'Green Line', 'Blauwe Lijn': 'Blue Line', 'Paarse Lijn': 'Purple Line', 'Rode Lijn': 'Red Line', 'Gele Lijn': 'Yellow Line','(geen kanonieke lijn)': '(no canonical line)' };
 
 /**
+ * The lines of -- COGNITIEVE DRIEHOEK -- (Master Prompt v7.2 5.10; task §5). The bands only — never a lift, a
+ * threshold or the weights behind them (W1, W5). Names and the pool line come from the canon in the report
+ * language (engine/cogTriangle.triangleFacts); the labels follow the block's language.
+ */
+function triangleLines(tri, language) {
+  const L = LABELS[language === 'en' ? 'en' : 'nl'];
+  const tb = (b) => L.triangleBand[b];
+  return [
+    `${L.mainTriangle}: ${tri.main.name} (${tri.main.id}) | ${L.members}: ${tri.main.members.join(' · ')} | band: ${tb(tri.main.band)}`,
+    `${L.mainRole}: ${tri.main.role.name} — ${tri.main.role.pool}`,
+    `${L.counterTriangle}: ${tri.counter.name} (${tri.counter.id}) | band: ${tb(tri.counter.band)}`,
+    ...tri.others.map((o) => `${L.otherTriangle}: ${o.name} (${o.id}) | band: ${tb(o.band)}`),
+    `${L.yellow}: ${tri.geel.map((g) => `${g.name} ${p1(toPoints(g.u))}`).join(' | ')}`,
+  ];
+}
+
+/**
  * @param {object} p
  * @param {object} p.session      bleedV2.scoreSession output (v2 session)
  * @param {object} p.payload      the engine payload for the same session (runPipeline().payload)
  * @param {'zacht'|'merkbaar'|'sterk'} p.supportEdit  the P11 band (runtimeEngine.support_edit_band)
  * @param {string[]} [p.styleTags] fired tags after precedence (answerStyle.styleTags().tags)
  * @param {{O:number,C:number,E:number,A:number,N:number}|null} [p.ocean]  uploaded OCEAN values, or null
+ * @param {object} p.triangle     the session's cognitive triangles (engine/cogTriangle.triangleFacts)
  * @param {'nl'|'en'} [p.language] the report language; 'nl' unless 'en'
  * @returns {{ key: string, title: string, lines: string[] }[]} the blocks in their fixed order
  */
-function buildDataBlock({ session: s, payload, supportEdit, styleTags = [], ocean = null, language = 'nl' }) {
+function buildDataBlock({ session: s, payload, supportEdit, styleTags = [], ocean = null, triangle: tri, language = 'nl' }) {
   if (!s || s.scoring_version !== 'v2_two_layer') throw new Error('the server-built data block is for v2 sessions');
   if (!payload || payload.main.name !== s.main || payload.support.name !== s.support) throw new Error('payload and session disagree on Main/Support');
   if (!['zacht', 'merkbaar', 'sterk'].includes(supportEdit)) throw new Error('the data block needs the P11 band');
+  // v7.2: the triangle block is always there on a v2 report — without it the page has nothing to read (task §5).
+  if (!tri || !tri.main || tri.main.role.name !== s.main) throw new Error('the data block needs the session\'s cognitive triangles');
   const en = language === 'en';
   const L = LABELS[en ? 'en' : 'nl'];
   const { main, support, shadow } = s;
@@ -144,11 +168,7 @@ function buildDataBlock({ session: s, payload, supportEdit, styleTags = [], ocea
 
   if (ocean) block('OCEAN PROFIEL (EXTERN GEUPLOAD)', L.ocean.map(([k, label]) => `${label}: ${Math.round(ocean[k])}/100`));
 
-  const triangle = [main, ...payload.links.yellow];
-  block('COGNITIEVE DRIEHOEK (YELLOW)', [
-    `${L.triangle}: ${triangle.join(' · ')}`,
-    `${L.yellow}: ${triangle.map((n) => `${n} ${p1(toPoints(s.mandjes_u[n].geel))}`).join(' | ')}`,
-  ]);
+  block('COGNITIEVE DRIEHOEK', triangleLines(tri, en ? 'en' : 'nl'));
 
   // Roles as the report names them (owner, 14 Oct): main, support, co-drivers. The engine's role tag
   // ("support" for every pull member) is a storage role, not the Support.
@@ -182,4 +202,4 @@ function buildDataBlock({ session: s, payload, supportEdit, styleTags = [], ocea
 /** The blocks as text: "-- TITLE --" then its lines, a blank line between blocks. */
 const dataBlockText = (blocks) => blocks.map((b) => [`-- ${b.title} --`, ...b.lines].join('\n')).join('\n\n');
 
-module.exports = { buildDataBlock, dataBlockText, TITLES_EN, LABELS };
+module.exports = { buildDataBlock, dataBlockText, triangleLines, TITLES_EN, LABELS };

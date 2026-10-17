@@ -870,6 +870,45 @@ test('Report reader — De Stille Stem run-in labels become subheadings, and onl
   assert.equal(R.liftStilleLabels('How that feels: tight.'), '### How that feels\n\ntight.', 'English label');
 });
 
+test('Report reader — the triangle page (v7.2): two sections of their own; headings inside stay with them; 21 from v7.2', async () => {
+  const R = await import('../../../platform/src/components/assessment/reportReader.js');
+  const P = await import('../../../platform/src/components/assessment/v4Parser.js');
+  const text = [
+    '## BEWEGING', 'De beweging zelf, lang genoeg om als echte sectie mee te tellen.', '',
+    '## DE COGNITIEVE DRIEHOEK — De Gepassioneerde Alchemist', 'Minnaar, Rebel en Magiër vormen samen jouw driehoek op het wiel.', '',
+    '## Aangeleerde lens', 'Hoe je hebt leren navigeren.', '',
+    '**Emotionele alchemie**', 'Voelen, breken, herbouwen.', '',
+    'DE DROGREDENEN VAN DE DRIEHOEK', 'Het Messias-Complex begint waar de Rebel de schuldige aanwijst en de Magiër wil repareren.', '',
+    '## DE ALCHEMIE VAN INDIVIDUATIE', 'De alchemie zelf, lang genoeg om als echte sectie mee te tellen.',
+  ].join('\n');
+  const { sections, ledger } = R.readReport(text);
+  const tri = sections.filter((s) => (P.matchNarrativeTag(s.title || '') || {}).slot === 'cognitive_triangle');
+  assert.equal(tri.length, 1, 'one section');
+  assert.ok(tri[0].content.includes('Hoe je hebt leren navigeren.'), 'a ## heading inside it stays with it (the v4 drop rule is gone)');
+  assert.ok(tri[0].content.includes('Voelen, breken, herbouwen.'));
+  assert.equal(R.shownTitle(tri[0]), 'DE COGNITIEVE DRIEHOEK — De Gepassioneerde Alchemist');
+  assert.ok(sections.some((s) => /ALCHEMIE VAN INDIVIDUATIE/.test(s.title) && s.content.includes('De alchemie zelf')));
+  assert.equal(P.matchNarrativeTag('THE COGNITIVE TRIANGLE — The Passionate Alchemist').slot, 'cognitive_triangle');
+  const fal = sections.filter((s) => (P.matchNarrativeTag(s.title || '') || {}).slot === 'triangle_fallacies');
+  assert.equal(fal.length, 1, 'a bare title line opens its own section');
+  assert.ok(fal[0].content.includes('Messias-Complex') && !tri[0].content.includes('Messias-Complex'));
+  assert.equal(P.matchNarrativeTag('THE FALLACIES OF THE TRIANGLE').slot, 'triangle_fallacies');
+  assert.deepEqual(ledger.unaccounted, []);
+  // completeness: 19 sections up to v7.1, 21 from v7.2 — the triangle's two right after BEWEGING
+  assert.equal(P.REPORT_V7_SLOTS.length, 19);
+  assert.equal(P.REPORT_V72_SLOTS.length, 21);
+  assert.deepEqual(P.REPORT_V72_SLOTS.slice(14, 18), ['stille_beweging', 'cognitive_triangle', 'triangle_fallacies', 'alchemy']);
+  assert.equal(P.reportSlotsFor('v7.0'), P.REPORT_V7_SLOTS);
+  assert.equal(P.reportSlotsFor(null), P.REPORT_V7_SLOTS);
+  assert.equal(P.reportSlotsFor('v7.2'), P.REPORT_V72_SLOTS);
+  assert.equal(P.reportSlotsFor('v8.0'), P.REPORT_V72_SLOTS);
+  const v72 = R.readReport(text, { promptVersion: 'v7.2' }).ledger.completeness.missing;
+  assert.ok(!v72.includes('cognitive_triangle') && !v72.includes('triangle_fallacies') && v72.includes('identity'));
+  const bare = ['## DE IDENTITEIT', 'Tekst.'].join('\n');
+  assert.ok(!R.readReport(bare, { promptVersion: 'v7.0' }).ledger.completeness.missing.includes('cognitive_triangle'));
+  assert.ok(R.readReport(bare, { promptVersion: 'v7.2' }).ledger.completeness.missing.includes('triangle_fallacies'));
+});
+
 test('Request — the English title set handed to the model is exactly what the platform parser routes (W8)', async () => {
   const { buildUserMessage, EN_SECTION_TITLES } = require('../../prompts/advanced');
   const hooks = require('node:module').registerHooks({

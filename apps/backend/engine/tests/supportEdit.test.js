@@ -21,7 +21,9 @@ const TEST_10 = {
   selftest_example:   { support: 'Sage', k: 0.311, band: 'sterk', herkomst: 'keuze' },
   ruling_tetrad:      { support: 'Judge', k: 0.142, band: 'merkbaar', herkomst: 'echo' },
   with_refusals:      { support: 'Caregiver', k: 0.076, band: 'zacht', herkomst: 'keuze' },
-  concentrated_lover: { support: 'Caregiver', k: 0.054, band: 'zacht', herkomst: 'echo' },
+  // The instruction's row read Caregiver (k 0.054, echo). The Support margin (owner, 17 Oct) moves it: Hero lies
+  // within 9 % of Caregiver's total (106.2 vs 115.2) with twice the direct points (54 vs 27).
+  concentrated_lover: { support: 'Hero', k: 0.05, band: 'zacht', herkomst: 'keuze' },
   fallback_heavy:     { support: 'Innocent', k: 0.044, band: 'zacht', herkomst: 'passief' },
 };
 

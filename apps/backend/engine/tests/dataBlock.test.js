@@ -13,10 +13,12 @@ const B = require('../bleedV2');
 const S = require('../answerStyle');
 const { buildDataBlock, dataBlockText, TITLES_EN } = require('../dataBlock');
 const { redLinePartner } = require('../../services/lineType');
+const CT = require('../cogTriangle');
+const { triangleCanon } = require('../corpusResolver');
 const sessions = require('./bleed_v2_session_fixtures_v0_1.json').cases;
 
 const ORDER = ['IDENTITEIT', 'SCORES (12-PUNTS WIEL)', 'MANDJE DECOMPOSITIE', 'KEUZE / ECHO PER GROEP', 'AFGELEIDE INDICES',
-  'ANTWOORDSTIJL', 'OCEAN PROFIEL (EXTERN GEUPLOAD)', 'COGNITIEVE DRIEHOEK (YELLOW)', 'HARDWARE SIGNALEN',
+  'ANTWOORDSTIJL', 'OCEAN PROFIEL (EXTERN GEUPLOAD)', 'COGNITIEVE DRIEHOEK', 'HARDWARE SIGNALEN',
   'EXTENDED ARCHETYPE PROFIEL', 'SHADOW INTEGRATIE', 'BLINDSPOT'];
 
 function build(questions, ocean = null, language = 'nl') {
@@ -25,7 +27,8 @@ function build(questions, ocean = null, language = 'nl') {
     geometry: { shadow: s.shadow, blindspot: redLinePartner(s.main) }, language: 'nl' });
   const tags = S.styleTags(questions, { main: s.main, support: s.support, totals: s.totals_u, polarizationLevel: s.polarizationLevel }).tags;
   const supportEdit = E.support_edit_band({ scores: s.totals_u, main: s.main }, s.support);
-  return { s, payload, tags, supportEdit, blocks: buildDataBlock({ session: s, payload, supportEdit, styleTags: tags, ocean, language }) };
+  const triangle = CT.triangleFacts(s, triangleCanon(language));
+  return { s, payload, tags, supportEdit, triangle, blocks: buildDataBlock({ session: s, payload, supportEdit, styleTags: tags, ocean, triangle, language }) };
 }
 
 for (const [name, c] of Object.entries(sessions)) {
@@ -59,6 +62,29 @@ test('never on the data block: compute values, the answer sheet, Nature/Culture,
   }
 });
 
+test('COGNITIEVE DRIEHOEK (v7.2, task §5): the bands per fixture, names from the canon, no margin line in IDENTITEIT', () => {
+  // task §9.3 — the Main by total; these blocks do not depend on the Support
+  const want = {
+    selftest_example: ['D2', 'stil', 'D1', 'neutraal', ['D4']], concentrated_lover: ['D2', 'stil', 'D1', 'stil', ['D3']],
+    ruling_tetrad: ['D4', 'draagt', 'D3', 'stil', []], fallback_heavy: ['D1', 'draagt', 'D2', 'stil', ['D4']],
+    with_refusals: ['D2', 'stil', 'D1', 'stil', ['D3']],
+  };
+  for (const [name, [tm, bm, tc, bc, others]] of Object.entries(want)) {
+    const { s, triangle, blocks } = build(sessions[name].questions);
+    assert.deepEqual([triangle.main.id, triangle.main.band, triangle.counter.id, triangle.counter.band, triangle.others.map((o) => o.id)], [tm, bm, tc, bc, others], name);
+    const lines = blocks.find((b) => b.key === 'COGNITIEVE DRIEHOEK').lines;
+    assert.match(lines[0], new RegExp(String.raw`^Main-driehoek: De \S.+ \(${tm}\) \| leden: \S+ · \S+ · \S+ \| band: ${bm}$`), name);
+    assert.ok(lines[1].startsWith(`Main-rol: ${s.main} — `) && /pool\)$/.test(lines[1]), name);
+    assert.equal(lines.filter((l) => l.startsWith('Andere driehoek:')).length, others.length, name);
+    assert.match(lines[lines.length - 1], /^geel: \S+ \d+\.\d \| \S+ \d+\.\d \| \S+ \d+\.\d$/, name);
+    assert.ok(!blocks.find((b) => b.key === 'IDENTITEIT').lines.some((l) => /marge|margin|9 ?%/.test(l)), `${name}: the margin rule is never named (v7.2 R-c 3.3)`);
+  }
+  const en = build(sessions.ruling_tetrad.questions, null, 'en').blocks.find((b) => b.key === 'COGNITIEVE DRIEHOEK');
+  assert.equal(en.title, 'COGNITIVE TRIANGLE');
+  assert.equal(en.lines[0], 'Main triangle: The Wise Master-Builder (D4) | members: Innocent · Sage · Ruler | band: carries');
+  assert.equal(en.lines[2], 'Counter-triangle: The Strategic Guardian (D3) | band: quiet');
+});
+
 test('ANTWOORDSTIJL appears only with a fired tag, with its code and one-line meaning; OCEAN only with an upload', () => {
   const withTag = build(sessions.fallback_heavy.questions);
   assert.deepEqual(withTag.blocks.find((b) => b.title === 'ANTWOORDSTIJL').lines,
@@ -69,18 +95,19 @@ test('ANTWOORDSTIJL appears only with a fired tag, with its code and one-line me
 });
 
 test('W5: without register_bands the block names the gap instead of printing band labels', () => {
-  const { s, payload, supportEdit } = build(sessions.selftest_example.questions);
+  const { s, payload, supportEdit, triangle } = build(sessions.selftest_example.questions);
   const bare = { ...payload, main: { ...payload.main, register: { ...payload.main.register, band_labels: null } } };
-  const hw = buildDataBlock({ session: s, payload: bare, supportEdit }).find((b) => b.title === 'HARDWARE SIGNALEN').lines;
+  const hw = buildDataBlock({ session: s, payload: bare, supportEdit, triangle }).find((b) => b.title === 'HARDWARE SIGNALEN').lines;
   assert.ok(hw.includes('banden: ontbreken (register_bands niet geleverd)'));
   assert.ok(!hw.some((l) => l.startsWith('banden (')));
 });
 
 test('refuses what it is not for: a v1 session, a payload for another Main/Support, a missing band', () => {
-  const { s, payload, supportEdit } = build(sessions.selftest_example.questions);
-  assert.throws(() => buildDataBlock({ session: { ...s, scoring_version: 'v1_nature_culture' }, payload, supportEdit }), /v2 sessions/);
-  assert.throws(() => buildDataBlock({ session: { ...s, support: 'Hero' }, payload, supportEdit }), /disagree/);
-  assert.throws(() => buildDataBlock({ session: s, payload }), /P11 band/);
+  const { s, payload, supportEdit, triangle } = build(sessions.selftest_example.questions);
+  assert.throws(() => buildDataBlock({ session: { ...s, scoring_version: 'v1_nature_culture' }, payload, supportEdit, triangle }), /v2 sessions/);
+  assert.throws(() => buildDataBlock({ session: { ...s, support: 'Hero' }, payload, supportEdit, triangle }), /disagree/);
+  assert.throws(() => buildDataBlock({ session: s, payload, triangle }), /P11 band/);
+  assert.throws(() => buildDataBlock({ session: s, payload, supportEdit }), /cognitive triangles/);  // task §5: a build error, never a silent gap
 });
 
 // English reports (owner, 13 Oct; Data Block Labels EN v0.1): English titles and labels, the same values,

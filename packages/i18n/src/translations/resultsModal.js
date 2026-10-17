@@ -759,6 +759,18 @@ export default {
           en: ['Direct choice', 'Echo from own hardware', 'Echo from the wheel'],
         },
       },
+      // The triangle figure on page 5.7b (Master Prompt v7.2; Backend Task "Triangle Page" v0.1 §3): the wheel
+      // labels in the report language, positions 1–12 (canon names: Ontdekker, not Ontdekkingsreiziger), and the
+      // caption line for a dashed (other carrying) triangle.
+      triangle: {
+        wheel: {
+          nl: ['Rechter', 'Minnaar', 'Verzorger', 'Onschuldige', 'Ontdekker', 'Rebel', 'Nar', 'Wijze', 'Kunstenaar', 'Magiër', 'Held', 'Heerser'],
+          en: ['Judge', 'Lover', 'Caregiver', 'Innocent', 'Explorer', 'Outlaw', 'Trickster', 'Sage', 'Artist', 'Magician', 'Hero', 'Ruler'],
+        },
+        dashed: { nl: (names) => `gestippeld: ${names}`, en: (names) => `dashed: ${names}` },
+        // the profile's three highest totals as purple points (owner, 17 Oct)
+        top: { nl: 'paars: je drie hoogste scores', en: 'purple: your three highest scores' },
+      },
       radar: {
         heading: { nl: 'Visuele Analyse — Triple Network Wiel', en: 'Visual Analysis — Triple Network Wheel' },
       },

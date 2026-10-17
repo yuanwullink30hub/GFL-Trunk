@@ -63,6 +63,10 @@ export default function PdfPreviewHarness() {
       polarization: data.polarization,
       dataBlock: data.dataBlock,
       uploadedOceanScores: data.uploadedOceanScores,
+      // v2: the server's scoring result and the triangle figure's facts (Master Prompt v7.2 page 5.7b)
+      profile: data.profile,
+      triangle: data.triangle,
+      promptVersion: data.promptVersion,
       // ?variant=male|female — which portrait the cover uses (default: the modal's own choice).
       portraitVariant: new URLSearchParams(window.location.search).get('variant') || undefined,
       // ?lesson=open|flow — force the cover lesson's layout (default: auto, whichever lays out better).

@@ -322,6 +322,31 @@ test('§3.4 tie chain: total → single picks → keuze → passief → lower wh
   assert.ok(s.tie_breaks.some((t) => t.join() === 'Caregiver,Lover'));
 });
 
+test('Support margin (owner, 17 Oct): within 9 % of the runner-up, the most direct points is the Support', () => {
+  assert.deepEqual(B.SUPPORT_MARGIN.margin, [9, 100]);
+  // order: Main 1, runner-up 2, then 3, 4. Totals in units; direct = keuze + passief.
+  const pick = (totals, acc) => B.pickSupport([1, 2, 3, 4], totals, Object.fromEntries([1, 2, 3, 4].map((p) => [p, { keuze: 0, passief: 0, ...acc[p] }])));
+  const T = { 1: 200, 2: 100, 3: 95, 4: 80 };
+  assert.deepEqual(pick(T, { 2: { keuze: 20 }, 3: { keuze: 40 } }), { support: 3, byTotal: 2 });    // within, more direct
+  assert.equal(pick(T, { 2: { keuze: 40 }, 3: { keuze: 30 } }).support, 2);                           // within, fewer direct
+  assert.equal(pick(T, { 2: { keuze: 40 }, 3: { keuze: 40 } }).support, 2);                           // equal direct keeps the rank
+  assert.equal(pick({ ...T, 3: 91 }, { 2: { keuze: 20 }, 3: { keuze: 40 } }).support, 3);             // exactly 91 % is within
+  assert.equal(pick({ ...T, 3: 90 }, { 2: { keuze: 20 }, 3: { keuze: 40 } }).support, 2);             // 90 % is outside
+  assert.equal(pick({ 1: 200, 2: 1000, 3: 909 }, { 2: {}, 3: { keuze: 1 } }).support, 2);            // 90.9 %: exact, no rounding up
+  assert.equal(pick(T, { 2: { keuze: 20 }, 3: { passief: 30 } }).support, 3);                          // passief is a direct choice too
+  assert.equal(pick(T, { 1: { keuze: 99 }, 2: { keuze: 20 } }).support, 2);                            // the Main never takes part
+  // two candidates over the runner-up: the most direct wins; level with each other → the higher rank
+  assert.equal(pick({ ...T, 4: 92 }, { 2: { keuze: 10 }, 3: { keuze: 30 }, 4: { keuze: 50 } }).support, 4);
+  assert.equal(pick({ ...T, 4: 92 }, { 2: { keuze: 10 }, 3: { keuze: 50 }, 4: { keuze: 50 } }).support, 3);
+  // end to end: Caregiver leads on total but is mostly echo; Hero lies within 9 % with twice the direct points
+  const s = B.scoreSession(fixtures.cases.concentrated_lover.questions);
+  assert.equal(s.support_by_total, 'Caregiver');
+  assert.equal(s.support, 'Hero');
+  assert.ok(100 * s.totals_u.Hero >= 91 * s.totals_u.Caregiver);
+  assert.equal(s.support_herkomst, 'keuze');
+  assert.equal(B.scoreSession(fixtures.cases.ruling_tetrad.questions).support_by_total, 'Judge');     // no one within: unchanged
+});
+
 test('§3.4 a refusal-only session scores zero and never throws', () => {
   const s = B.scoreSession(Array.from({ length: 36 }, () => ({ l1_refusal: true, l1_groups: [], l2_picks: [] })));
   assert.equal(sum(s.totals), 0);

@@ -48,6 +48,11 @@ export const NARRATIVE_TAGS = [
   { stem: 'REFLECTIE', en: ['REFLECTION'], slot: 'stille_reflectie', renderer: 'prose' },
   { stem: 'MOTIVATIE', en: ['MOTIVATION'], slot: 'stille_motivatie', renderer: 'prose' },
   { stem: 'BEWEGING', en: ['MOVEMENT'], slot: 'stille_beweging', renderer: 'prose' },
+  // p6b — Master Prompt v7.2 page 5.7b (owner, 17 Oct 2026): DE COGNITIEVE DRIEHOEK then DE DROGREDENEN VAN DE
+  // DRIEHOEK, on a page of their own between De Stille Stem and the Hardware Data page, under the triangle figure.
+  // The model's own headings inside them stay subheadings.
+  { stem: 'DE COGNITIEVE DRIEHOEK', en: ['THE COGNITIVE TRIANGLE'], slot: 'cognitive_triangle', renderer: 'prose' },
+  { stem: 'DE DROGREDENEN VAN DE DRIEHOEK', en: ['THE FALLACIES OF THE TRIANGLE'], slot: 'triangle_fallacies', renderer: 'prose' },
   // p7 — Archetype images (render-side) + De Extensie (v5.2 §5.7) + Resonantie
   { stem: 'DE EXTENSIE', en: ['THE EXTENSION'], slot: 'extension', renderer: 'prose' },
   { stem: 'PROFESSIONELE RESONANTIE', en: ['PROFESSIONAL RESONANCE'], slot: 'prof_resonance', renderer: 'prose' },
@@ -77,6 +82,7 @@ export const MACHINE_TAGS = {
   'AFGELEIDE INDICES': 'indices',                // authenticity, polarization(+band), datapoints
   'OCEAN PROFIEL (EXTERN GEUPLOAD)': 'ocean_uploaded', // OCEAN bars (only if upload present)
   'COGNITIEVE DRIEHOEK (YELLOW)': 'yellow_triangle',
+  'COGNITIEVE DRIEHOEK': 'yellow_triangle',      // Master Prompt v7.2 5.10 (bands, roles, the counter-triangle)
   'HARDWARE SIGNALEN': 'hardware_signals',
   'EXTENDED ARCHETYPE PROFIEL': 'extended_profile', // gift, curse, levensles
   'SHADOW INTEGRATIE': 'shadow_integration',
@@ -89,6 +95,7 @@ export const MACHINE_TAGS = {
   'DERIVED INDICES': 'indices',
   'OCEAN PROFILE (EXTERNALLY UPLOADED)': 'ocean_uploaded',
   'COGNITIVE TRIANGLE (YELLOW)': 'yellow_triangle',
+  'COGNITIVE TRIANGLE': 'yellow_triangle',
   'HARDWARE SIGNALS': 'hardware_signals',
   'EXTENDED ARCHETYPE PROFILE': 'extended_profile',
   'SHADOW INTEGRATION': 'shadow_integration',
@@ -105,6 +112,19 @@ export const REPORT_V7_SLOTS = [
   'creative_resonance', 'ocean', 'morph_vorm', 'morph_hardware', 'morph_overgang', 'stille_reflectie',
   'stille_motivatie', 'stille_beweging', 'alchemy', 'neural_board', 'ontological', 'ai_prompt',
 ];
+// Master Prompt v7.2: 21 sections — the triangle page's two after BEWEGING.
+export const REPORT_V72_SLOTS = [
+  ...REPORT_V7_SLOTS.slice(0, REPORT_V7_SLOTS.indexOf('stille_beweging') + 1),
+  'cognitive_triangle', 'triangle_fallacies',
+  ...REPORT_V7_SLOTS.slice(REPORT_V7_SLOTS.indexOf('stille_beweging') + 1),
+];
+
+/** The sections a report under this prompt version must carry ("v7.2" → 21; earlier or unknown → 19). */
+export function reportSlotsFor(promptVersion) {
+  const m = /^v(\d+)\.(\d+)/.exec(String(promptVersion || ''));
+  const v72 = Boolean(m) && (Number(m[1]) > 7 || (Number(m[1]) === 7 && Number(m[2]) >= 2));
+  return v72 ? REPORT_V72_SLOTS : REPORT_V7_SLOTS;
+}
 
 // Master Prompt v4.1 §5 — locked page order. Render-side visuals (radar, D-curve,
 // dual-core chart, archetype images, meta-disclaimer) are added by the renderer.
@@ -115,6 +135,7 @@ export const PAGE_ORDER = [
   ['ocean_o', 'ocean_c', 'ocean_e', 'ocean_a', 'ocean_n'],     // p4 (upload-only; IF-state)
   ['morph_vorm', 'morph_hardware', 'morph_overgang'],          // p5 + D-curve chart
   ['stille_reflectie', 'stille_motivatie', 'stille_beweging'], // p6
+  ['cognitive_triangle', 'triangle_fallacies'],                // p6b (v7.2) + triangle figure
   ['extension', 'prof_resonance', 'creative_resonance'],       // p7 + archetype images
   ['alchemy', 'neural_board', 'ontological'],                  // p8 + dual-core chart
   ['ai_prompt'],                                               // p9

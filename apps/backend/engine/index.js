@@ -60,8 +60,10 @@ function corpusName(key) {
  * @param {'nl'|'en'} [p.language]
  * @param {'v1_nature_culture'|'v2_two_layer'} [p.scoringVersion]  v2: the TNM objects in every slice (P9),
  *                                            the old test's readings cut from it (P13), Dutch enrichment cells (§9)
+ * @param {{ main: string, others: string[] }} [p.triangles]  v2: the session's cognitive triangles (engine/cogTriangle),
+ *                                            which route the slice's triangle material (Master Prompt v7.2)
  */
-function runPipeline({ scores, main, support, culturePicks = [], geometry, language = 'nl', scoringVersion = 'v1_nature_culture' }) {
+function runPipeline({ scores, main, support, culturePicks = [], geometry, language = 'nl', scoringVersion = 'v1_nature_culture', triangles = null }) {
   const v2 = scoringVersion === 'v2_two_layer';
   // Main and Support are the scoring's (Bleed v2 scoring §3.4, with its tie chain) — read, never re-derived.
   if (!main || !support) throw new Error('runPipeline needs the scoring\'s Main and Support');
@@ -74,7 +76,7 @@ function runPipeline({ scores, main, support, culturePicks = [], geometry, langu
   // the pull set (R8) still ships through the payload and the Main × Support extension cell.
   const activeSet = [geo.main, ...result.codrivers.map((c) => c.name)];
   const slice = manifest(activeSet, geo.main, geo.support, culturePicks, {
-    language, shadow: geometry && geometry.shadow, blindspot: geometry && geometry.blindspot, v2,
+    language, shadow: geometry && geometry.shadow, blindspot: geometry && geometry.blindspot, v2, triangles,
   });
   const corpusEn = loadCorpus('en');
   const cells = corpusEn.archetypes[geo.main].D_states;

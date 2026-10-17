@@ -54,6 +54,11 @@ export default {
         nl: (n) => `Laag ${n}`,
         en: (n) => `Layer ${n}`,
       },
+      // The two-layer test: every layer of a question runs the subject's full time (owner, 17 Oct)
+      secondsPerLayer: {
+        nl: (sec) => `${sec}s per laag`,
+        en: (sec) => `${sec}s per layer`,
+      },
       secondsPerQuestion: {
         nl: (sec) => `${sec}s per vraag`,
         en: (sec) => `${sec}s per question`,

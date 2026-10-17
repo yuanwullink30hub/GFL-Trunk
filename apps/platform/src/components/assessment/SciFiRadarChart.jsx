@@ -44,7 +44,11 @@ const LAYER_META = [
  *
  * @param {{ data: Array, shadow?: string, blindspot?: string, mainArchetype?: string, supportArchetype?: string }} props
  */
-const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchetype }) => {
+/**
+ * `fillHeight`: the frame fills its parent while the wheel keeps its 340px, so the legend sits at the
+ * parent's bottom edge, clear of the lowest wheel label (the PDF's off-screen copy, owner 17 Oct).
+ */
+const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchetype, fillHeight = false }) => {
   const { t } = useLanguage();
   // Dynamic domain: find max total across all archetypes, round up to next 50
   const fullMark = useMemo(() => {
@@ -129,7 +133,7 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
   const legendPayload = bands.map((b) => ({ value: b.label, type: 'square', color: b.color, labelColor: b.labelColor }));
 
   return (
-    <div style={{ width: '100%', height: '340px', position: 'relative', background: 'transparent' }}>
+    <div style={{ width: '100%', height: fillHeight ? '100%' : '340px', position: 'relative', background: 'transparent' }}>
       <ResponsiveContainer width="100%" height={340}>
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
           <PolarGrid stroke="#a5f3fc" strokeOpacity={0.15} gridType="polygon" radialLines={true} />
@@ -192,7 +196,7 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
       {/* Custom legend — pinned to inside-bottom of the container */}
       <div style={{
         position: 'absolute',
-        bottom: '0.5rem',
+        bottom: fillHeight ? '0.25rem' : '0.5rem',
         left: 0,
         right: 0,
         display: 'flex',

@@ -1132,7 +1132,8 @@ const AssessmentResultsModal = ({
       };
 
       // ── The triangle figure (Master Prompt v7.2 page 5.7b; Backend Task "Triangle Page" v0.1 §3) ──
-      // The 12-point wheel, position 1 (Rechter) at the top and clockwise; the four yellow triangles faint; the
+      // The 12-point wheel as the model's own wheel draws it: Heerser (12) at the top and Rebel (6) at the bottom of
+      // the vertical line, Rechter (1) one step clockwise (owner, 17 Oct); the four yellow triangles faint; the
       // Main's triangle highlighted, its fill set by its band (draagt 15 % · neutraal 8 % · stil outline only),
       // solid outline in all three; every other carrying triangle dashed, no fill. The band never shows as a
       // word or number. The page colour is solid, so each "opacity" is the exact mix with it, drawn opaque in
@@ -1147,7 +1148,8 @@ const AssessmentResultsModal = ({
         const boxH = (H - 2 * margin) * 0.38;
         const r = boxH * 0.36;                                  // room around the wheel for the labels
         const cx = W / 2, cy = y + boxH / 2;
-        const at = (p, rad) => { const a = ((p - 1) * Math.PI) / 6; return [cx + rad * Math.sin(a), cy - rad * Math.cos(a)]; };
+        const angle = (p) => (p * Math.PI) / 6;                // 12 → 0 (top), 6 → π (bottom), clockwise
+        const at = (p, rad) => { const a = angle(p); return [cx + rad * Math.sin(a), cy - rad * Math.cos(a)]; };
         const triangle = (ps, style) => { const [a, b, c] = ps.map((p) => at(p, r)); pdf.triangle(a[0], a[1], b[0], b[1], c[0], c[1], style); };
         const mainPs = TRI_POSITIONS[fig.main.id];
         const otherIds = (fig.others || []).map((o) => o.id).filter((id) => TRI_POSITIONS[id]);
@@ -1180,14 +1182,14 @@ const AssessmentResultsModal = ({
           pdf.circle(x, yy, member || top ? 1.25 : 0.85, 'F');
           // "N Name": the number yellow on a member, purple on a top score, grey elsewhere; the name bold cream
           // (member), cream (top score or dashed member), grey
-          const sin = Math.sin(((p - 1) * Math.PI) / 6);
+          const sin = Math.sin(angle(p));
           const [lx, ly] = at(p, r + 4.2);
           const num = String(p), name = ` ${local(WHEEL_KEYS[p - 1])}`;
           pdf.setFontSize(8);
           pdf.setFont('helvetica', 'bold'); const wNum = pdf.getTextWidth(num);
           pdf.setFont('helvetica', member ? 'bold' : 'normal'); const wName = pdf.getTextWidth(name);
           const x0 = sin > 0.2 ? lx : sin < -0.2 ? lx - wNum - wName : lx - (wNum + wName) / 2;
-          const baseline = ly + (p === 1 ? -0.6 : p === 7 ? 2.6 : 1.1);
+          const baseline = ly + (p === 12 ? -0.6 : p === 6 ? 2.6 : 1.1);   // the top label sits above, the bottom one below
           pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...(member ? triYellow : top ? purple : mutedGray));
           pdf.text(num, x0, baseline);
           pdf.setFont('helvetica', member ? 'bold' : 'normal'); pdf.setTextColor(...(member || top || dashedMember ? cream : mutedGray));

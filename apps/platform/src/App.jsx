@@ -8,7 +8,7 @@ import ClientSubnav from './components/ClientNav';
 const NebulaBackground = lazy(() => import('./components/NebulaBackground'));
 const PublicProfile = lazy(() => import('./components/assessment/PublicProfile'));
 
-import { loadQuestionLayers, loadTwoLayerPlan as fetchTwoLayerPlan, getMe, getHistory, getToken, openPrivateWindow, pingBackend } from '@gfl/api-client';
+import { loadQuestionLayers, loadTwoLayerPlan as fetchTwoLayerPlan, getMe, getHistory, getToken, openPrivateWindow, pingBackend, checkServerHealth } from '@gfl/api-client';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { useLanguage } from '@gfl/i18n';
 import { SciFiButton } from '@gfl/ui';
@@ -1820,6 +1820,25 @@ const App = () => {
     warmAssessmentImages();
   }, [isSystem, clientMode, activeSection]);
 
+  // Can the server take a test? (owner, 17 Oct) Asked at frame 49, when the intro card opens: while the answer is
+  // out the level cards wait, and when the backend or its database does not answer the card blocks the test, so
+  // nobody spends twenty minutes on a test that cannot become a report. While blocked it asks again on its own
+  // every 20 s (quietly, the block stays up) and opens once the server is back.
+  const [serverStatus, setServerStatus] = useState('checking'); // 'checking' | 'ok' | 'down'
+  const serverCheckId = useRef(0);
+  const runServerCheck = useCallback((quiet = false) => {
+    const id = ++serverCheckId.current;
+    if (!quiet) setServerStatus('checking');
+    checkServerHealth().then((ok) => { if (serverCheckId.current === id) setServerStatus(ok ? 'ok' : 'down'); });
+  }, []);
+  const introOpen = isSystem && assessmentPhase === 'intro';
+  useEffect(() => { if (introOpen) runServerCheck(); }, [introOpen, runServerCheck]);
+  useEffect(() => {
+    if (!introOpen || serverStatus !== 'down') return undefined;
+    const t = setTimeout(() => runServerCheck(true), 20000);
+    return () => clearTimeout(t);
+  }, [introOpen, serverStatus, runServerCheck]);
+
   // Set global crosshair cursor on mount — uses !important style tag to override
   // all inline cursor:pointer and Tailwind cursor-* classes everywhere on the site.
   useEffect(() => {
@@ -2533,6 +2552,8 @@ const App = () => {
                   onRemoveFile={handleRemoveFile}
                   onBack={handleIntroBack}
                   backLabel={clientMode ? t('desktopLayout.kitchen') : 'DELTAWERKEN'}
+                  serverStatus={serverStatus}
+                  onRetryServer={runServerCheck}
                 />
               </div>
             )}

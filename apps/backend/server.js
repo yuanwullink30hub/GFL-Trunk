@@ -94,6 +94,27 @@ app.use('/api/refusal-text', refusalTextRoutes);
 // Lightweight keepalive — frontend pings on every card save to prevent Render sleep
 app.get('/api/ping', (_req, res) => res.json({ pong: true }));
 
+// Can a test be turned into a report right now? (owner, 17 Oct) The intro card asks at frame 49 and blocks the
+// test while this answers 503, so nobody fills in a test the server cannot take. Unlike /api/ping it reaches the
+// database: a ping bounded at 5 s, since the driver would otherwise wait 30 s for a server to select.
+app.get('/api/health', async (_req, res) => {
+  res.set('Cache-Control', 'no-store');
+  let timer;
+  try {
+    const { getDB } = require('./db');
+    await Promise.race([
+      getDB().command({ ping: 1 }),
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('database ping timed out')), 5000); }),
+    ]);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[Health] database unreachable:', err.message);
+    res.status(503).json({ ok: false });
+  } finally {
+    clearTimeout(timer);
+  }
+});
+
 // Health check
 app.get('/api/status', (_req, res) => {
   const providers = Object.entries(config.ai)

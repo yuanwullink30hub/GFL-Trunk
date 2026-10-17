@@ -715,6 +715,28 @@ export function pingBackend() {
 }
 
 /**
+ * Can the server take a test right now (backend up and its database answering)? Resolves true or false, never
+ * throws. The wait is long on purpose: a host waking from sleep (Render, ~1 min) answers late but answers.
+ * @param {number} [timeoutMs]
+ * @returns {Promise<boolean>}
+ */
+export async function checkServerHealth(timeoutMs = 75000) {
+  const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = ctl ? setTimeout(() => ctl.abort(), timeoutMs) : null;
+  try {
+    const response = await fetch(`${API_BASE}/health`, { cache: 'no-store', credentials: 'omit', signal: ctl?.signal });
+    // A backend from before this route answers 404: it is up, so a deploy that lands the platform first blocks nobody.
+    if (response.status === 404) return true;
+    if (!response.ok) return false;
+    return (await response.json()).ok === true;
+  } catch {
+    return false;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/**
  * Get available AI providers and backend status.
  */
 export async function getApiStatus() {

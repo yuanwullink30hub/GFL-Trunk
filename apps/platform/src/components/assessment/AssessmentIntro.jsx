@@ -67,8 +67,11 @@ const renderCopy = (text, onLink) => {
  * - onStart(levelId) - called when user picks a level
  * - onClose() - called when user closes the modal
  * - onNavigateToData() - called when user clicks the research button
+ * - serverStatus - 'checking' | 'ok' | 'down' (App.jsx asks at frame 49): the levels open only on 'ok', and
+ *   'down' covers the card with a notice, so nobody starts a test the server cannot turn into a report
+ * - onRetryServer() - ask the server again
  */
-const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolicy, uploadedFiles = [], onAddFile, onRemoveFile, onBack = null, backLabel = '' }) => {
+const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolicy, uploadedFiles = [], onAddFile, onRemoveFile, onBack = null, backLabel = '', serverStatus = 'ok', onRetryServer = null }) => {
   const { t, tArray, tFunc, language } = useLanguage();
   const fileInputRef = useRef(null);
   const infoIconRef = useRef(null);
@@ -1089,9 +1092,15 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
 
           {/* Level Selection — each card carries one purple info pop-up: who it is for, then the shared level note. */}
           <div style={{ marginBottom: s.levelsMb, marginTop: '1rem' }}>
+            {serverStatus === 'checking' && (
+              <p className="text-center font-mono uppercase" style={{ fontSize: 'max(9px, 0.45vw)', fontWeight: 700, letterSpacing: '0.15em', color: 'rgba(196,181,253,0.7)', marginBottom: '0.6rem' }}>
+                {t('assessmentIntroExtra.server.checking')}
+              </p>
+            )}
             <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'}`} style={{ gap: s.levelsGap }}>
               {levels.map((level) => {
                 const isLocked = false; // all three levels open (owner, 15 Oct)
+                const serverWait = serverStatus !== 'ok'; // the levels wait for the server check (owner, 17 Oct)
                 return (
                   <div key={level.id} style={{ position: 'relative', width: '90%', margin: '0 auto' }}>
                     {/* Who-is-this-for pop-up — top-right like every info icon on the intro card, purple, its own text per level; built like the OCEAN
@@ -1141,13 +1150,13 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                       )}
                     </span>
                     <SciFiButton
-                      onClick={(e) => !isLocked && openConsent(level.id, e)}
+                      onClick={(e) => !isLocked && !serverWait && openConsent(level.id, e)}
                       color="#f97316"
                       rgb="249, 115, 22"
                       size="lg"
                       rounded="0.4rem"
                       fullWidth
-                      disabled={isLocked}
+                      disabled={isLocked || serverWait}
                       padding={s.levelPadding}
                       style={{ width: '100%' }}
                     >
@@ -1237,6 +1246,64 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                 >
                   {t('assessmentIntroExtra.leaveConfirm.proceed')}
                 </SciFiButton>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ SERVER DOWN ═══ (owner, 17 Oct) The server cannot take a test now, so the card is blocked: no level
+            can be picked. App.jsx asks again every 20 s and lifts this once the server answers. */}
+        {serverStatus === 'down' && (
+          <div
+            role="alertdialog"
+            aria-labelledby="gfl-server-down-title"
+            className="absolute inset-0 z-50 flex items-center justify-center rounded-lg"
+            style={{
+              backgroundColor: 'rgba(2, 0, 3, 0.82)',
+              backdropFilter: laptopBlur,
+              WebkitBackdropFilter: laptopBlur,
+              animation: 'infoExpand 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+              transformOrigin: 'center center',
+            }}
+          >
+            <div
+              style={{
+                position: 'relative',
+                width: `calc(0.6 * ${s.modalMaxWidth})`,
+                maxWidth: '90vw',
+                padding: '1.5rem 1.75rem',
+                borderRadius: '0.5rem',
+                backgroundColor: isLowGpu ? 'rgba(10, 3, 18, 0.9)' : 'rgba(2, 0, 3, 0.55)',
+                backdropFilter: laptopBlur,
+                WebkitBackdropFilter: laptopBlur,
+                border: '1px solid rgba(168,85,247,0.2)',
+                boxShadow: '0 6px 30px rgba(0,0,0,0.7), inset 0 0 12px rgba(168,85,247,0.06)',
+                textAlign: 'center',
+              }}
+            >
+              <h2 id="gfl-server-down-title" className="font-mono uppercase" style={{
+                fontSize: 'max(18px, 1vw)', fontWeight: 700, letterSpacing: '0.1em', color: '#a855f7', marginBottom: '0.9rem',
+                textShadow: '0 0 10px rgba(168,85,247,0.35)',
+              }}>
+                {t('assessmentIntroExtra.server.downTitle')}
+              </h2>
+              <p style={{ color: '#FFFEF0', fontSize: 'max(12px, 0.65vw)', lineHeight: 1.7, marginBottom: '0.6rem' }}>
+                {t('assessmentIntroExtra.server.downText')}
+              </p>
+              <p style={{ color: 'rgba(255,254,240,0.6)', fontSize: 'max(10px, 0.5vw)', lineHeight: 1.6, marginBottom: '1.25rem' }}>
+                {t('assessmentIntroExtra.server.downAuto')}
+              </p>
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                {onBack && (
+                  <SciFiButton onClick={onBack} variant="white" size="sm">
+                    {backLabel}
+                  </SciFiButton>
+                )}
+                {onRetryServer && (
+                  <SciFiButton onClick={() => onRetryServer()} variant="purple" size="sm">
+                    {t('assessmentIntroExtra.server.retry')}
+                  </SciFiButton>
+                )}
               </div>
             </div>
           </div>

@@ -59,6 +59,29 @@ export default {
       nl: 'Level keuze is irrelevant voor vergelijking en is geen sociale maatstaf, deze keuze stemt de vragenlijst af naar jouw verhouding.',
       en: 'Your level choice is irrelevant for comparison and is not a social measure; it tunes the questionnaire to your relationship to the material.',
     },
+    // The server check at frame 49 (owner, 17 Oct): the test waits for it and is blocked while the server is down.
+    server: {
+      checking: {
+        nl: 'Verbinding met de server controleren…',
+        en: 'Checking the connection to the server…',
+      },
+      downTitle: {
+        nl: 'De test is even niet beschikbaar',
+        en: 'The test is unavailable for a moment',
+      },
+      downText: {
+        nl: 'Onze server reageert nu niet, dus een test kan op dit moment geen rapport opleveren. Om te voorkomen dat je tijd verliest, start de test pas als de server weer bereikbaar is.',
+        en: 'Our server is not responding right now, so a test cannot produce a report at the moment. So you don’t lose your time, the test only starts once the server is reachable again.',
+      },
+      downAuto: {
+        nl: 'We kijken elke 20 seconden opnieuw. Zodra de server terug is, gaat de test vanzelf open.',
+        en: 'We check again every 20 seconds. As soon as the server is back, the test opens by itself.',
+      },
+      retry: {
+        nl: 'Opnieuw proberen',
+        en: 'Try again',
+      },
+    },
     // The purple info per level card (owner, 16 Oct): who should pick this level.
     levelWho: {
       title: {

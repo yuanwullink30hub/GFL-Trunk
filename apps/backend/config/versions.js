@@ -7,7 +7,9 @@
  */
 module.exports = Object.freeze({
   tau_calibration_version: 'v0-PROVISIONAL',
-  corpus_manifest_version: 'v1.1',   // Corpus Lookup Table v1.1 (§8 Schaduw-pakket + link table) + always-block ruling (claim, anchors, Nature/Culture, M1/M2)
+  // Corpus Lookup Table v1.1 (§8 Schaduw-pakket + link table) + always-block ruling (claim, anchors, Nature/Culture,
+  // M1/M2); v1.2: the v2 slice's triangle routing (Backend Task "Triangle Page" v0.1 §6, Master Prompt v7.2)
+  corpus_manifest_version: 'v1.2',
   register_bands_version: 'v0-PROVISIONAL',   // Band_Cutpoints_v0_PROVISIONAL sheet (Master Prompt v5.2 R4)
   workbook: 'v4.3',
   spec: 'A1',

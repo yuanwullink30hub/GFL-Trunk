@@ -14,7 +14,10 @@
  *            §6 of the blindspot's group — always, unless the slice already carries that §6
  *              (its group block, or the shadow's §1 + §6 when shadow and blindspot share a group: Ruling/Chaos)
  *        + ONE extension cell (Main × Support)
- *        + one TNM entry per culture-picked active archetype, preamble once
+ *        + v1: one TNM entry per culture-picked active archetype, preamble once
+ *          v2 (Master Prompt v7.2): the TNM preamble without the fallacy blocks, the Main's triangle (architecture,
+ *          superpower, fallacies), its pair paragraph and its three role entries, and per other carrying
+ *          triangle its superpower, fallacies and role entries (the triangles from engine/cogTriangle)
  *   — and nothing else.
  *
  * Objects (ids):
@@ -30,6 +33,11 @@
  *   extension/<Main>×<Support> the single ratified row: nummer, naam EN, naam NL, Gift, Curse, Levensles
  *   tnm/preamble              Introduction + Overview + every "Cognitive Weaknesses & Fallacies" + Per-Archetype Layer
  *   tnm/entry/<Archetype>     that archetype's per-archetype Yellow-Triangle entry
+ *   tnm/preamble_v2           Introduction + Overview + Per-Archetype Layer (no fallacy blocks)
+ *   tnm/triangle/<Dn>/main    the triangle's header + Cognitive Architecture + Superpower + Weaknesses & Fallacies
+ *   tnm/triangle/<Dn>/other   the triangle's header + Superpower + Weaknesses & Fallacies
+ *   tnm/cross/<D1-D2|D3-D4>   Cross-Triangle Dynamics header + that pair's paragraph
+ *   (never: Cultural Manifestation, The Absent Triangle, the AI Reading and its Scenarios A/B/C)
  *
  * Headings, not line numbers: every key below is bound to a Rosetta section index once, from the
  * EN twin (the NL twin shares the indices), and binding fails loudly if a key no longer resolves.
@@ -58,6 +66,7 @@
 const VERSIONS = require('../config/versions');
 const { loadCorpus } = require('../services/corpusData');
 const { redLinePartner } = require('../services/lineType');
+const CT = require('./cogTriangle');
 
 const tokens = (text) => Math.ceil(text.length / 4);
 const section = (s) => `### ${s.title}\n\n${s.body}`.trim();
@@ -99,6 +108,27 @@ const TNM_PREAMBLE = [
   'Cognitive Weaknesses & Fallacies',          // heading key — matches the section under every triangle
   'Per-Archetype Layer — Profile sec 1–2 Supply',
 ];
+/**
+ * Master Prompt v7.2 (Backend Task "Triangle Page" v0.1 §6): a v2 slice carries the triangle material by the
+ * session's cognitive triangles instead of every fallacy block. The intro, overview and per-archetype layer stay;
+ * per triangle the canon blocks below; Culturele Manifestatie and De Afwezige Driehoek never ship (W7, R-a).
+ */
+const TNM_PREAMBLE_V2 = [
+  'Introduction: What Are the Yellow Triangles?',
+  'Overview: The Four Triangles',
+  'Per-Archetype Layer — Profile sec 1–2 Supply',
+];
+const TNM_TRIANGLES = {
+  D1: 'TRIANGLE 1: THE ANALYTICAL AESTHETE', D2: 'TRIANGLE 2: THE PASSIONATE ALCHEMIST',
+  D3: 'TRIANGLE 3: THE STRATEGIC GUARDIAN', D4: 'TRIANGLE 4: THE WISE MASTER-BUILDER',
+};
+const TNM_TRIANGLE_PARTS = {
+  architecture: 'Cognitive Architecture', superpower: 'The Cognitive Superpower', fallacies: 'Cognitive Weaknesses & Fallacies',
+};
+/** What each triangle role ships: the Main's triangle in full (minus the learned-pattern block), another carrying one in brief. */
+const TNM_ROLE_PARTS = { main: ['architecture', 'superpower', 'fallacies'], other: ['superpower', 'fallacies'] };
+const TNM_CROSS_HEADER = 'Cross-Triangle Dynamics: The Complementary Tensions';
+const TNM_CROSS = { 'D1-D2': 'Triangle 1 <-> Triangle 2', 'D3-D4': 'Triangle 3 <-> Triangle 4' };
 const TNM_ENTRIES = {
   Judge: '1. Judge (De Rechter) — Triangle 1', Ruler: '12. Ruler (De Heerser) — Triangle 4',
   Lover: '2. Lover (De Minnaar) — Triangle 2', Caregiver: '3. Caregiver (De Verzorger) — Triangle 3',
@@ -224,9 +254,23 @@ function bindings() {
   }
   const entries = {};
   for (const [name, key] of Object.entries(TNM_ENTRIES)) entries[name] = one(key, tnmStart);
+  const preambleV2 = TNM_PREAMBLE_V2.map((key) => one(key, tnmStart));
+  const roleLayer = preambleV2[preambleV2.length - 1];
+  // Each triangle's blocks, found between its own header and the next one (the four share their headings).
+  const headers = Object.fromEntries(Object.entries(TNM_TRIANGLES).map(([t, key]) => [t, one(key, tnmStart)]));
+  const triangles = {};
+  for (const [t, at] of Object.entries(headers)) {
+    const next = Math.min(...Object.values(headers).filter((i) => i > at), roleLayer);
+    triangles[t] = { header: at, ...Object.fromEntries(Object.entries(TNM_TRIANGLE_PARTS).map(([part, key]) => [part, one(key, at + 1, next)])) };
+  }
+  const crossHeader = one(TNM_CROSS_HEADER, tnmStart);
+  const cross = Object.fromEntries(Object.entries(TNM_CROSS).map(([pair, key]) => [pair, [crossHeader, one(key, crossHeader + 1)]]));
 
   if (unbound.length) throw new Error(`corpusResolver: Lookup Table bindings do not resolve in the corpus — ${unbound.join('; ')}`);
-  _bind = { wheel, front, principles, groups, tnm: { preamble, entries }, staged: [...staged], stagedInline: [...stagedInline], dependent: [...dependent] };
+  _bind = {
+    wheel, front, principles, groups, tnm: { preamble, entries, preambleV2, triangles, cross },
+    staged: [...staged], stagedInline: [...stagedInline], dependent: [...dependent],
+  };
   return _bind;
 }
 
@@ -278,6 +322,14 @@ function registry(language) {
 
   add('tnm/preamble', 'tnm', ros[b.tnm.preamble[0]].title, join(b.tnm.preamble));
   for (const [name, i] of Object.entries(b.tnm.entries)) add(`tnm/entry/${name}`, 'tnm', ros[i].title, join([i]));
+  // v7.2: the preamble without the four fallacy blocks, each triangle by role, and the two pair paragraphs.
+  add('tnm/preamble_v2', 'tnm', ros[b.tnm.preambleV2[0]].title, join(b.tnm.preambleV2));
+  for (const [t, at] of Object.entries(b.tnm.triangles)) {
+    for (const [role, parts] of Object.entries(TNM_ROLE_PARTS)) {
+      add(`tnm/triangle/${t}/${role}`, 'tnm', ros[at.header].title, join([at.header, ...parts.map((p) => at[p])]));
+    }
+  }
+  for (const [pair, indices] of Object.entries(b.tnm.cross)) add(`tnm/cross/${pair}`, 'tnm', ros[indices[1]].title, join(indices));
 
   _registry[lang] = { lang, docs, corpus };
   return _registry[lang];
@@ -329,7 +381,7 @@ const OLD_TEST_STRIP = {
 function stripOldTestReadings(id, text, lang) {
   const T = OLD_TEST_STRIP[lang];
   const once = (n, what) => { if (n !== 1) throw new Error(`corpusResolver P13: ${id} (${lang}) — ${what} matched ${n}× (expected 1)`); };
-  if (id === 'tnm/preamble') {
+  if (id === 'tnm/preamble' || id === 'tnm/preamble_v2') {
     let paras = text.split('\n\n');
     for (const start of T.paragraphs) {
       once(paras.filter((p) => p.startsWith(start)).length, `paragraph "${start.slice(0, 40)}…"`);
@@ -366,7 +418,7 @@ function nameOf(corpus, key) {
  * fails loudly rather than ship another group's material. Emits a token estimate (≈ chars/4) for logging
  * per-report corpus weight.
  */
-function manifest(active_set, main, support, culture_picks = [], { language = 'nl', shadow, blindspot, v2 = false } = {}) {
+function manifest(active_set, main, support, culture_picks = [], { language = 'nl', shadow, blindspot, v2 = false, triangles = null } = {}) {
   const { lang, docs, corpus } = registry(language);
   const b = bindings();
   const mainName = nameOf(corpus, main);
@@ -402,13 +454,30 @@ function manifest(active_set, main, support, culture_picks = [], { language = 'n
   ids.push(...pack.objects);
   if (supportName && docs.has(`extension/${mainName}×${supportName}`)) ids.push(`extension/${mainName}×${supportName}`);
 
-  // v1: TNM on culture picks. v2 (P9): culture picks no longer exist and Yellow fires on every Layer-2
-  // pick, so every Leerling report carries the TNM preamble and the active set's entries.
-  const picked = new Set((culture_picks || []).map((c) => nameOf(corpus, c)).filter(Boolean));
-  const tnm = v2 ? active : active.filter((n) => picked.has(n));
-  if (tnm.length) {
-    ids.push('tnm/preamble');
-    for (const n of tnm) ids.push(`tnm/entry/${n}`);
+  if (v2) {
+    // v7.2 (Backend Task "Triangle Page" v0.1 §6): by the session's cognitive triangles (engine/cogTriangle) —
+    // the Main's triangle in full with its pair paragraph and its three role entries; every other triangle that
+    // carries with its superpower, fallacies and role entries. Read, never derived here.
+    const T = triangles || {};
+    if (!CT.IDS.includes(T.main)) throw new Error('corpusResolver: a v2 slice needs the cognitive-triangle view (engine/cogTriangle)');
+    const others = T.others || [];
+    if (others.some((t) => !CT.IDS.includes(t) || t === T.main || t === CT.COMPLEMENT[T.main])) {
+      throw new Error(`corpusResolver: another triangle is never the Main's or its counter-triangle (got ${others.join(', ')})`);
+    }
+    ids.push('tnm/preamble_v2', `tnm/triangle/${T.main}/main`, `tnm/cross/${CT.pairOf(T.main)}`);
+    for (const n of CT.membersOf(T.main)) ids.push(`tnm/entry/${n}`);
+    for (const t of others) {
+      ids.push(`tnm/triangle/${t}/other`);
+      for (const n of CT.membersOf(t)) ids.push(`tnm/entry/${n}`);
+    }
+  } else {
+    // v1: TNM on culture picks.
+    const picked = new Set((culture_picks || []).map((c) => nameOf(corpus, c)).filter(Boolean));
+    const tnm = active.filter((n) => picked.has(n));
+    if (tnm.length) {
+      ids.push('tnm/preamble');
+      for (const n of tnm) ids.push(`tnm/entry/${n}`);
+    }
   }
 
   const textOf = (id) => (v2 ? stripOldTestReadings(id, docs.get(id).text, lang) : docs.get(id).text);
@@ -424,4 +493,29 @@ function manifest(active_set, main, support, culture_picks = [], { language = 'n
   };
 }
 
-module.exports = { manifest, registry, bindings, GROUPS, GROUP_HEADINGS, NEVER_PATTERNS, STAGED, stripInline, stripDependent, stripOldTestReadings, norm };
+const _canon = {};
+/**
+ * The triangle names (D1–D4, the overview's Name row) and every archetype's pool line (its role entry's
+ * "Cognitive role (pool)" row), verbatim from the canon in the report language — never translated here.
+ */
+function triangleCanon(language) {
+  const lang = String(language || '').toLowerCase() === 'en' ? 'en' : 'nl';
+  if (_canon[lang]) return _canon[lang];
+  const ros = loadCorpus(lang).framework_rosetta;
+  const b = bindings();
+  const rows = (body) => body.split('\n').filter((l) => l.startsWith('|') && !/^\|\s*-/.test(l))
+    .map((l) => l.replace(/^\|\s?/, '').replace(/\s?\|$/, '').split(' | ').map((c) => c.trim()));
+  const nameRow = rows(ros[b.tnm.preambleV2[1]].body).find((r) => r[0] === (lang === 'en' ? 'Name' : 'Naam'));
+  const poolKey = lang === 'en' ? 'Cognitive role (pool)' : 'Cognitieve rol (pool)';
+  const pools = Object.fromEntries(Object.entries(b.tnm.entries).map(([n, i]) => [n, (rows(ros[i].body).find((r) => r[0] === poolKey) || [])[1]]));
+  const names = nameRow ? Object.fromEntries(CT.IDS.map((t, k) => [t, nameRow[k + 1]])) : {};
+  const missing = [...CT.IDS.filter((t) => !names[t]), ...Object.keys(pools).filter((n) => !pools[n])];
+  if (missing.length) throw new Error(`corpusResolver: the ${lang} canon lacks triangle names or pool lines for ${missing.join(', ')}`);
+  _canon[lang] = Object.freeze({ names: Object.freeze(names), pools: Object.freeze(pools) });
+  return _canon[lang];
+}
+
+module.exports = {
+  manifest, registry, bindings, triangleCanon, GROUPS, GROUP_HEADINGS, NEVER_PATTERNS, STAGED, stripInline, stripDependent,
+  stripOldTestReadings, norm,
+};

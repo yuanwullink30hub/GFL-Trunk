@@ -22,7 +22,9 @@
 const B = require('./bleedV2');
 const S = require('./answerStyle');
 const E = require('./runtimeEngine');
+const CT = require('./cogTriangle');
 const { runPipeline } = require('./index');
+const { triangleCanon } = require('./corpusResolver');
 const { buildDataBlock, dataBlockText } = require('./dataBlock');
 const { requirePrompt, corpusBlock, formatCPathBlock, formatPayloadBlock, clientPayload } = require('./reportV5');
 const { redLinePartner } = require('../services/lineType');
@@ -39,13 +41,23 @@ function promptVersion(system) {
   return m ? `v${m[1]}` : 'unknown';
 }
 
-/** The English title set for a v7 report (W8): the 19 titles, the trait subheadings, the closing line — no machine block. */
-function englishTitles() {
+/** Does the prompt's masthead name this version or a later one? ("v7.2" ≥ 7.2; "unknown" never.) */
+function promptAtLeast(system, major, minor) {
+  const m = /^v(\d+)\.(\d+)/.exec(promptVersion(system));
+  return Boolean(m) && (Number(m[1]) > major || (Number(m[1]) === major && Number(m[2]) >= minor));
+}
+
+/**
+ * The English title set for a v7 report (W8): the 19 titles (21 from v7.2: the triangle page), the trait
+ * subheadings, the closing line — no machine block.
+ */
+function englishTitles(system) {
+  const triangles = promptAtLeast(system, 7, 2);
   return [
     '\n═══ SECTION TITLES — ENGLISH REPORT (the delivered title set, W8) ═══',
     'Emit each title LITERALLY as its own line, in this order, uppercase as written — these are the parser tags.',
     'The word budgets and every HARD LIMIT of DEEL 5 apply unchanged.',
-    ...EN_SECTION_TITLES.narrative.map((x) => (x.startsWith('  ')
+    ...EN_SECTION_TITLES.narrative.filter((x) => triangles || !EN_SECTION_TITLES.triangleTitles.includes(x)).map((x) => (x.startsWith('  ')
       ? '  then one block per trait, each under its own subheading "[trait] — [score]": Openness · Conscientiousness · Extraversion · Agreeableness · Neuroticism'
       : `- ${x}`)),
     `Neural switchboard experiment labels (line starts): ${EN_SECTION_TITLES.experimentLabels.join(' · ')}`,
@@ -138,7 +150,13 @@ function buildV2Request({ system, responses, session = null, language = 'nl', oc
     isIndividuated: s.support === s.shadow,
     polarizationIndex: pts(s.polarizationIndex), polarizationPct: s.polarizationPct, polarizationLevel: s.polarizationLevel,
   };
-  const out = runPipeline({ scores: s.totals_u, main: s.main, support: s.support, geometry, language: lang, scoringVersion: V2 });
+  // Master Prompt v7.2 page 5.7b: the session's cognitive triangles, once, from the chosen weight in the mandjes
+  // (engine/cogTriangle) — they route the slice, fill the data block and draw the PDF figure.
+  const triangle = CT.triangleFacts(s, triangleCanon(lang));
+  const out = runPipeline({
+    scores: s.totals_u, main: s.main, support: s.support, geometry, language: lang, scoringVersion: V2,
+    triangles: { main: triangle.main.id, others: triangle.others.map((o) => o.id) },
+  });
 
   // C-path A on the v2 mandjes (Path A wiring task): only its refusal list reaches the model.
   const cRuntime = computeCRuntime({
@@ -148,7 +166,7 @@ function buildV2Request({ system, responses, session = null, language = 'nl', oc
 
   // §7: the data block — the server's, never the model's. The page prints it in the report language
   // (English labels on English reports, owner 13 Oct); the model reads it in the prompt's own Dutch terms.
-  const blockInput = { session: s, payload: out.payload, supportEdit, styleTags, ocean };
+  const blockInput = { session: s, payload: out.payload, supportEdit, styleTags, ocean, triangle };
   const modelData = buildDataBlock({ ...blockInput, language: 'nl' });
   const dataBlock = en ? buildDataBlock({ ...blockInput, language: 'en' }) : modelData;
 
@@ -171,7 +189,7 @@ function buildV2Request({ system, responses, session = null, language = 'nl', oc
 
   const user = [
     'Genereer het volledige rapport voor deze gebruiker volgens de systeeminstructies.',
-    en ? englishTitles() : '',
+    en ? englishTitles(system) : '',
     profile,
     formatCPathBlock(cRuntime),
     formatPayloadBlock(out.payload),
@@ -195,6 +213,7 @@ function buildV2Request({ system, responses, session = null, language = 'nl', oc
     session: s,
     styleTags,
     supportEdit,
+    triangle,
     dataBlock,
     promptVersion: promptVersion(system),
     // What the browser receives: the two register curves, the Keuze/Echo graph (§1), the polarisation
@@ -203,10 +222,19 @@ function buildV2Request({ system, responses, session = null, language = 'nl', oc
       enginePayload: { ...(clientPayload(out.payload) || {}), keuze_echo: s.group_view },
       polarization: { polarizationIndex: pts(s.polarizationIndex), polarizationPct: s.polarizationPct, polarizationLevel: s.polarizationLevel },
       profile: profileOf(s),
+      // The triangle figure on the PDF's page 5.7b: which triangle to highlight, how strongly (the band sets the
+      // fill, never printed as a word), the other carrying triangles dashed, the names for the caption — and the
+      // profile's three highest totals as purple points (owner, 17 Oct), so the reader sees where they meet the
+      // triangle. Read from the scoring's one ranking (total, then its tie chain), never re-sorted.
+      triangle: {
+        main: { id: triangle.main.id, name: triangle.main.name, members: triangle.main.members, band: triangle.main.band },
+        others: triangle.others.map(({ id, name, members }) => ({ id, name, members })),
+        top: s.ranking.slice(0, 3),
+      },
     },
     // For the orb code-gen (points, like v1) and the logs.
     archetypeDetails: B.NAMES.map((n) => ({ key: n.toUpperCase(), total: s.totals[n] })),
   };
 }
 
-module.exports = { buildV2Request, scoreV2, promptVersion, CLOSING_LINE };
+module.exports = { buildV2Request, scoreV2, promptVersion, promptAtLeast, CLOSING_LINE };

@@ -448,6 +448,9 @@ const EN_SECTION_TITLES = Object.freeze({
     'REFLECTION',
     'MOTIVATION',
     'MOVEMENT',
+    // Master Prompt v7.2 page 5.7b — handed over only with a v7.2+ prompt (triangleTitles below)
+    'THE COGNITIVE TRIANGLE',
+    'THE FALLACIES OF THE TRIANGLE',
     'THE ALCHEMY OF INDIVIDUATION',
     'THE NEURAL SWITCHBOARD',
     'ONTOLOGICAL EVOLUTION',
@@ -457,10 +460,12 @@ const EN_SECTION_TITLES = Object.freeze({
   machineHeader: 'PROFILE DATA FOR AI PROCESSING',
   machineTags: [
     'IDENTITY', 'SCORES (12-POINT WHEEL)', '5-BASKET DECOMPOSITION', 'NATURE / CULTURE DISTRIBUTION PER GROUP',
-    'DERIVED INDICES', 'OCEAN PROFILE (EXTERNALLY UPLOADED)', 'COGNITIVE TRIANGLE (YELLOW)', 'HARDWARE SIGNALS',
+    'DERIVED INDICES', 'OCEAN PROFILE (EXTERNALLY UPLOADED)', 'COGNITIVE TRIANGLE', 'HARDWARE SIGNALS',
     'EXTENDED ARCHETYPE PROFILE', 'SHADOW INTEGRATION', 'BLINDSPOT',
   ],
   experimentLabels: ['The Focus Lever:', 'The Shadow Injection:', 'The Blindspot Check:'],
+  // The two page-5.7b titles: a prompt before v7.2 has no such sections, so it never gets their titles.
+  triangleTitles: ['THE COGNITIVE TRIANGLE', 'THE FALLACIES OF THE TRIANGLE'],
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -500,7 +505,9 @@ function buildUserMessage({
     parts.push(`\n═══ SECTION TITLES — ENGLISH REPORT (the delivered title set, W8) ═══`);
     parts.push(`Emit each title LITERALLY as its own line, in this order, uppercase as written — these are the parser tags.`);
     parts.push(`The word budgets and every HARD LIMIT of DEEL 5 apply unchanged.`);
-    parts.push(...EN_SECTION_TITLES.narrative.map((x) => (x.startsWith('  ') ? x : `- ${x}`)));
+    // the old test's prompts (v6 and earlier) have no triangle page
+    parts.push(...EN_SECTION_TITLES.narrative.filter((x) => !EN_SECTION_TITLES.triangleTitles.includes(x))
+      .map((x) => (x.startsWith('  ') ? x : `- ${x}`)));
     parts.push(`Machine block (DEEL 6): the header line "${EN_SECTION_TITLES.machineHeader}", then exactly these tags:`);
     parts.push(EN_SECTION_TITLES.machineTags.map((x) => `-- ${x} --`).join(' | '));
     parts.push(`Neural switchboard experiment labels (line starts): ${EN_SECTION_TITLES.experimentLabels.join(' · ')}`);

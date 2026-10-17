@@ -429,6 +429,7 @@ router.post('/analyze', analyzeLimit, uploadCaps, scoringVersionGate, promptGate
     // The request plan. Both branches yield the model input (user, cachedContext) and what the browser
     // draws (engine curves, polarisation, data block), plus the orb code.
     let user, cachedContext, orbCode, clientEngine, clientPolarization, dataBlock = null, clientProfile = null;
+    let clientTriangle = null, reportPromptVersion = null;
     // Who the report is about: v2 reads the server's own scoring, v1 the client's fields.
     let reportMain = archetypeKey, reportSupportGroup = supportGroup, reportExtension = extendedArchetypeName;
     if (req.v2) {
@@ -443,6 +444,9 @@ router.post('/analyze', analyzeLimit, uploadCaps, scoringVersionGate, promptGate
         `style tags ${v7.styleTags.join(', ') || 'none'}; Support-bewerking ${v7.supportEdit}; Support-herkomst ${s.support_herkomst}; ` +
         `prompt_version=${v7.promptVersion} stamps ${JSON.stringify(v7.payload.stamps)}`);
       if (s.tie_breaks.length) console.log('[AI] v2 tie-breaks (logged, never sent):', JSON.stringify(s.tie_breaks));
+      if (s.support !== s.support_by_total) console.log(`[AI] v2 Support margin: ${s.support} (most direct points within 9 %) replaces ${s.support_by_total} (runner-up on total)`);
+      console.log(`[AI] v2 cognitive triangle: Main ${v7.triangle.main.id} ${v7.triangle.main.band}; counter ${v7.triangle.counter.id} ${v7.triangle.counter.band}; `
+        + `other carrying ${v7.triangle.others.map((o) => o.id).join(', ') || 'none'}`);
       // The one scoring result, to the browser before the long model call: the results screen reads it (and
       // keeps it when the report fails); the browser never scores the test itself (owner, 14 Oct).
       clientProfile = v7.client.profile;
@@ -451,6 +455,8 @@ router.post('/analyze', analyzeLimit, uploadCaps, scoringVersionGate, promptGate
       cachedContext = v7.cachedContext;
       clientEngine = v7.client.enginePayload;
       clientPolarization = v7.client.polarization;
+      clientTriangle = v7.client.triangle;
+      reportPromptVersion = v7.promptVersion;
       dataBlock = v7.dataBlock;
       reportMain = s.main.toUpperCase();
       reportSupportGroup = String(v7.payload.geometry.supportGroup).toUpperCase();
@@ -661,6 +667,10 @@ router.post('/analyze', analyzeLimit, uploadCaps, scoringVersionGate, promptGate
       profile: clientProfile,
       // The polarisation (index, %, band) — computed once, above; the browser shows it, never derives it.
       polarization: clientPolarization,
+      // v2: the triangle figure's facts (Master Prompt v7.2 page 5.7b) — bands only, never a lift.
+      triangle: clientTriangle,
+      // v2: the prompt version, so the reader expects the sections that version asks for (19, or 21 from v7.2).
+      promptVersion: reportPromptVersion,
       // Authoritative orb profile code (LC_ORB3_…), radial+purple-gated with the one polar_norm —
       // SEALED (services/sealedCode.js): the browser cannot read it. The raw code is handed over
       // only when the full report is unlocked (payment or activation code). '' when geometry incomplete.

@@ -311,6 +311,29 @@ function rank(totalsU, singlePicks, accU) {
   return { order, tieBreaks };
 }
 
+/** The Support margin (owner, 17 Oct 2026), exact like every other threshold here. */
+const SUPPORT_MARGIN = Object.freeze({ version: 'owner 17 Oct 2026', margin: X.threshold('9/100') });
+
+/**
+ * The Support (owner, 17 Oct 2026): the runner-up on total, unless another archetype (never the Main) lies
+ * within 9 % of that runner-up's total and got more DIRECT points. Then the Support is the archetype with
+ * the most direct points among them. Direct = keuze + passief (a Layer-1 choice is a direct choice too,
+ * owner 13 Oct). So a Support that is more echo than choice only stands when nobody within the margin was
+ * chosen more directly. Equal direct points keep the higher-ranked one. Exact: t within the margin of T ⇔
+ * b × t ≥ (b − a) × T for a margin a/b.
+ * @returns {{ support: number, byTotal: number }} wheel positions
+ */
+function pickSupport(order, totalsU, accU) {
+  const [, byTotal, ...rest] = order;
+  const [a, b] = SUPPORT_MARGIN.margin;
+  const direct = (p) => accU[p].keuze + accU[p].passief;
+  let support = byTotal;
+  for (const p of rest) {                       // ranking order, so a tie on direct points keeps the higher rank
+    if (b * totalsU[p] >= (b - a) * totalsU[byTotal] && direct(p) > direct(support)) support = p;
+  }
+  return { support, byTotal };
+}
+
 /**
  * One completed v2 session → everything §3.4 lists. Engine-facing values are integer units (`totals_u`,
  * `mandjes_u`; the unit is `unit`); `totals` and `mandjes` are the same values in points, for display.
@@ -325,7 +348,8 @@ function scoreSession(responses) {
   for (const [, picks] of questions) if (picks.length === 1) singlePicks[picks[0]] += 1;
 
   const { order, tieBreaks } = rank(totalsU, singlePicks, accU);
-  const [main, support] = order;
+  const main = order[0];
+  const { support, byTotal } = pickSupport(order, totalsU, accU);
   const shadow = purple(main);
   const named = (o) => Object.fromEntries(POSITIONS.map((p) => [byPos(p), o[p]]));
   return {
@@ -342,6 +366,7 @@ function scoreSession(responses) {
     ranking: order.map(byPos),
     main: byPos(main),
     support: byPos(support),
+    support_by_total: byPos(byTotal),           // the runner-up on total; differs from support when the margin rule chose
     support_herkomst: supportHerkomst(accU, support),
     shadow: byPos(shadow),
     tetrad: groupOf[main] === groupOf[support] && TETRAD_GROUPS.includes(groupOf[main]),
@@ -386,5 +411,5 @@ module.exports = {
   SCORING_VERSION, CONFIG, UNIT, PICK_U, FB_U, deriveUnit, toPoints, CHANNEL_CEILING_U, validStates,
   NAMES, GROUPS, BASKETS, ECHO, groupOf, posOf, byPos, sibling, purple, blue, yellow,
   scoreQuestion, questionUnits, testUnits, questionBaskets, testBaskets, toScoringInput, parseResponse,
-  groupView, payloadBlock, scoreSession, rank, supportHerkomst, BleedInputError,
+  groupView, payloadBlock, scoreSession, rank, SUPPORT_MARGIN, pickSupport, supportHerkomst, BleedInputError,
 };

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { LanguageProvider, useLanguage } from '@gfl/i18n';
 import AdminDashboardModal from '@gfl/admin-ui';
-import { login, getMe, getToken, logout } from '@gfl/api-client';
+import { login, getMe, getToken, logout, checkServerHealth } from '@gfl/api-client';
 import { SciFiButton, INPUT, FIELD_LABEL, CornerAccents, FONT, inputFocus, inputBlur } from '@gfl/ui';
 
 /** Installed app only (window.gflAdmin): "new version ready — restart". The update comes from the private feed. */
@@ -38,14 +38,43 @@ function Shell() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // The server did not answer at start (asleep, restarting, deploying): the session is kept, not ended.
+  const [offline, setOffline] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const [waking, setWaking] = useState(false);
 
-  useEffect(() => {
-    if (!getToken()) { setChecking(false); return; }
-    getMe()
-      .then((u) => { if (u && u.role === 'admin') setUser(u); else logout(); })
-      .catch(() => logout())
-      .finally(() => setChecking(false));
+  // Resume the saved session. Only the server saying the session is invalid (a 401, on which getMe clears the
+  // token) or an account without management rights ends it. Any other failure — no answer, a 502 while the host
+  // restarts — keeps the token and shows the start screen below, which wakes the server and asks again
+  // (owner, 19 Oct: a restart used to log you out).
+  const resume = useCallback(async () => {
+    if (!getToken()) { setOffline(false); setChecking(false); return; }
+    try {
+      const u = await getMe();
+      if (u && u.role === 'admin') setUser(u); else logout();
+      setOffline(false);
+    } catch {
+      if (getToken()) { setOffline(true); setAttempt((n) => n + 1); } else setOffline(false);
+    } finally {
+      setChecking(false);
+    }
   }, []);
+  useEffect(() => { resume(); }, [resume]);
+
+  // While the server does not answer: wake it and ask again, every 10 s.
+  useEffect(() => {
+    if (!offline) return undefined;
+    let alive = true;
+    const timer = setTimeout(async () => { await checkServerHealth(); if (alive) resume(); }, 10000);
+    return () => { alive = false; clearTimeout(timer); };
+  }, [offline, attempt, resume]);
+
+  const retryNow = useCallback(async () => {
+    setWaking(true);
+    await checkServerHealth();
+    await resume();
+    setWaking(false);
+  }, [resume]);
 
   const submit = useCallback(async (e) => {
     e.preventDefault();
@@ -67,7 +96,7 @@ function Shell() {
     }
   }, [email, password, t]);
 
-  const signOut = useCallback(() => { logout(); setUser(null); }, []);
+  const signOut = useCallback(() => { logout(); setUser(null); setOffline(false); }, []);
 
   // Installed app: the updater's private feed only answers a management session.
   useEffect(() => {
@@ -76,6 +105,33 @@ function Shell() {
 
   if (checking) return null;
   if (user) return (<><AdminDashboardModal user={user} onLogout={signOut} onClose={signOut} /><UpdateBar /></>);
+
+  if (offline) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 1rem', background: '#0a0510' }}>
+        <div role="status" style={{
+          position: 'relative', width: '100%', maxWidth: '28rem', padding: '1.5rem', borderRadius: '0.5rem',
+          background: 'rgba(2, 0, 3, 0.3)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+          boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), inset 0 0 12px rgba(168,85,247,0.06)',
+          display: 'flex', flexDirection: 'column', gap: '0.9rem',
+        }}>
+          <CornerAccents color="#a855f7" />
+          <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: 'max(16px, 0.9vw)', letterSpacing: '0.16em', textTransform: 'uppercase', color: '#a855f7' }}>
+            {t('admin.server.startTitle')}
+          </div>
+          <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(12px, 0.65vw)', lineHeight: 1.6, color: '#FFFEF0' }}>
+            {t('admin.server.startText')}
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <SciFiButton size="sm" variant="purple" disabled={waking} onClick={retryNow}>
+              {waking ? t('admin.server.waking') : t('admin.server.retry')}
+            </SciFiButton>
+            <SciFiButton size="sm" variant="white" onClick={signOut}>{t('admin.server.logout')}</SciFiButton>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 1rem', background: '#0a0510' }}>

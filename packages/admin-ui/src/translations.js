@@ -67,6 +67,25 @@ export default {
       check: { nl: 'Controleren op updates', en: 'Check for updates' },
       restartUpdate: { nl: 'Herstarten en bijwerken', en: 'Restart and update' },
     },
+    // Waking the server from the header (ServerWake.jsx) and the start screen when the server does not answer yet
+    // (apps/admin App.jsx) — owner, 19 Oct: a sleeping or restarting server never logs you out.
+    server: {
+      wake: { nl: 'Server wekken', en: 'Wake server' },
+      wakeHint: {
+        nl: 'Maakt de server wakker en laadt dit tabblad opnieuw. Je blijft ingelogd.',
+        en: 'Wakes the server and loads this tab again. You stay logged in.',
+      },
+      waking: { nl: 'Server wordt gewekt…', en: 'Waking the server…' },
+      awake: { nl: 'Server is wakker', en: 'Server is awake' },
+      down: { nl: 'Server reageert niet', en: 'Server is not responding' },
+      startTitle: { nl: 'Server wordt gewekt', en: 'Waking the server' },
+      startText: {
+        nl: 'De server reageert nog niet, bijvoorbeeld na een herstart of een update. Je bent nog ingelogd; zodra hij antwoordt, opent het dashboard vanzelf.',
+        en: 'The server is not answering yet, for example after a restart or an update. You are still logged in; the dashboard opens by itself as soon as it answers.',
+      },
+      retry: { nl: 'Nu opnieuw proberen', en: 'Try again now' },
+      logout: { nl: 'Uitloggen', en: 'Log out' },
+    },
 
     /* ═══════════ Management app login (apps/admin) ═══════════ */
     login: {

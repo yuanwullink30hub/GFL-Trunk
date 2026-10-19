@@ -47,6 +47,7 @@ import {
   HOLO_PAGE_BG, HOLO_PAGE_BG_SIZE, HOLO_BAR, HOLO_PANEL, HOLO_TABLE_HEAD, CHROME, gradientText, TITLE_GRADIENT, PURPLE,
 } from './holo';
 import { AppUpdateControl } from './AppUpdate';
+import { ServerWakeControl } from './ServerWake';
 import QuestionBankEditor from './QuestionBankEditor';
 
 // ── Responsive context ──
@@ -178,6 +179,9 @@ class TabBoundary extends React.Component {
 const AdminDashboardModal = memo(({ user, onLogout }) => {
   const { t, language } = useLanguage();
   const [tab, setTab] = useState('overview');
+  // Bumped when the server was woken from the header: the open tab mounts again and fetches afresh.
+  const [tabLoad, setTabLoad] = useState(0);
+  const reloadTab = useCallback(() => setTabLoad((n) => n + 1), []);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
@@ -310,6 +314,8 @@ const AdminDashboardModal = memo(({ user, onLogout }) => {
               <span style={{ color: '#c084fc', textTransform: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
+              {/* Wake the server; once it answers, the open tab loads again (owner, 19 Oct) */}
+              <ServerWakeControl onAwake={reloadTab} />
               {/* Installed app only: its version, update status and the check / restart button */}
               <AppUpdateControl />
               <HoloClock />
@@ -403,7 +409,7 @@ const AdminDashboardModal = memo(({ user, onLogout }) => {
           )}
 
           {/* ── Tab content — a tab that throws shows its error here; header and tabs stay usable ── */}
-          <TabBoundary key={tab}>
+          <TabBoundary key={`${tab}:${tabLoad}`}>
           {tab === 'overview' && <OverviewTab user={user} />}
           {tab === 'users' && <UsersTab currentUserId={user.id} />}
           {tab === 'assessments' && <AssessmentsTab adminEmail={user?.email} />}

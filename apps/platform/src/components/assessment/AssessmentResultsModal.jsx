@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 // html2canvas + jsPDF are lazy-loaded inside handleDownloadPdf (export click) so the
 // ~250 KB gz export-vendor chunk stays out of the results-modal mount.
 import SciFiRadarChart from './SciFiRadarChart';
+import FitTitle from './FitTitle';
 import SubgroupCounters from './SubgroupCounters';
 import { getResultsSizes } from './assessmentSizes';
 import {
@@ -1142,10 +1143,12 @@ const AssessmentResultsModal = ({
       const TRI_POSITIONS = { D1: [1, 5, 9], D2: [2, 6, 10], D3: [3, 7, 11], D4: [4, 8, 12] };
       const WHEEL_KEYS = ['judge', 'lover', 'caregiver', 'innocent', 'explorer', 'outlaw', 'trickster', 'sage', 'artist', 'magician', 'hero', 'ruler'];
       const mixBg = (c, a) => c.map((v, i) => Math.round(bg[i] + (v - bg[i]) * a));
-      const drawTriangleFigure = (fig) => {
+      // The figure's full height (owner, 19 Oct: 10 % smaller than the first 38 %); the page may shrink it further so
+      // its text never moves to a next page.
+      const TRI_FIG_H = (H - 2 * margin) * 0.38 * 0.9;
+      const drawTriangleFigure = (fig, boxH = TRI_FIG_H) => {
         const labels = tArray('resultsModal.pdf.triangle.wheel');
         const local = (name) => labels[WHEEL_KEYS.indexOf(String(name).toLowerCase())] || name;
-        const boxH = (H - 2 * margin) * 0.38;
         const r = boxH * 0.36;                                  // room around the wheel for the labels
         const cx = W / 2, cy = y + boxH / 2;
         const angle = (p) => (p * Math.PI) / 6;                // 12 → 0 (top), 6 → π (bottom), clockwise
@@ -1195,11 +1198,37 @@ const AssessmentResultsModal = ({
           pdf.setFont('helvetica', member ? 'bold' : 'normal'); pdf.setTextColor(...(member || top || dashedMember ? cream : mutedGray));
           pdf.text(name, x0 + wNum, baseline);
         }
+        // The synergy's name inside the wheel (owner, 19 Oct), on three lines — "De" / the adjective / the noun —
+        // in the largest size whose lines all stay inside the inner dodecagon the four triangles leave open (its
+        // inradius is r / 2: an equilateral triangle's inradius is half its circumradius). Each line's corners
+        // must lie within that circle, with a little air; capped at 11 pt.
+        const words = sanitizePdf(fig.main.name || '').split(/\s+/).filter(Boolean);
+        const nameLines = words.length >= 3 ? [words[0], words.slice(1, -1).join(' '), words[words.length - 1]] : words;
+        if (nameLines.length) {
+          const inner = (r / 2) * 0.92;
+          pdf.setFont('helvetica', 'bold');
+          let size = 11;
+          const fits = (s) => {
+            pdf.setFontSize(s);
+            const lh = s * 0.3528 * 1.18, half = s * 0.3528 * 0.36;   // line pitch and half the cap height, mm
+            return nameLines.every((ln, i) => {
+              const yc = (i - (nameLines.length - 1) / 2) * lh;
+              const hw = pdf.getTextWidth(ln) / 2, vy = Math.abs(yc) + half;
+              return hw * hw + vy * vy <= inner * inner;
+            });
+          };
+          while (size > PDF_MIN_FONT && !fits(size)) size -= 0.25;
+          pdf.setFontSize(size); pdf.setTextColor(...cream);
+          const lh = size * 0.3528 * 1.18;
+          nameLines.forEach((ln, i) => {
+            const yc = cy + (i - (nameLines.length - 1) / 2) * lh;
+            pdf.text(ln, cx, yc + size * 0.3528 * 0.36, { align: 'center' });
+          });
+        }
         y += boxH + 1;
 
-        // Caption: the synergy name, its three members in wheel order, and a dimmed line per dashed triangle.
-        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10.5); pdf.setTextColor(...cream);
-        pdf.text(sanitizePdf(fig.main.name || ''), W / 2, y, { align: 'center' }); y += 4.6;
+        // Caption: the triangle's three members in wheel order, the purple-points key, and a dimmed line per
+        // dashed triangle (the name itself stands inside the wheel).
         pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(...dimWhite);
         // " · " is in WinAnsi (0xB7), so it prints as itself — the names come from our own label list
         pdf.text(mainPs.map((p) => local(WHEEL_KEYS[p - 1])).join(' · '), W / 2, y, { align: 'center' }); y += 4.2;
@@ -3042,12 +3071,35 @@ const AssessmentResultsModal = ({
           const endTriangle = trackBlock('nb_triangle');
           if (triangleSections.length > 0) {
             const triOrder = (s) => (/drogredenen/i.test(cleanTitle(s.title || '')) ? 1 : 0);
+            const ordered = triangleSections.slice().sort((a, b) => triOrder(a) - triOrder(b));
+            const writeText = () => ordered.forEach((section, i) => {
+              if (i > 0) hr();
+              renderSectionFlow(shownTitle(section), section.content, triYellow);
+            });
+            // One page, always (owner, 19 Oct): the text is measured first on a throwaway page; the figure takes
+            // what is left (at most its own size, at least 55 % of it), and the text then runs to the page's edge
+            // with no page break — never onto a next page.
+            let figH = TRI_FIG_H;
+            if (triangleFigure?.main) {
+              const savedY = y, savedNPB = noPageBreak, savedPWC = new Set(pagesWithContent);
+              pdf.addPage(); paintBg();
+              const tmpPg = pdf.internal.getNumberOfPages();
+              y = margin; noPageBreak = true;
+              writeText();
+              const textH = y - margin;
+              pdf.deletePage(tmpPg);
+              pagesWithContent.clear(); savedPWC.forEach((p) => pagesWithContent.add(p));
+              y = savedY; noPageBreak = savedNPB;
+              const captionH = 4.2 + (triangleFigure.top?.length ? 3.8 : 0) + (triangleFigure.others?.length ? 3.8 : 0) + 3 + 1;
+              const room = (H - 2 * margin) - captionH - textH;
+              figH = Math.max(TRI_FIG_H * 0.55, Math.min(TRI_FIG_H, room));
+            }
             await justifiedPage(async () => {
-              if (triangleFigure?.main) drawTriangleFigure(triangleFigure);
-              triangleSections.slice().sort((a, b) => triOrder(a) - triOrder(b)).forEach((section, i) => {
-                if (i > 0) hr();
-                renderSectionFlow(shownTitle(section), section.content, triYellow);
-              });
+              const savedNPB = noPageBreak;
+              noPageBreak = true;
+              if (triangleFigure?.main) drawTriangleFigure(triangleFigure, figH);
+              writeText();
+              noPageBreak = savedNPB;
             });
           }
           endTriangle();
@@ -3957,8 +4009,8 @@ const AssessmentResultsModal = ({
                   </div>
 
                   <div style={{ maxWidth: rs.profileTextMaxW }}>
-                    <h1 style={{
-                      fontSize: rs.titleFont,
+                    {/* The configuration's name, shrunk only as far as its longest word needs (FitTitle) */}
+                    <FitTitle text={extNameShown || result.name} fontSize={rs.titleFont} style={{
                       fontFamily: "'Lexend Mega', sans-serif",
                       fontWeight: 'bold',
                       background: 'linear-gradient(to right, #a855f7, #d8b4fe, #a855f7)',
@@ -3967,9 +4019,7 @@ const AssessmentResultsModal = ({
                       backgroundClip: 'text',
                       filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.5))',
                       marginBottom: '0.5rem',
-                    }}>
-                      {extNameShown || result.name}
-                    </h1>
+                    }} />
                     {result.mainName && result.secondaryName && (
                       <p style={{
                         fontSize: '0.9rem',

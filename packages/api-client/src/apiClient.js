@@ -1081,15 +1081,18 @@ export async function loadQuestionLayers() {
  * The two-layer Leerling plan for this quarter, as GET /api/questions/two-layer returns it ({ enabled: false } when
  * that test is off). Same source order as loadQuestionLayers; from the file, the plan for this quarter's label.
  */
-export async function loadTwoLayerPlan() {
+export async function loadTwoLayerPlan(level = 'leerling') {
   const fromFile = async () => {
     const f = await fetchPublishedQuestions();
     if (!f.twoLayer?.enabled) return { enabled: false };
-    const plan = f.twoLayer.plans?.[quarterNow()];
+    // Leerling is `plans` in every file; other levels sit in `plansByLevel` (Gevorderd since 21 Oct).
+    const plans = level === 'leerling' ? f.twoLayer.plans : f.twoLayer.plansByLevel?.[level];
+    const plan = plans?.[quarterNow()];
     if (!plan) throw new Error('No published plan for this quarter'); // file older than its quarters: ask the backend
     return plan;
   };
-  const order = ON_LOCALHOST ? [getTwoLayerQuestions, fromFile] : [fromFile, getTwoLayerQuestions];
+  const fromServer = () => getTwoLayerQuestions(level);
+  const order = ON_LOCALHOST ? [fromServer, fromFile] : [fromFile, fromServer];
   try { return await order[0](); } catch { return order[1](); }
 }
 
@@ -1098,8 +1101,8 @@ export async function loadTwoLayerPlan() {
  * @returns {Promise<{ enabled: boolean, rotation_sequence_id?: string, placeholder?: boolean,
  *   subjects?: { subject: string, questions: object[] }[] }>}  `enabled: false` while the server has it off
  */
-export async function getTwoLayerQuestions() {
-  const response = await fetch(`${API_BASE}/questions/two-layer`);
+export async function getTwoLayerQuestions(level = 'leerling') {
+  const response = await fetch(`${API_BASE}/questions/two-layer${level === 'leerling' ? '' : `?level=${encodeURIComponent(level)}`}`);
   if (!response.ok) throw new Error(`Two-layer questions fetch failed (${response.status})`);
   return response.json();
 }

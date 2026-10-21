@@ -1396,8 +1396,8 @@ const PromptsTabContent = memo(({ slot, hintKey }) => {
   );
 });
 
-// The level sub-tabs. Leerling opens the two-layer question bank editor (QuestionBankEditor.jsx); Beginner and
-// Gevorderd take the same Leerling questions for now (owner, 15 Oct), so they have no bank of their own yet.
+// The level sub-tabs. Leerling and Gevorderd (since 21 Oct) open the two-layer question bank editor
+// (QuestionBankEditor.jsx) on their own bank; Beginner takes the Leerling questions for now, so it has no bank yet.
 // The old test's editor was removed (owner, 16 Oct 2026).
 const LEVEL_TABS = [
   { key: 'beginner', label: 'Beginner' },
@@ -1420,8 +1420,8 @@ const QuestionsTab = memo(() => {
         ))}
       </div>
 
-      {level === 'advanced' ? (
-        <QuestionBankEditor level="leerling" />
+      {level === 'advanced' || level === 'intermediate' ? (
+        <QuestionBankEditor key={level} level={level === 'advanced' ? 'leerling' : 'gevorderd'} />
       ) : (
         <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
           <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: C.gold, marginBottom: '0.8rem' }}>

@@ -2,7 +2,8 @@
  * Garden For Life — Assessment Questions Routes
  *
  * GET    /api/questions                        — The old test's layers (public; read-only since 16 Oct 2026)
- * GET    /api/questions/two-layer              — The two-layer bank in this quarter's rotation order (public)
+ * GET    /api/questions/two-layer?level=…      — A level's two-layer bank in this quarter's rotation order (public;
+ *                                                 leerling unless level=gevorderd)
  * POST   /api/questions/publish                — Publish the public questions file to R2 now (admin)
  * GET    /api/questions/bank/:level            — The two-layer bank's drafts for the admin editor (admin)
  * PATCH  /api/questions/bank/:level/:id        — Save part of one question, pinned to its version (admin)
@@ -13,7 +14,7 @@
  */
 const { Router } = require('express');
 const { collections } = require('../db');
-const { twoLayerPlan, loadPublishedBank, bankSource, servedQuestion } = require('../services/twoLayerBank');
+const { twoLayerPlan, loadPublishedBank, bankSource, servedQuestion, LEVELS: BANK_LEVELS } = require('../services/twoLayerBank');
 const { publishQuestions } = require('../services/questionsPublisher');
 const bankStore = require('../services/questionBankStore');
 const { authRequired, adminRequired } = require('../middleware/auth');
@@ -43,13 +44,16 @@ router.get('/', async (_req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/questions/two-layer — Public: the two-layer Leerling bank in this quarter's rotation order
-// (services/twoLayerBank.js). Always on: the owner switched the test live on 16 Oct, without a switch.
+// GET /api/questions/two-layer — Public: a level's two-layer bank in this quarter's rotation order
+// (services/twoLayerBank.js): ?level=gevorderd, otherwise Leerling. Always on: the owner switched the test live
+// on 16 Oct, without a switch; Gevorderd has its own bank since 21 Oct.
 // ─────────────────────────────────────────────────────────────
 
-router.get('/two-layer', (_req, res) => {
+router.get('/two-layer', (req, res) => {
+  const level = req.query.level ? String(req.query.level) : 'leerling';
+  if (!BANK_LEVELS.includes(level)) return res.status(404).json({ error: `no two-layer bank for level ${level}` });
   try {
-    res.json(twoLayerPlan());
+    res.json(twoLayerPlan(new Date(), level));
   } catch (err) {
     console.error('[Questions] Two-layer plan error:', err.message);
     res.status(500).json({ error: 'Failed to load the two-layer test' });
@@ -73,7 +77,7 @@ router.post('/publish', authRequired, adminRequired, async (_req, res) => {
 
 /** Does this draft read exactly like the question the test serves now? */
 function isLive(draft) {
-  const served = servedQuestion(draft.question_id);
+  const served = servedQuestion(draft.question_id, draft.level);
   if (!served) return false;
   const q = bankStore.bankQuestionOf(draft);
   return served.text === q.text
@@ -81,7 +85,7 @@ function isLive(draft) {
     && q.l2_answers.every((a) => (served.l2_answers.find((x) => x.archetype === a.archetype) || {}).text === a.text);
 }
 
-const withLive = (d) => ({ ...d, live: d.level === 'leerling' ? isLive(d) : false });
+const withLive = (d) => ({ ...d, live: BANK_LEVELS.includes(d.level) ? isLive(d) : false });
 
 function sendBankError(res, err, what) {
   if (err instanceof bankStore.BankError) {
@@ -102,7 +106,7 @@ router.get('/bank/:level', authRequired, adminRequired, async (req, res) => {
       archetypes: bankStore.ARCHETYPES.map((a) => ({ name: a, group: bankStore.GROUP_OF[a] })),
       questions: questions.map(withLive),
       published: snap ? { revision: snap.revision, publishedAt: snap.publishedAt, publishedBy: snap.publishedBy } : null,
-      serving: bankSource(),
+      serving: bankSource(req.params.level),
     });
   } catch (err) {
     sendBankError(res, err, 'Loading the question bank');

@@ -7,9 +7,10 @@
  *
  * The file holds what GET /api/questions and GET /api/questions/two-layer return today:
  *   layers     the old test's question layers from the database (read-only since 16 Oct), without internal fields
- *   twoLayer   { enabled: true, plans }: the bank's plan for the current quarter and the seven after it
- *              (plans by quarter label), so a quarter switch needs no backend
- *              either — the platform picks the plan for its own quarter (Europe/Amsterdam)
+ *   twoLayer   { enabled: true, plans, plansByLevel }: each bank's plan for the current quarter and the seven after
+ *              it (by quarter label), so a quarter switch needs no backend either — the platform picks the plan for
+ *              its own quarter (Europe/Amsterdam). `plans` is Leerling's (what every app version reads);
+ *              `plansByLevel` holds every level with a bank of its own (leerling, gevorderd since 21 Oct)
  *
  * Without R2 configured (services/r2.js) publishing is a logged no-op and the platform keeps asking the backend.
  */
@@ -18,7 +19,7 @@
 
 const { collections } = require('../db');
 const { putObject, r2Enabled } = require('./r2');
-const { twoLayerPlanFor, quartersFrom } = require('./twoLayerBank');
+const { twoLayerPlanFor, quartersFrom, LEVELS } = require('./twoLayerBank');
 
 const KEY = 'questions/questions.json';
 const PUBLIC_URL = (process.env.QUESTIONS_PUBLIC_URL || 'https://downloads.gardenforlife.nl/questions/questions.json');
@@ -28,8 +29,9 @@ const QUARTERS_AHEAD = 8;
 async function buildQuestionsFile(now = new Date()) {
   const layers = (await collections.questions().find({}).sort({ layerIndex: 1 }).toArray())
     .map(({ _id, updatedAt, updatedBy, createdAt, ...rest }) => rest);
-  const plans = Object.fromEntries(quartersFrom(now, QUARTERS_AHEAD).map((q) => [q, twoLayerPlanFor(q)]));
-  const twoLayer = { enabled: true, plans };
+  const quarters = quartersFrom(now, QUARTERS_AHEAD);
+  const plansByLevel = Object.fromEntries(LEVELS.map((level) => [level, Object.fromEntries(quarters.map((q) => [q, twoLayerPlanFor(q, level)]))]));
+  const twoLayer = { enabled: true, plans: plansByLevel.leerling, plansByLevel };
   return { schema: 1, publishedAt: now.toISOString(), layers, seeded: layers.length > 0, twoLayer };
 }
 

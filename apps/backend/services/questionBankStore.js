@@ -18,7 +18,8 @@
 const { getDB } = require('../db');
 const { GROUPS: GROUP_POSITIONS, NAMES } = require('../engine/bleedV2');
 
-const BANK_FILES = { leerling: '../engine/data/question_bank_leerling_v1_0.json' };
+// The levels with a bank of their own (services/twoLayerBank.js serves the same files). Gevorderd since 21 Oct 2026.
+const { BANK_FILES } = require('./twoLayerBank');
 const LEVELS = Object.freeze(Object.keys(BANK_FILES));
 /** Canonical order: groups as on the wheel, each with its two archetypes (the bank file's order). */
 const GROUPS = Object.keys(GROUP_POSITIONS);

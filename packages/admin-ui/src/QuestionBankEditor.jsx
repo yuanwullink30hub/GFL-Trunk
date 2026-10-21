@@ -311,7 +311,7 @@ const QuestionCard = memo(function QuestionCard({ level, question, subjectLabel,
   );
 });
 
-const LEVEL_LABELS = { leerling: 'Leerling' };
+const LEVEL_LABELS = { leerling: 'Leerling', gevorderd: 'Gevorderd' };
 
 export default function QuestionBankEditor({ level = 'leerling' }) {
   const { t, tFunc, language } = useLanguage();

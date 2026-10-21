@@ -194,7 +194,7 @@ function warmAssessmentImages() {
   _warmedAssessmentImgs = ASSESSMENT_WARM_IMAGES.map((src) => { const img = new Image(); img.src = src; return img; });
 }
 
-/** The two-layer plan with every answer text emptied (Beginner / Gevorderd until their own sheets exist). */
+/** The two-layer plan with every answer text emptied (Beginner until its own sheet exists; Gevorderd when its plan did not load). */
 function withoutAnswerTexts(plan) {
   if (!plan) return plan;
   const blank = (a) => ({ ...a, text: '', ...(a.textEn !== undefined ? { textEn: '' } : {}) });
@@ -401,11 +401,17 @@ const App = () => {
   // when the server has it on. A Leerling test LOCKS the plan it started with (Rotation Sequence §2), so a
   // quarter switch mid-test never changes its order; the other levels keep the old test.
   const twoLayerPlanRef = useRef(null);
+  // Gevorderd's own bank (owner, 21 Oct): its own questions and answers, its own rotation sequence.
+  const gevorderdPlanRef = useRef(null);
   const [activeTwoLayerPlan, setActiveTwoLayerPlan] = useState(null);
   const loadTwoLayerPlan = useCallback(() => {
+    const usable = (plan) => (plan?.enabled && plan.subjects?.length === 5 ? plan : null);
     fetchTwoLayerPlan()
-      .then((plan) => { if (plan?.enabled && plan.subjects?.length === 5) twoLayerPlanRef.current = plan; })
+      .then((plan) => { if (usable(plan)) twoLayerPlanRef.current = plan; })
       .catch(() => {}); // the old test stays
+    fetchTwoLayerPlan('gevorderd')
+      .then((plan) => { if (usable(plan)) gevorderdPlanRef.current = plan; })
+      .catch(() => {}); // Gevorderd falls back to the Leerling cards without answer texts
   }, []);
   useEffect(() => { loadTwoLayerPlan(); }, [loadTwoLayerPlan]);
 
@@ -416,7 +422,7 @@ const App = () => {
     if (assessmentPhase !== 'intro') return;
     pingBackend();
     if (!liveSubjectsRef.current.length) loadQuestions();
-    if (!twoLayerPlanRef.current) loadTwoLayerPlan();
+    if (!twoLayerPlanRef.current || !gevorderdPlanRef.current) loadTwoLayerPlan();
   }, [assessmentPhase, loadQuestions, loadTwoLayerPlan]);
 
   // Get total questions based on level — uses actual layer counts from MongoDB
@@ -1124,9 +1130,12 @@ const App = () => {
     // Reset assessment state immediately (while intro shrinks)
     setAssessmentLevel(levelId);
     // Every level takes the two-layer test (owner, 15 Oct): the same cards; the levels differ in timer and Layer-2 back.
-    // Beginner and Gevorderd have no answer sheet of their own yet, so their cards show no written answers
-    // (owner, 16 Oct): the Leerling questions, every answer box empty.
-    setActiveTwoLayerPlan(levelId === 'deep' ? twoLayerPlanRef.current : withoutAnswerTexts(twoLayerPlanRef.current));
+    // Leerling and Gevorderd (since 21 Oct) take their own bank. Beginner has no sheet yet, so its cards show no
+    // written answers (owner, 16 Oct): the Leerling questions, every answer box empty — as Gevorderd does when its
+    // plan could not be loaded.
+    setActiveTwoLayerPlan(levelId === 'deep' ? twoLayerPlanRef.current
+      : levelId === 'standard' && gevorderdPlanRef.current ? gevorderdPlanRef.current
+        : withoutAnswerTexts(twoLayerPlanRef.current));
     setCurrentSubjectIndex(0);
     setCurrentQuestionIndex(0);
     setAssessmentAnswers([]);

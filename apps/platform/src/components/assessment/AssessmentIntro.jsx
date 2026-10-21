@@ -1100,6 +1100,9 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
             <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'}`} style={{ gap: s.levelsGap }}>
               {levels.map((level) => {
                 const isLocked = false; // all three levels open (owner, 15 Oct)
+                // Beginner is held back while its question sheet is written (owner, 21 Oct): the card looks as
+                // it always does, but a click starts nothing. Remove this line to open it again.
+                const isInert = level.id === 'quick';
                 const serverWait = serverStatus !== 'ok'; // the levels wait for the server check (owner, 17 Oct)
                 return (
                   <div key={level.id} style={{ position: 'relative', width: '90%', margin: '0 auto' }}>
@@ -1150,7 +1153,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                       )}
                     </span>
                     <SciFiButton
-                      onClick={(e) => !isLocked && !serverWait && openConsent(level.id, e)}
+                      onClick={(e) => !isLocked && !isInert && !serverWait && openConsent(level.id, e)}
                       color="#f97316"
                       rgb="249, 115, 22"
                       size="lg"

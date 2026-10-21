@@ -197,8 +197,8 @@ export default {
       questions: {
         heading: { nl: 'VRAGEN', en: 'QUESTIONS' },
         levelShared: {
-          nl: 'Beginner en Gevorderd gebruiken voorlopig dezelfde vragen als Leerling. Hun eigen vragenbank volgt.',
-          en: 'Beginner and Intermediate use the Apprentice questions for now. Their own question bank will follow.',
+          nl: 'Beginner gebruikt voorlopig dezelfde vragen als Leerling, zonder antwoordteksten. Zijn eigen vragenbank volgt.',
+          en: 'Beginner uses the Apprentice questions for now, without answer texts. Its own question bank will follow.',
         },
       },
 

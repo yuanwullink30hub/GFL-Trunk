@@ -131,3 +131,53 @@ test('the served bank only accepts the ratified question ids', () => {
   bank.questions[0].question_id = 'leerling-zelf_zonde-99';
   assert.throws(() => useBank(bank, { kind: 'published' }), /ratified question ids/);
 });
+
+test('Gevorderd has its own bank (owner, 21 Oct): served by level, edited and published apart from Leerling', async () => {
+  const admin = await account('admin');
+  const G1 = 'gevorderd-zelf_zonde-01';
+  const gBank = require('../engine/data/question_bank_gevorderd_v1_0.json');
+
+  // the public plan by level: its own questions, its own rotation sequence; an unknown level is refused
+  let r = await call('GET', '/api/questions/two-layer?level=gevorderd');
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.level, 'gevorderd');
+  assert.match(r.body.rotation_sequence_id, /^gevorderd:\d{4}-Q\d:[0-9a-f]{12}$/);
+  assert.deepEqual(r.body.subjects.map((s) => s.questions.length), [9, 9, 6, 6, 6]);
+  const servedG = () => r.body.subjects.flatMap((s) => s.questions).find((q) => q.id === G1);
+  assert.equal(servedG().text, gBank.questions[0].text);
+  assert.ok(servedG().l1.every((a) => a.text.length > 0) && servedG().l2.every((a) => a.text.length > 0));
+  assert.equal((await call('GET', '/api/questions/two-layer?level=beginner')).status, 404);
+  const leerling = await call('GET', '/api/questions/two-layer');
+  assert.equal(leerling.body.level, 'leerling');
+
+  // the editor opens Gevorderd: 36 drafts from its own file, all live
+  r = await call('GET', '/api/questions/bank/gevorderd', { token: admin });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.questions.length, 36);
+  assert.ok(r.body.questions.every((q) => q.live && q.level === 'gevorderd'));
+  assert.equal(r.body.serving.kind, 'file');
+
+  // an edit and a publish change Gevorderd only
+  r = await call('PATCH', `/api/questions/bank/gevorderd/${G1}`, { token: admin, body: { version: 1, text: 'Een nieuwe Gevorderd-vraag?' } });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await call('POST', '/api/questions/bank/gevorderd/publish', { token: admin });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await call('GET', '/api/questions/two-layer?level=gevorderd');
+  assert.equal(servedG().text, 'Een nieuwe Gevorderd-vraag?');
+  const after = await call('GET', '/api/questions/two-layer');
+  assert.deepEqual(after.body, leerling.body, 'Leerling is untouched by a Gevorderd publish');
+});
+
+test('every level with a bank has a valid rotation for the next eight quarters', () => {
+  const B = require('../services/twoLayerBank');
+  assert.deepEqual(B.LEVELS, ['leerling', 'gevorderd']);
+  for (const level of B.LEVELS) {
+    for (const q of B.quartersFrom(new Date(), 8)) {
+      const plan = B.twoLayerPlanFor(q, level);
+      assert.equal(plan.level, level);
+      assert.equal(plan.subjects.flatMap((s) => s.questions).length, 36, `${level} ${q}`);
+    }
+  }
+  const { buildQuestionsFile } = require('../services/questionsPublisher');
+  assert.equal(typeof buildQuestionsFile, 'function');
+});

@@ -25,7 +25,7 @@ test('plan → card records → response records → the server scores them', as
   assert.equal(plan.placeholder, false);
   const all = plan.subjects.flatMap((s) => s.questions);
   assert.equal(all.reduce((n, q) => n + q.l1.length + q.l2.length, 0), 648);
-  assert.equal(all.find((q) => q.id === 'leerling-zelf_zonde-01').text, 'Wat vergeef je jezelf het moeilijkst?');
+  assert.equal(all.find((q) => q.id === 'leerling-zelf_zonde-01').text, require('../engine/data/question_bank_leerling_v1_0.json').questions[0].text);
   assert.match(plan.rotation_sequence_id, /^leerling:\d{4}-Q[1-4]:[0-9a-f]{12}$/);
   assert.deepEqual(plan.subjects.map((s) => s.questions.length), [9, 9, 6, 6, 6]);
   const questions = plan.subjects.flatMap((s) => s.questions);

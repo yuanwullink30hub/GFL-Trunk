@@ -70,7 +70,7 @@ test('drafts seed from the ratified bank, save pinned to a version, publish swap
   assert.equal(r.body.published, null);
   assert.equal(r.body.serving.kind, 'file');
   const q1 = r.body.questions[0];
-  assert.equal(q1.text, 'Wat vergeef je jezelf het moeilijkst?');
+  assert.equal(q1.text, require('../engine/data/question_bank_leerling_v1_0.json').questions[0].text);
   assert.equal(Object.keys(q1.l1).length, 6);
   assert.equal(Object.keys(q1.l2).length, 12);
 
@@ -96,7 +96,7 @@ test('drafts seed from the ratified bank, save pinned to a version, publish swap
   // the live test still serves the ratified text
   r = await call('GET', '/api/questions/two-layer');
   const served = () => r.body.subjects.flatMap((s) => s.questions).find((q) => q.id === Q1);
-  assert.equal(served().text, 'Wat vergeef je jezelf het moeilijkst?');
+  assert.equal(served().text, require('../engine/data/question_bank_leerling_v1_0.json').questions[0].text);
   const rotation = r.body.rotation_sequence_id;
 
   // an empty answer blocks publishing, by name

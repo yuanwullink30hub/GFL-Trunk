@@ -12,7 +12,7 @@ const assert = require('node:assert/strict');
 before(h.start);
 after(h.stop);
 
-test('v2: unknown versions 400, malformed answers 400, Leerling only, no v7 prompt 409, Dutch without ratified cells 409', async () => {
+test('v2: unknown versions 400, malformed answers 400, every level (no prompt 409), no v7 prompt 409, Dutch without ratified cells 409', async () => {
   const base = await h.serve([['/api/ai', require('../routes/ai')]], { jsonLimit: '22mb' });
   const url = `${base}/api/ai/analyze`;
   const responses = require('../engine/tests/bleed_v2_session_fixtures_v0_1.json').cases.selftest_example.questions;
@@ -24,9 +24,10 @@ test('v2: unknown versions 400, malformed answers 400, Leerling only, no v7 prom
   assert.equal(bad.status, 400);
   assert.match(bad.body.error, /unknown group/);
 
+  // every level takes the two-layer test (Level Routing v0.1 §1.2); without its prompt it stops at 409
   const beginner = await h.post(url, { scoring_version: 'v2_two_layer', level: 'beginner', language: 'en', responses });
-  assert.equal(beginner.status, 400);
-  assert.match(beginner.body.error, /Leerling only/);
+  assert.equal(beginner.status, 409);
+  assert.match(beginner.body.error, /no Master Prompt for level beginner/);
 
   const noPrompt = await h.post(url, { scoring_version: 'v2_two_layer', level: 'advanced', language: 'en', responses });
   assert.equal(noPrompt.status, 409);

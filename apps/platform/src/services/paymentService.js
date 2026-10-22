@@ -42,18 +42,19 @@ async function postJson(path, body) {
   return { ok: res.ok, status: res.status, data };
 }
 
-let configPromise = null;
+const configPromises = new Map(); // report level → promise
 /**
- * Payment config from the server. A failed fetch resolves to { enabled: false, failed: true } so the
+ * Payment config from the server, for a report level (beginner | intermediate | advanced; the price differs
+ * per level — the payment itself prices from the report's seal). A failed fetch resolves to { enabled: false, failed: true } so the
  * paywall disables paying instead of showing a price it can't vouch for. Not cached on failure.
  */
-export function getPaymentConfig() {
-  if (!configPromise) {
-    configPromise = fetch(`${apiBase()}/payments/config`, { headers: paymentTestHeaders() })
+export function getPaymentConfig(level = 'advanced') {
+  if (!configPromises.has(level)) {
+    configPromises.set(level, fetch(`${apiBase()}/payments/config?level=${encodeURIComponent(level)}`, { headers: paymentTestHeaders() })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`config ${res.status}`))))
-      .catch(() => { configPromise = null; return { enabled: false, failed: true }; });
+      .catch(() => { configPromises.delete(level); return { enabled: false, failed: true }; }));
   }
-  return configPromise;
+  return configPromises.get(level);
 }
 
 /**

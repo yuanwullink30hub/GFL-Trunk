@@ -8,6 +8,10 @@
  * opens the seal, records the unlock against the code's hash and hands the code over for the
  * PDF — once, at that moment.
  *
+ * The seal also carries the report's level (beginner | intermediate | advanced), so the price the
+ * server charges follows the report, not what the browser claims (owner, 22 Oct 2026: price per level).
+ * A seal without one (made before that) counts as advanced.
+ *
  * Nothing is stored: the seal lives only in the tab. When the tab is closed or SEAL_TTL_MS has
  * passed, the code is gone for good — which matches the one-time nature of the report.
  *
@@ -20,6 +24,8 @@ const config = require('../config');
 
 const SEAL_TTL_MS = 24 * 60 * 60 * 1000; // same window as the computed profile
 const VERSION = 's1';
+const LEVELS = ['beginner', 'intermediate', 'advanced'];
+const DEFAULT_LEVEL = 'advanced';
 
 function key() {
   if (!config.jwtSecret) throw new Error('[sealedCode] JWT_SECRET is required to seal crystal codes');
@@ -30,17 +36,18 @@ class SealError extends Error {
   constructor(code) { super(code); this.code = code; } // 'invalid' | 'expired'
 }
 
-/** Seal a raw crystal code. Returns an opaque string safe to send to the browser. */
-function sealCode(orbCode, now = Date.now()) {
+/** Seal a raw crystal code and the report's level. Returns an opaque string safe to send to the browser. */
+function sealCode(orbCode, now = Date.now(), { level = DEFAULT_LEVEL } = {}) {
+  if (!LEVELS.includes(level)) throw new Error(`[sealedCode] unknown level ${JSON.stringify(level)}`);
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv('aes-256-gcm', key(), iv);
-  const body = Buffer.concat([cipher.update(JSON.stringify({ c: String(orbCode), e: now + SEAL_TTL_MS }), 'utf8'), cipher.final()]);
+  const body = Buffer.concat([cipher.update(JSON.stringify({ c: String(orbCode), e: now + SEAL_TTL_MS, l: level }), 'utf8'), cipher.final()]);
   return `${VERSION}.${Buffer.concat([iv, cipher.getAuthTag(), body]).toString('base64url')}`;
 }
 
-/** Open a seal. Throws SealError('invalid' | 'expired'). `allowExpired` is for clean-up only
- *  (discarding an unpaid report's leftovers) — never for unlocking. */
-function unsealCode(sealed, now = Date.now(), { allowExpired = false } = {}) {
+/** Open a seal: { code, level }. Throws SealError('invalid' | 'expired'). `allowExpired` is for clean-up
+ *  only (discarding an unpaid report's leftovers) — never for unlocking. */
+function openSeal(sealed, now = Date.now(), { allowExpired = false } = {}) {
   const [version, payload] = String(sealed || '').split('.');
   if (version !== VERSION || !payload) throw new SealError('invalid');
   let data;
@@ -54,7 +61,10 @@ function unsealCode(sealed, now = Date.now(), { allowExpired = false } = {}) {
   }
   if (!data || typeof data.c !== 'string' || !/^LC_ORB[23]?_/.test(data.c)) throw new SealError('invalid');
   if (!allowExpired && !(data.e > now)) throw new SealError('expired');
-  return data.c;
+  return { code: data.c, level: LEVELS.includes(data.l) ? data.l : DEFAULT_LEVEL };
 }
 
-module.exports = { sealCode, unsealCode, SealError, SEAL_TTL_MS };
+/** The raw crystal code of a seal (see openSeal). */
+const unsealCode = (sealed, now, opts) => openSeal(sealed, now, opts).code;
+
+module.exports = { sealCode, unsealCode, openSeal, SealError, SEAL_TTL_MS, LEVELS };

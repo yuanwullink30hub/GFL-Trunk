@@ -47,14 +47,16 @@ const translations = {
         en: "Download the basics to map your archetype — the identity, the explanation, visualized on our own model, and of course the price you pay for the embodiment of this archetype."
       },
       paid: {
-        // {net} (excl. VAT) and {launch} are filled in by AssessmentIntro from config/pricing.js.
-        nl: "Optioneel voor {net} excl. BTW{launch} — De volledige uiteenzetting (3x de hoeveelheid data), lezen = transformeren op zich. Incl. AI-prompt en toegang tot de complete online-extensie.",
-        en: "Optional for {net} excl. VAT{launch} — The full exposition (3× the data), reading = transforming in itself. Incl. AI prompt and access to the complete online extension."
+        // {launch} is filled in by AssessmentIntro while the launch discount runs; the prices sit on the level cards.
+        nl: "Optioneel betaald rapport{launch} — De volledige uiteenzetting (3x de hoeveelheid data), lezen = transformeren op zich. Incl. AI-prompt en toegang tot de complete online-extensie.",
+        en: "Optional paid report{launch} — The full exposition (3× the data), reading = transforming in itself. Incl. AI prompt and access to the complete online extension."
       },
-      // Appended to the price while the launch price applies.
+      // Behind the price on each level card.
+      excl: { nl: "excl.", en: "excl." },
+      // Appended while the launch discount applies ({pct} and {end} from config/pricing.js).
       launchSuffix: {
-        nl: " — Lanceringsprijs tot Equinox {end}, daarna {regularNet} excl. BTW",
-        en: " — Launch price until Equinox {end}, then {regularNet} excl. VAT"
+        nl: " — {pct} % korting tot Equinox {end}",
+        en: " — {pct}% off until Equinox {end}"
       }
     },
     layersTitle: {

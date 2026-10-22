@@ -37,7 +37,7 @@ import PdfConsentStep from './PdfConsentStep';
 import { PopupShell, PopupTitle, POP_MS, PURPLE } from './PopupShell';
 import { SciFiButton } from '@gfl/ui';
 import { registerLeaveHandler } from '../../reportDownloadGuard';
-import { formatCents, formatPrice } from '../../config/pricing';
+import { formatCents, formatPrice, levelPrice } from '../../config/pricing';
 import { getPaymentConfig, markPaymentDelivered } from '../../services/paymentService';
 import {
   bareHeading, isContractSubheading, isOceanMemberHeading, splitGluedHeading,
@@ -281,7 +281,7 @@ const AssessmentResultsModal = ({
   const paymentRefRef = useRef('');
   // Server payment config (price per the flip schedule) for the Essentie button label.
   const [payConfig, setPayConfig] = useState(null);
-  useEffect(() => { let live = true; getPaymentConfig().then((c) => { if (live) setPayConfig(c); }); return () => { live = false; }; }, []);
+  useEffect(() => { let live = true; getPaymentConfig(REPORT_LEVEL[assessmentLevel] || 'advanced').then((c) => { if (live) setPayConfig(c); }); return () => { live = false; }; }, [assessmentLevel]);
   // The paid PDF is the user's only copy; until it is saved a "download now" banner stays up.
   const [fullDownloaded, setFullDownloaded] = useState(false);
   const paidNotSaved = !!paidPaymentId && !fullDownloaded;
@@ -4483,7 +4483,7 @@ const AssessmentResultsModal = ({
                           <span style={{ fontSize: '0.85em', fontWeight: 'normal', textTransform: 'none', letterSpacing: '0.02em', opacity: 0.85 }}>
                             {paidPaymentId
                               ? t('resultsModal.paywall.unlocked')
-                              : (payConfig?.enabled ? formatCents(language, payConfig.grossCents, payConfig.currency) : formatPrice(language))}
+                              : (payConfig?.enabled ? formatCents(language, payConfig.grossCents, payConfig.currency) : formatPrice(language, levelPrice(assessmentLevel)))}
                           </span>
                         )}
                       </span>
@@ -4523,6 +4523,7 @@ const AssessmentResultsModal = ({
             fill
             open={showPaywall}
             sealedOrbCode={sealedOrbCodeRef.current}
+            level={REPORT_LEVEL[assessmentLevel] || 'advanced'}
             email={reviewFormData.email.trim()}
             language={language}
             t={t}

@@ -9,6 +9,8 @@
  *   STRIPE_MODE_PUBLISHABLE_KEY · STRIPE_PUBLISHABLE_KEY_MODE · STRIPE_PUBLISHABLE_KEY (only pk_<mode>_)
  *   STRIPE_MODE_WEBHOOK_SECRET · STRIPE_WEBHOOK_SECRET_MODE · STRIPE_WEBHOOK_SECRET
  *   STRIPE_MODE_PRICE_LAUNCH · STRIPE_PRICE_LAUNCH_MODE · STRIPE_PRICE_LAUNCH   (same for PRICE_NORMAL)
+ *   PRICE_LAUNCH / PRICE_NORMAL are Leerling's and Gevorderd's; Beginner has its own pair,
+ *   PRICE_BEGINNER_LAUNCH / PRICE_BEGINNER_NORMAL (same name forms).
  *
  * PAYMENTS_TEST_TOKEN: in production, TEST mode is locked to requests carrying this token
  * (header X-GFL-Payments-Test) — otherwise anyone could unlock a real report with Stripe's test cards.
@@ -30,6 +32,8 @@ function resolveStripeEnv(env = process.env) {
     webhookSecret: pick('WEBHOOK_SECRET'),
     priceLaunch: pick('PRICE_LAUNCH'),
     priceNormal: pick('PRICE_NORMAL'),
+    priceBeginnerLaunch: pick('PRICE_BEGINNER_LAUNCH'),
+    priceBeginnerNormal: pick('PRICE_BEGINNER_NORMAL'),
     testAccessToken: clean(env.PAYMENTS_TEST_TOKEN),
   };
 }

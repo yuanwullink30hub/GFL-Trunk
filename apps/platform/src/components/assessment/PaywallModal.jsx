@@ -67,7 +67,7 @@ const INPUT_BLUR = { borderColor: `rgba(${CYAN_RGB}, 0.2)`, background: 'rgba(0,
 
 const OTHER_COUNTRY = 'OTHER';
 
-const PaywallModal = ({ open, onClose, onPaid, onConsent, language, t, sealedOrbCode = '', email = '', origin = 'center center', fill = false }) => {
+const PaywallModal = ({ open, onClose, onPaid, onConsent, language, t, sealedOrbCode = '', email = '', level = 'advanced', origin = 'center center', fill = false }) => {
   const [step, setStep] = useState('consent'); // consent | summary | payment | awaiting | processing | paid | failed | rejected | codeAccepted
   const [consentChecked, setConsentChecked] = useState(false);
   // Activation code: an inline form under "Heb je een activatiecode?" (summary step).
@@ -122,13 +122,13 @@ const PaywallModal = ({ open, onClose, onPaid, onConsent, language, t, sealedOrb
     requestAnimationFrame(() => dialogRef.current?.focus());
     let live = true;
     setPayConfig(null);
-    getPaymentConfig().then((cfg) => {
+    getPaymentConfig(level).then((cfg) => {
       if (!live) return;
       setPayConfig(cfg);
       if (cfg?.allowedCountries?.length) setCountry(cfg.allowedCountries[0]);
     });
     return () => { live = false; };
-  }, [open, stopPolling]);
+  }, [open, level, stopPolling]);
 
   useEffect(() => stopPolling, [stopPolling]);
 

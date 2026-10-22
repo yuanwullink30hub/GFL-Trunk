@@ -19,7 +19,7 @@
 const crypto = require('crypto');
 const { Router } = require('express');
 const config = require('../config');
-const { sealCode } = require('../services/sealedCode');
+const { sealCode, LEVELS } = require('../services/sealedCode');
 const { resolvePaymentConfig, hasTestAccess } = require('../services/paymentConfig');
 
 // Production TEST mode is locked to this header (config/stripeEnv.js PAYMENTS_TEST_TOKEN).
@@ -59,12 +59,16 @@ function sendError(res, err, label) {
   return res.status(502).json({ error: 'provider_error' });
 }
 
+// ?level=beginner|intermediate|advanced (absent or unknown → advanced): the price shown for that level.
+// Display only — the payment itself prices from the report's seal.
 router.get('/config', async (req, res) => {
   try {
-    const cfg = await resolvePaymentConfig(new Date(), { testAccess: testAccessOf(req) });
+    const level = LEVELS.includes(req.query.level) ? req.query.level : undefined;
+    const cfg = await resolvePaymentConfig(new Date(), { testAccess: testAccessOf(req), level });
     res.json({
       enabled: cfg.enabled,
       publishableKey: cfg.publishableKey,
+      priceTier: cfg.priceTier,
       grossCents: cfg.grossCents,
       currency: cfg.currency,
       allowedCountries: cfg.allowedCountries,
@@ -90,7 +94,8 @@ router.post('/dev-seal', (req, res) => {
     return res.status(404).json({ error: 'not_found' });
   }
   const code = `LC_ORB3_DEVTEST_${crypto.randomBytes(12).toString('hex')}`;
-  return res.json({ sealedOrbCode: sealCode(code) });
+  const level = LEVELS.includes(req.body?.level) ? req.body.level : undefined;
+  return res.json({ sealedOrbCode: sealCode(code, Date.now(), { level }) });
 });
 
 router.post('/full-report', payLimiter, async (req, res) => {

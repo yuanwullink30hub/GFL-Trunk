@@ -23,14 +23,14 @@ const V2 = 'v2_two_layer';
 const FIRST_V2_PROMPT = 7; // Master Prompt major version the two-layer test needs
 
 /**
- * The prompt slot for a report request. Throws on an unknown level, and on the two-layer test at any
- * level but Leerling (v7 is Leerling only).
+ * The prompt slot for a report request. Throws on an unknown level. The two-layer test runs at every level
+ * (Backend Instruction Level Routing v0.1 §1.2: v2 for every session on a two-layer bank, whatever the
+ * level); promptMismatch still keeps it off a prompt older than v7.
  * @param {string} [level]          'beginner' | 'intermediate' | 'advanced' (absent → advanced)
  * @param {string} [scoringVersion] 'v1_nature_culture' (or absent) | 'v2_two_layer'
  */
 function promptSlotFor(level = DEFAULT_LEVEL, scoringVersion) {
   if (!LEVELS.includes(level)) throw new RangeError(`unknown level ${JSON.stringify(level)}`);
-  if (scoringVersion === V2 && level !== 'advanced') throw new RangeError('the two-layer test is Leerling only');
   return level;
 }
 

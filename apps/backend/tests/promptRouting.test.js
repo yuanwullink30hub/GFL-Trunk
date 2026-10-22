@@ -17,7 +17,9 @@ test('slots: one record per level; Leerling keeps the historic record; the test 
   assert.equal(R.promptSlotFor('advanced', 'v2_two_layer'), 'advanced');
   assert.deepEqual(R.SLOTS.map(R.promptRecordId), ['beginner', 'intermediate', 'default']);
   assert.throws(() => R.promptSlotFor('expert'), /unknown level/);
-  assert.throws(() => R.promptSlotFor('beginner', 'v2_two_layer'), /Leerling only/);
+  // the two-layer test runs at every level (Level Routing v0.1 §1.2)
+  assert.equal(R.promptSlotFor('beginner', 'v2_two_layer'), 'beginner');
+  assert.equal(R.promptSlotFor('intermediate', 'v2_two_layer'), 'intermediate');
   assert.throws(() => R.promptRecordId('default'), /unknown prompt slot/);
   // v2 needs v7+, the old test v6 or earlier; a prompt that names no version passes
   const v7 = 'AI MASTER PROMPT v7.0 — DELTAWERKEN RAPPORTGENERATOR\nW1', v6 = 'AI MASTER PROMPT v6.3.6 — X\nW1';

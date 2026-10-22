@@ -909,6 +909,30 @@ test('Report reader — the triangle page (v7.2): two sections of their own; hea
   assert.ok(R.readReport(bare, { promptVersion: 'v7.2' }).ledger.completeness.missing.includes('triangle_fallacies'));
 });
 
+test('Report reader — Beginner (Level Routing v0.1 §6, R6/R7): 17 sections; a stray Stille Stem or Overgang is dropped and logged', async () => {
+  const R = await import('../../../platform/src/components/assessment/reportReader.js');
+  const P = await import('../../../platform/src/components/assessment/v4Parser.js');
+  assert.equal(P.REPORT_BEGINNER_SLOTS.length, 17);
+  assert.deepEqual(P.REPORT_BEGINNER_SLOTS, P.REPORT_V72_SLOTS.filter((s) => !/^(morph_overgang|stille_)/.test(s)));
+  assert.equal(P.reportSlotsFor('v7.3', 'beginner'), P.REPORT_BEGINNER_SLOTS);
+  assert.equal(P.reportSlotsFor('v7.3', 'advanced'), P.REPORT_V72_SLOTS);
+  const text = [
+    '## DE HARDWARE ONDER DRUK', 'De druk zelf, lang genoeg om als echte sectie mee te tellen.', '',
+    '## DE OVERGANG NAAR DE STILLE STEM', 'Een overgang die Beginner niet hoort te schrijven, toch geschreven.', '',
+    '## REFLECTIE', 'Een reflectie die Beginner niet hoort te schrijven, toch geschreven.', '',
+    '## DE COGNITIEVE DRIEHOEK', 'Minnaar, Rebel en Magiër vormen samen jouw driehoek op het wiel.',
+  ].join('\n');
+  const beginner = R.readReport(text, { promptVersion: 'v7.3', level: 'beginner' });
+  const slots = beginner.sections.map((s) => (P.matchNarrativeTag(s.title || '') || {}).slot);
+  assert.ok(slots.includes('morph_hardware') && slots.includes('cognitive_triangle'));
+  assert.ok(!slots.includes('morph_overgang') && !slots.includes('stille_reflectie'), 'dropped, never rendered');
+  assert.deepEqual(beginner.ledger.discarded.filter((d) => /Beginner/.test(d.rule)).map((d) => d.title), ['DE OVERGANG NAAR DE STILLE STEM', 'REFLECTIE']);
+  assert.ok(!beginner.ledger.completeness.missing.includes('stille_beweging'), 'absent is normal');
+  // Leerling keeps them
+  const leerling = R.readReport(text, { promptVersion: 'v7.3' });
+  assert.ok(leerling.sections.some((s) => /REFLECTIE/.test(s.title)));
+});
+
 test('Request — the English title set handed to the model is exactly what the platform parser routes (W8)', async () => {
   const { buildUserMessage, EN_SECTION_TITLES } = require('../../prompts/advanced');
   const hooks = require('node:module').registerHooks({

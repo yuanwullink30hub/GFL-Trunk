@@ -25,7 +25,7 @@
 
 import {
   NARRATIVE_TAGS, matchNarrativeTag, normalizeTagLine, canonicalTitle, stripPageLabel,
-  bareHeading, isOceanMemberHeading, isContractSubheading, reportSlotsFor,
+  bareHeading, isOceanMemberHeading, isContractSubheading, reportSlotsFor, BEGINNER_ABSENT_SLOTS,
 } from './v4Parser.js';
 
 // ── Title helpers (shared with the renderer) ─────────────────────────────────────────────────────
@@ -579,11 +579,21 @@ export function liftStilleLabels(content) {
  * line — `recovered` (a lost first heading), `fuzzy` (a heading read through drift), `demoted` (a
  * heading kept as a subheading), `discarded` ({ rule, title, text }), `unaccounted` (should be empty).
  */
-export function readReport(analysisText, { promptVersion = null } = {}) {
+export function readReport(analysisText, { promptVersion = null, level = null } = {}) {
   const ledger = { recovered: [], fuzzy: [], demoted: [], discarded: [], unaccounted: [] };
   const raw = String(analysisText || '');
-  const sections = parseAiSections(stripKaartFields(raw, ledger), ledger) || [];
+  let sections = parseAiSections(stripKaartFields(raw, ledger), ledger) || [];
   ledger.unaccounted = unaccountedLines(raw, sections, ledger);
+  // Beginner carries no DE OVERGANG and no De Stille Stem (Level Routing v0.1 §6, R7): one emitted anyway is
+  // dropped, on the ledger, and never rendered.
+  if (level === 'beginner') {
+    sections = sections.filter((s) => {
+      const tag = matchNarrativeTag(s.title || '');
+      if (!tag || !BEGINNER_ABSENT_SLOTS.includes(tag.slot)) return true;
+      ledger.discarded.push({ rule: 'a section Beginner does not carry (Stille Stem / Overgang)', title: s.title, text: s.content });
+      return false;
+    });
+  }
   // After the accounting (which compares against the model's own lines): the Stille Stem run-in labels
   // become subheadings.
   for (const s of sections) {
@@ -611,7 +621,7 @@ export function readReport(analysisText, { promptVersion = null } = {}) {
   const slots = new Set(sections.map((s) => (matchNarrativeTag(s.title || '') || {}).slot).filter(Boolean));
   ledger.completeness = {
     closingLine: ledger.discarded.some((d) => d.rule === 'closing line (v7 completion marker)'),
-    missing: reportSlotsFor(promptVersion).filter((x) => !slots.has(x)),
+    missing: reportSlotsFor(promptVersion, level).filter((x) => !slots.has(x)),
   };
   return { sections, ledger };
 }

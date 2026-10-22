@@ -119,8 +119,15 @@ export const REPORT_V72_SLOTS = [
   ...REPORT_V7_SLOTS.slice(REPORT_V7_SLOTS.indexOf('stille_beweging') + 1),
 ];
 
-/** The sections a report under this prompt version must carry ("v7.2" → 21; earlier or unknown → 19). */
-export function reportSlotsFor(promptVersion) {
+// Beginner (Backend Instruction Level Routing v0.1 §6): 17 sections — v7.3's order without DE OVERGANG and De Stille
+// Stem (sections 12–15). If the model emits them anyway, the reader drops them (logged) and nothing renders them.
+export const BEGINNER_ABSENT_SLOTS = ['morph_overgang', 'stille_reflectie', 'stille_motivatie', 'stille_beweging'];
+export const REPORT_BEGINNER_SLOTS = REPORT_V72_SLOTS.filter((s) => !BEGINNER_ABSENT_SLOTS.includes(s));
+
+/** The sections a report under this prompt version and level must carry ("v7.2" → 21; earlier or unknown → 19;
+ *  Beginner → 17). `level` is the report request's: beginner | intermediate | advanced. */
+export function reportSlotsFor(promptVersion, level = null) {
+  if (level === 'beginner') return REPORT_BEGINNER_SLOTS;
   const m = /^v(\d+)\.(\d+)/.exec(String(promptVersion || ''));
   const v72 = Boolean(m) && (Number(m[1]) > 7 || (Number(m[1]) === 7 && Number(m[2]) >= 2));
   return v72 ? REPORT_V72_SLOTS : REPORT_V7_SLOTS;

@@ -13,7 +13,8 @@ import AssessmentResultsModal from '../components/assessment/AssessmentResultsMo
 // First populate the replay cache by generating one full report in the app, or load a saved replay
 // with &replay=<name> (public/dev-replay/<name>.json); &variant=male|female picks the portrait,
 // &lesson=open|flow forces the cover lesson's layout, &lang=en|nl the language, &pages=N keeps the first N pages,
-// &fixture=<case> draws the Keuze/Echo graph from a Bleed v2 session fixture.
+// &fixture=<case> draws the Keuze/Echo graph from a Bleed v2 session fixture, &level=quick|standard|deep builds that
+// level's report (quick = Beginner: its own page flow).
 // ──────────────────────────────────────────────────────────────────────────
 export default function PdfPreviewHarness() {
   const { t, language, setLanguage } = useLanguage();
@@ -122,6 +123,7 @@ export default function PdfPreviewHarness() {
         <AssessmentResultsModal
           key={genKey}
           previewMode
+          assessmentLevel={new URLSearchParams(window.location.search).get('level') || 'deep'}
           onPreviewReady={onReady}
           layerAnswers={data.layerAnswers}
           liveSubjects={data.liveSubjects}

@@ -75,6 +75,8 @@ import HoloOverlays from '../HoloOverlays';
 const tnmWheelImg = '/images/Model imports/TNM wheel PNG.png';
 const deltawerkenImg = '/images/Model imports/Deltawerken png.png';
 const cellsImg = '/images/Model imports/Cells within Cells png.png';
+// The two-triangle perspective diagram (Perspectief / As above, so below), white on transparent — Beginner page 10.
+const perspectiefImg = '/images/Model imports/Perspectief model PNG.png';
 const c12Img = '/images/Model imports/C12.png';
 
 /**
@@ -603,7 +605,7 @@ const AssessmentResultsModal = ({
         // The report reader: sections for the card and the PDF, plus a ledger that accounts for every
         // line of the model's text (placed, or discarded by a named rule) — logged, so nothing is
         // lost or moved without a trace. It strips the Kaart microcopy itself, onto that ledger.
-        const { sections, ledger: readerLedger } = readReport(aiResult.analysis || '', { promptVersion: aiResult.promptVersion });
+        const { sections, ledger: readerLedger } = readReport(aiResult.analysis || '', { promptVersion: aiResult.promptVersion, level: REPORT_LEVEL[assessmentLevel] || 'advanced' });
         logReaderLedger(readerLedger);
         // A v2 report (it carries the server's data block) is checked for completeness: the closing
         // line [EINDE RAPPORT] and all its sections — 19, 21 from v7.2 (payload instruction v7 §7). An incomplete report
@@ -941,6 +943,9 @@ const AssessmentResultsModal = ({
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
       const W = 210, H = 297;
       const margin = 18;
+      // Beginner's report (Level Routing v0.1 §5.3; owner, 22 Oct 2026): the same introduction, AI prompt and data
+      // pages; its shorter sections run as one flow instead of one fixed page per group (see 'beginner_body').
+      const isBeginnerPdf = REPORT_LEVEL[assessmentLevel] === 'beginner';
       const contentW = W - margin * 2;
       let y = margin;
 
@@ -2386,7 +2391,7 @@ const AssessmentResultsModal = ({
           }).join('\n').trim()
         : '';
       const endOceanCore = trackBlock('ocean_core');
-      if (oceanBody || oceanTraitSections.length > 0 || hasOceanUpload) {
+      if (!isBeginnerPdf && (oceanBody || oceanTraitSections.length > 0 || hasOceanUpload)) {
         await justifiedPage(async (gap) => {
           sectionHeading(sectionTitle('ocean_page', language), blue);
           oceanSubtitle();
@@ -2442,41 +2447,54 @@ const AssessmentResultsModal = ({
         .filter(s => morphRank(s) >= 0)
         .sort((a, b) => morphRank(a) - morphRank(b));
       const hasMorphChart = !!(morphChart && morphologyRef.current);
-      if (hasMorphChart || morphPage.length > 0) {
+      // The D-curve chart, centred in its box, the caption under it. Beginner measures it first (`measure`: its
+      // height, nothing drawn) so the chart and DE VORM land on one page; the capture is made once.
+      let morphCapture = null;
+      // `maxChartH` (Beginner only) shrinks the chart to that height, keeping its proportions; without it the chart is
+      // drawn as it always was.
+      const drawMorphChart = async ({ measure = false, maxChartH = 0 } = {}) => {
+        try {
+          if (!morphCapture) {
+            const morphCanvas = await html2canvas(morphologyRef.current, {
+              backgroundColor: '#060612', scale: 2, useCORS: true, logging: false,
+            });
+            morphCapture = { img: morphCanvas.toDataURL('image/jpeg', 0.85), ratio: morphCanvas.height / morphCanvas.width };
+          }
+          const capTxt = t('resultsModal.pdf.morph.captionRegister');
+
+          const innerPad = 3;
+          const MORPH_SCALE = 0.75;                         // 25% smaller than full width
+          let chartW = (contentW - innerPad * 2) * MORPH_SCALE;
+          let chartH = morphCapture.ratio * chartW;
+          if (chartH > 101) { chartH = 101; }              // cap chart height (135 × 0.75)
+          if (maxChartH > 0 && chartH > maxChartH) { chartW *= maxChartH / chartH; chartH = maxChartH; }
+          const boxW = chartW + innerPad * 2;
+          const boxH = chartH + innerPad * 2;
+          const boxX = margin + (contentW - boxW) / 2;     // centered
+          pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
+          const capLines = pdf.splitTextToSize(sanitizePdf(capTxt), contentW);
+          const lineH = 3.6;
+          if (measure) return boxH + 4 + capLines.length * lineH + 5;
+          ensureSpace(boxH + 4);
+          // Bordered box around the (centered) chart
+          pdf.setDrawColor(...cyan);
+          pdf.setLineWidth(0.4);
+          pdf.rect(boxX, y, boxW, boxH);
+          pdf.addImage(morphCapture.img, 'JPEG', boxX + innerPad, y + innerPad, chartW, chartH);
+          y += boxH + 4;
+          // Caption below the chart, full width
+          pdf.setTextColor(...mutedGray);
+          for (const cl of capLines) { ensureSpace(lineH); pdf.text(cl, margin, y + 2); y += lineH; }
+          y += 5;
+        } catch { if (measure) return 4; y += 4; }
+        return 0;
+      };
+      if (!isBeginnerPdf && (hasMorphChart || morphPage.length > 0)) {
         pdf.addPage(); paintBg(); markPage(); y = margin;
         sectionHeading(sectionTitle('morphology_page', language), cyan);
 
         // Chart FULL-WIDTH (so the in-chart labels are readable), caption BELOW it.
-        if (hasMorphChart) {
-          try {
-            const morphCanvas = await html2canvas(morphologyRef.current, {
-              backgroundColor: '#060612', scale: 2, useCORS: true, logging: false,
-            });
-            const morphImg = morphCanvas.toDataURL('image/jpeg', 0.85);
-            const capTxt = t('resultsModal.pdf.morph.captionRegister');
-
-            const innerPad = 3;
-            const MORPH_SCALE = 0.75;                         // 25% smaller than full width
-            const chartW = (contentW - innerPad * 2) * MORPH_SCALE;
-            let chartH = (morphCanvas.height / morphCanvas.width) * chartW;
-            if (chartH > 101) { chartH = 101; }              // cap chart height (135 × 0.75)
-            const boxW = chartW + innerPad * 2;
-            const boxH = chartH + innerPad * 2;
-            const boxX = margin + (contentW - boxW) / 2;     // centered
-            ensureSpace(boxH + 4);
-            // Bordered box around the (centered) chart
-            pdf.setDrawColor(...cyan);
-            pdf.setLineWidth(0.4);
-            pdf.rect(boxX, y, boxW, boxH);
-            pdf.addImage(morphImg, 'JPEG', boxX + innerPad, y + innerPad, chartW, chartH);
-            y += boxH + 4;
-            // Caption below the chart, full width
-            pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic'); pdf.setTextColor(...mutedGray);
-            const lineH = 3.6;
-            for (const cl of pdf.splitTextToSize(sanitizePdf(capTxt), contentW)) { ensureSpace(lineH); pdf.text(cl, margin, y + 2); y += lineH; }
-            y += 5;
-          } catch { y += 4; }
-        }
+        if (hasMorphChart) await drawMorphChart();
 
         // Master Prompt v4.3 §5.5 — TWO pages: Page A = chart + DE VORM; Page B = DE HARDWARE
         // ONDER DRUK + DE OVERGANG (no chart). Split the reads accordingly.
@@ -2589,7 +2607,7 @@ const AssessmentResultsModal = ({
 
       // ── DUAL-CORE DYNAMICS + RADAR CHART (page 5) ──
       const endDualCore = trackBlock('dual_core');
-      await justifiedPage(async (gap) => {
+      if (!isBeginnerPdf) await justifiedPage(async (gap) => {
       const savedNPBdc = noPageBreak; noPageBreak = true; // no bottom padding — let text flow to edge
       // Orange titles on this page (owner, 17 Oct 2026): yellow belongs to De Cognitieve Driehoek's page now.
       const keuzeEcho = enginePayload?.keuze_echo;
@@ -2925,14 +2943,10 @@ const AssessmentResultsModal = ({
             .filter(s => g1aTitle(s).includes('essentie') || g1aTitle(s).includes('vermenigvuldiging'))
             .sort((a, b) => (g1aTitle(a).includes('essentie') ? 0 : 1) - (g1aTitle(b).includes('essentie') ? 0 : 1));
 
-          const endGroup1a = trackBlock('group1a');
-          // ── Page 7: Identiteit + Waarom (with the fixed Meta-Disclaimer on top) ──
-          if (identityPage.length > 0) {
-            await justifiedPage(async (gap) => {
-            const savedNPB = noPageBreak;
-            noPageBreak = true; // no bottom padding — let the text flow down to the page edge
-
-            // ── Fixed Meta-Disclaimer (purple blockquote) before section 1 ──
+          // ── Fixed Meta-Disclaimer (purple blockquote) before section 1; `measure` returns its height ──
+          const drawMetaDisclaimer = ({ measure = false } = {}) => {
+            pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
+            if (measure) return pdf.splitTextToSize(t('resultsModal.pdf.metaDisclaimer'), contentW - 8).length * 3.5 + 4 + 8;
             ensureSpace(20);
             pdf.setFillColor(20, 16, 36);
             const disclaimerX = margin;
@@ -2952,6 +2966,17 @@ const AssessmentResultsModal = ({
               dlY += 3.5;
             }
             y += dlH + 8; // doubled padding between the meta-disclaimer and the first section
+            return 0;
+          };
+
+          const endGroup1a = trackBlock('group1a');
+          // ── Page 7: Identiteit + Waarom (with the fixed Meta-Disclaimer on top) ──
+          if (!isBeginnerPdf && identityPage.length > 0) {
+            await justifiedPage(async (gap) => {
+            const savedNPB = noPageBreak;
+            noPageBreak = true; // no bottom padding — let the text flow down to the page edge
+
+            drawMetaDisclaimer();
             gap();
 
             identityPage.forEach((section, i) => {
@@ -2965,7 +2990,7 @@ const AssessmentResultsModal = ({
           // Vermenigvuldiging always stays on Essentie's page, however far it runs past the bottom
           // margin — the model sometimes writes a line or two more than the page holds, and the
           // margin takes them (owner, 2026-09-19).
-          if (essencePage.length > 0) {
+          if (!isBeginnerPdf && essencePage.length > 0) {
             await justifiedPage(async (gap) => {
             const savedNPB = noPageBreak;
             noPageBreak = true; // no bottom padding — let the text flow down to the page edge
@@ -3009,7 +3034,28 @@ const AssessmentResultsModal = ({
               y += drawH + 8;
             } catch { y += 4; }
           };
-          if (group1bSections.length > 0) {
+          // The TNM wheel, the static model image, in the room below the text down to `bottom`: at most FIXED_TNM_H,
+          // shrunk when the page is fuller, skipped below `minH`. Returns whether it was drawn.
+          const drawTnmWheel = async ({ bottom = H - 6, minH = 18 } = {}) => {
+            try {
+              const tnmEl = await new Promise((res, rej) => {
+                const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = tnmWheelImg;
+              });
+              const availH = bottom - (y + 1);                   // room down to ~6mm from page edge
+              if (availH > minH) {
+                const FIXED_TNM_H = 65;                           // fixed height: 50 × 1.3 — the radar left this page, the wheel takes the room
+                const finalH = Math.min(FIXED_TNM_H, availH);    // fixed, only shrinks if the page is full (never clips)
+                const finalW = (tnmEl.naturalWidth / tnmEl.naturalHeight) * finalH;
+                const offsetX = margin + (contentW - finalW) / 2;
+                y += 1;                                          // tighter gap under De Blindspot (~70% of before)
+                pdf.addImage(tnmWheelImg, 'PNG', offsetX, y, finalW, finalH);
+                y += finalH + 4;
+                return true;
+              }
+            } catch { /* image load failed — skip */ }
+            return false;
+          };
+          if (!isBeginnerPdf && group1bSections.length > 0) {
             await justifiedPage(async (gap) => {
             // Schaduw + Blindspot — full text page, no radar (§5.3)
             for (let gi = 0; gi < shadowBlindspotSections.length; gi++) {
@@ -3019,21 +3065,7 @@ const AssessmentResultsModal = ({
             }
             // ── TNM WHEEL — the static model image (same asset/size as page 5) placed in the
             //    leftover space below the text. Static image → no capture/clip risk. ──
-            try {
-              const tnmEl = await new Promise((res, rej) => {
-                const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = tnmWheelImg;
-              });
-              const availH = (H - 6) - (y + 1);                  // room down to ~6mm from page edge
-              if (availH > 18) {
-                const FIXED_TNM_H = 65;                           // fixed height: 50 × 1.3 — the radar left this page, the wheel takes the room
-                const finalH = Math.min(FIXED_TNM_H, availH);    // fixed, only shrinks if the page is full (never clips)
-                const finalW = (tnmEl.naturalWidth / tnmEl.naturalHeight) * finalH;
-                const offsetX = margin + (contentW - finalW) / 2;
-                y += 1;                                          // tighter gap under De Blindspot (~70% of before)
-                pdf.addImage(tnmWheelImg, 'PNG', offsetX, y, finalW, finalH);
-                y += finalH + 4;
-              }
-            } catch { /* image load failed — skip */ }
+            await drawTnmWheel();
             });
           }
           endGroup1b();
@@ -3048,7 +3080,7 @@ const AssessmentResultsModal = ({
           // A page break before REFLECTIE, then REFLECTIE, MOTIVATIE and BEWEGING together on that one
           // page — the three voices are never split over two pages (Brief v2 Addendum A §4; at budget
           // they are 790 words, the densest measured page carried 852).
-          if (stillePage.length > 0) {
+          if (!isBeginnerPdf && stillePage.length > 0) {
             await justifiedPage(async (gap) => {
             const savedNPB = noPageBreak;
             noPageBreak = true; // no bottom padding — let the text flow down to the page edge
@@ -3069,7 +3101,7 @@ const AssessmentResultsModal = ({
           //    text spills onto the next page, flowing (never leaving this page half empty). No section from the
           //    model, no page; no triangle facts from the server (an older replay), no figure. ──
           const endTriangle = trackBlock('nb_triangle');
-          if (triangleSections.length > 0) {
+          if (!isBeginnerPdf && triangleSections.length > 0) {
             const triOrder = (s) => (/drogredenen/i.test(cleanTitle(s.title || '')) ? 1 : 0);
             const ordered = triangleSections.slice().sort((a, b) => triOrder(a) - triOrder(b));
             const writeText = () => ordered.forEach((section, i) => {
@@ -3113,7 +3145,7 @@ const AssessmentResultsModal = ({
             /professionele\s+resonantie|creatieve\s+resonantie/i.test(s.title || '') || isExtensionTitle(s.title)
           ).sort((a, b) => resonanceRank(a) - resonanceRank(b));
           const endResonance = trackBlock('nb_resonance');
-          if (resonanceSections.length > 0 || (result.mainArchetype && result.secondaryArchetype) || radarEl) {
+          if (!isBeginnerPdf && (resonanceSections.length > 0 || (result.mainArchetype && result.secondaryArchetype) || radarEl)) {
             await justifiedPage(async (gap) => {
             // Radar wheel first — render-side, no caption, no "radar-lezing" section (§5.7).
             await drawRadar();
@@ -3202,6 +3234,164 @@ const AssessmentResultsModal = ({
             });
           }
           endResonance();
+
+          // ── Beginner (Level Routing v0.1 §5.3; owner, 22 Oct 2026): the report's sections in v7.3 order — without
+          //    De Overgang and De Stille Stem — as ONE flow instead of a fixed page per group. The text is shorter and
+          //    keeps Leerling's type size, so pages are filled: a section stays on the page it starts on when it fits
+          //    there whole, else it opens the next page; a figure always stays with the section under it (radar →
+          //    De Extensie, D-curve → De Vorm, triangle → De Cognitieve Driehoek, Hardware Data → De Alchemie), the TNM
+          //    wheel with De Blindspot. Titles keep their Leerling colours. ──
+          const endBeginner = trackBlock('beginner_body');
+          if (isBeginnerPdf) {
+            const BODY_PT = 8.5; // writePdfMarkdown's body size: estimates measure in it
+            const sectionH = (title, content) => {
+              pdf.setFont('helvetica', 'normal'); pdf.setFontSize(BODY_PT);
+              return estimateSectionHeight(title, content, contentW - 4);
+            };
+            const bottom = H - margin;
+            let opened = false;
+            // Room for a unit of height h: the page it would start on, else a fresh one. Nothing is ever split here;
+            // a unit taller than a page (over budget) starts a fresh page and flows on as Leerling's sections do.
+            const room = (h) => {
+              if (opened && y + 1.5 + h <= bottom) { hr(); return; }
+              pdf.addPage(); paintBg(); markPage(); y = margin; opened = true;
+            };
+            const section = (s, color, content = s.content) => {
+              room(sectionH(shownTitle(s), content));
+              renderSection(shownTitle(s), content, color);
+            };
+            const byTitle = (list, order) => list.slice().sort((a, b) => {
+              const ix = (s) => order.findIndex((k) => cleanTitle(s.title || '').toLowerCase().includes(k));
+              return ix(a) - ix(b);
+            });
+            const firstOf = (list) => list[0];
+
+            // The first three report pages are fixed (owner, 22 Oct 2026); each is one page, its text running to the
+            // page edge rather than onto a next page. From OCEAN on, the flow takes over.
+            const fixedPage = async (draw) => {
+              pdf.addPage(); paintBg(); markPage(); y = margin; opened = true;
+              const savedNPB = noPageBreak; noPageBreak = true;
+              await draw();
+              noPageBreak = savedNPB;
+            };
+            const sep = (i) => { if (i > 0) hr(); };
+            // p8: the meta-disclaimer, De Identiteit, De Verklaring, the radar wheel
+            const ident = byTitle(identityPage, ['identiteit', 'verklaring', 'waarom']);
+            await fixedPage(async () => {
+              drawMetaDisclaimer();
+              ident.forEach((s, i) => { sep(i); renderSection(shownTitle(s), s.content, getPdfSectionColor(s.title)); });
+              if (radarEl) { y += 4; await drawRadar(); }
+            });
+            // p9: De Essentie, De Vermenigvuldiging, De Schaduw, De Blindspot
+            const essence = byTitle(essencePage, ['essentie', 'vermenigvuldiging']);
+            const p9 = [...essence, ...shadowBlindspotSections];
+            if (p9.length) await fixedPage(async () => {
+              p9.forEach((s, i) => { sep(i); renderSection(shownTitle(s), s.content, getPdfSectionColor(s.title)); });
+            });
+            // p10: the TNM wheel, De Extensie, Creatieve Resonantie, and the perspective diagram as large as the rest of
+            // the page allows (full content width at most, its own proportions, centred in the room left).
+            await fixedPage(async () => {
+              await drawTnmWheel({ bottom });
+              resonanceSections.forEach((s, i) => { sep(i); renderSection(shownTitle(s), s.content, green); });
+              try {
+                const el = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = perspectiefImg; });
+                const top = y + 6, roomH = bottom - top;
+                const ratio = el.naturalHeight / el.naturalWidth;
+                const w = Math.min(contentW, roomH / ratio), h = w * ratio;
+                if (h >= 30) {
+                  pdf.addImage(perspectiefImg, 'PNG', margin + (contentW - w) / 2, top + (roomH - h) / 2, w, h);
+                  y = top + roomH;
+                }
+              } catch { /* image load failed — skip */ }
+            });
+
+            // OCEAN: its title, subtitle, the uploaded values and the disclaimer, with the first block of the read; then
+            // each trait block where it fits (one section — the model's trait headings split it).
+            if (oceanBody || hasOceanUpload) {
+              pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
+              const discH = pdf.splitTextToSize(t(hasOceanUpload ? 'resultsModal.pdf.oceanPage.disclaimerLight' : 'resultsModal.pdf.oceanPage.disclaimerHeavy'), contentW - 10).length * 3.6 + 5 + 4;
+              const headH = 12 + 7 + (hasOceanUpload ? 6 + 5 * 8 + 2 : 0) + discH;
+              const lines = oceanBody ? oceanBody.split('\n') : [];
+              const headOf = (l) => splitGluedHeading(l)?.heading ?? l;
+              const blocks = [];
+              lines.forEach((l) => {
+                if (!blocks.length || (isOceanMemberHeading(headOf(l)) && blocks[blocks.length - 1].some((x) => x.trim()))) blocks.push([]);
+                blocks[blocks.length - 1].push(l);
+              });
+              const texts = blocks.map((b) => b.join('\n').trim()).filter(Boolean);
+              const blockH = (txt) => sectionH('', txt) - 12; // no heading of its own
+              room(headH + (texts.length ? blockH(texts[0]) : 0));
+              sectionHeading(sectionTitle('ocean_page', language), blue);
+              oceanSubtitle();
+              if (hasOceanUpload) { drawUploadedOceanTable(); oceanDisclaimer(false); } else oceanDisclaimer(true);
+              // With an upload: the values with O, C and E on one page, A and N from a fresh page with the D-curve under them
+              // (owner, 22 Oct 2026). Otherwise each block where it fits.
+              const isAgreeableness = (txt) => /meegaand|agreeabl/i.test(bareHeading(headOf(txt.split('\n')[0])));
+              texts.forEach((txt, i) => {
+                const breakHere = hasOceanUpload && isAgreeableness(txt) ? y > margin : (i > 0 && y + blockH(txt) > bottom);
+                if (breakHere) { pdf.addPage(); paintBg(); markPage(); y = margin; }
+                writePdfMarkdown(txt, margin + 2, contentW - 4, cyan);
+              });
+            }
+
+            // The D-curve (page title, chart, caption) with De Vorm · De Hardware onder Druk
+            const vorm = firstOf(morphPage.filter((s) => morphRank(s) === 0));
+            const hardware = morphPage.filter((s) => morphRank(s) === 1);
+            // The D-curve (page title, chart, caption) in the room left under OCEAN, shrunk to fit (owner, 22 Oct 2026);
+            // under MIN_CHART_H it opens a page of its own at full size. Then De Vorm and De Hardware onder Druk together
+            // on one fresh page, running to its edge rather than onto a next one.
+            if (hasMorphChart) {
+              const MIN_CHART_H = 35;
+              const full = await drawMorphChart({ measure: true });     // box + caption at full size
+              const chrome = full - (await drawMorphChart({ measure: true, maxChartH: 1 })) + 1; // what the chart itself takes
+              const fixedH = full - chrome;                              // caption, gaps and box padding
+              const avail = bottom - (y + 1.5) - 12 - fixedH;            // chart height the page still holds
+              if (opened && avail >= MIN_CHART_H) {
+                // Anchored to the bottom of the page (owner, 22 Oct 2026): the free room goes between the text and the chart.
+                const chartH = Math.min(full - fixedH, avail);
+                y = Math.max(y + 1.5, bottom - (12 + fixedH + chartH));
+                sectionHeading(sectionTitle('morphology_page', language), cyan);
+                await drawMorphChart({ maxChartH: avail });
+              } else {
+                room(12 + full);
+                sectionHeading(sectionTitle('morphology_page', language), cyan);
+                await drawMorphChart();
+              }
+            }
+            const morphReads = [vorm, ...hardware].filter(Boolean);
+            if (morphReads.length) await fixedPage(async () => {
+              morphReads.forEach((s, i) => { sep(i); renderSection(shownTitle(s), relabelProse(s.content, language), cyan); });
+            });
+
+            // The triangle with De Cognitieve Driehoek · De Drogredenen
+            const tri = byTitle(triangleSections, ['cognitieve', 'drogredenen']);
+            // One page: the figure as large as the page allows next to Beginner's short texts (owner, 22 Oct 2026) — at
+            // least Leerling's full size, at most TRI_FIG_MAX (where the wheel labels still fit the width).
+            if (tri.length) {
+              const fig = triangleFigure?.main ? triangleFigure : null;
+              const TRI_FIG_MAX = 140;
+              const captionH = fig ? 4.2 + (fig.top?.length ? 3.8 : 0) + (fig.others?.length ? 3.8 : 0) + 3 + 1 : 0;
+              const textH = tri.reduce((h, s, i) => h + sectionH(shownTitle(s), s.content) + (i > 0 ? 1.5 : 0), 0);
+              await fixedPage(async () => {
+                const boxH = Math.min(TRI_FIG_MAX, Math.max(TRI_FIG_H, bottom - y - captionH - textH));
+                if (fig) drawTriangleFigure(fig, boxH);
+                tri.forEach((s, i) => { sep(i); renderSection(shownTitle(s), s.content, triYellow); });
+              });
+            }
+
+            // Hardware Data (the Keuze/Echo graph) with De Alchemie · Het Neurale Schakelbord · Ontologische Evolutie
+            const hwd = byTitle(group2Sections, ['alchemie', 'schakelbord', 'ontologi']);
+            const keuzeEcho = enginePayload?.keuze_echo;
+            if (keuzeEcho) {
+              room(12 + KE_FOOTPRINT_H + 1.5 + (hwd[0] ? sectionH(shownTitle(hwd[0]), hwd[0].content) : 0));
+              sectionHeading(t('resultsModal.pdf.keuzeEcho.title'), orange);
+              drawKeuzeEcho(keuzeEcho);
+              hr();
+              if (hwd[0]) renderSection(shownTitle(hwd[0]), hwd[0].content, orange);
+              hwd.slice(1).forEach((s) => section(s, orange));
+            } else hwd.forEach((s) => section(s, orange));
+          }
+          endBeginner();
 
           // ── Alchemie / Neurale Schakelbord / Ontologie now render on the Dual-Core page
           //    (Master Prompt v4.1 §5.8); group2Sections kept only to keep them out of `others`.
@@ -3557,6 +3747,7 @@ const AssessmentResultsModal = ({
         // Creatieve Resonantie (the radar page, §5.4) · 9 OCEAN · 10-12 Vorm/Hardware/Overgang ·
         // 13-15 De Stille Stem · De Cognitieve Driehoek · 16-18 Alchemie/Schakelbord/Evolutie · 19 AI-prompt + machineblok.
         const desiredBlockOrder = [
+          'beginner_body', // Beginner only: all its sections as one flow (none of the blocks below render then)
           'group1a',       // 1-4: Identiteit/Verklaring + Essentie/Vermenigvuldiging
           'group1b',       // 5-6: Schaduw + Blindspot
           'nb_resonance',  // 7-8: radar + DE EXTENSIE + Creatieve Resonantie (§5.4, before OCEAN)
@@ -3648,7 +3839,7 @@ const AssessmentResultsModal = ({
       setIsGeneratingPdf(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, displaySections, uploadedFiles, language, enginePayload, polarization, dataBlock, triangleFigure, t, tArray, tFunc, portrait, portraitVariant, paidPaymentId]);
+  }, [result, displaySections, uploadedFiles, language, enginePayload, polarization, dataBlock, triangleFigure, t, tArray, tFunc, portrait, portraitVariant, paidPaymentId, assessmentLevel]);
 
   // Dev PDF live-preview: once the (replayed) analysis is ready, auto-build the PDF
   // and hand the blob URL back to the harness instead of downloading.

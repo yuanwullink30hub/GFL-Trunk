@@ -1,7 +1,7 @@
 {
  "level": "leerling",
  "version": "1.0",
- "ratified": "2026-10-16 15:50 (owner: '648 geaccepteerd'); 2026-10-22 owner: the sheet's revisions taken over, every * removed",
+ "ratified": "2026-10-16 15:50 (owner: '648 geaccepteerd'); 2026-10-22 owner: the sheet's revisions taken over (second pass), every * removed",
  "l1_refusal_label": "Geen van deze past",
  "questions": [
   {
@@ -9,93 +9,93 @@
    "level": "leerling",
    "subject": "zelf_zonde",
    "position": 1,
-   "text": "Wat vergeef je jezelf het moeilijkst?",
+   "text": "Waarin schiet jij soms zo door, dat je het jezelf achteraf moeilijk vergeeft?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Dat ik mijn eigen regels niet naleefde toen het erop aankwam."
+     "text": "In blijven eisen hoe het hoort, tot er voor niemand nog ruimte was."
     },
     {
      "group": "Relational",
-     "text": "Dat ik iemand in de steek liet terwijl ik er had kunnen zijn."
+     "text": "In meebuigen, tot ik mezelf niet meer terugvind."
     },
     {
      "group": "Seeker",
-     "text": "Dat ik mezelf afsloot voor wat het leven nog kon worden."
+     "text": "In nergens een grens trekken, ook toen ik die allang had moeten zien."
     },
     {
      "group": "Chaos",
-     "text": "Dat ik de waarheid ontweek op het moment dat die eruit moest."
+     "text": "In afbreken, ook als er al niets meer overeind staat."
     },
     {
      "group": "Abstract",
-     "text": "Dat ik in mezelf verdween toen meedoen nodig was."
+     "text": "In me terugtrekken in mijn hoofd, terwijl buiten het leven doorging."
     },
     {
      "group": "Agency",
-     "text": "Dat ik doorduwde voor het resultaat en de prijs niet wilde zien."
+     "text": "In doordrukken, ook toen er niets meer te halen viel."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Ik wist dat het niet klopte en toch ging ik erin mee. Niet de fout zelf — maar dat ik mijn eigen kompas negeerde."
+     "text": "In harder oordelen dan nodig was. Ik had gelijk, maar het vonnis was zwaarder dan de fout — en dat reken ik mezelf zwaarder aan dan welke vergissing ook."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Ik heb het verwaarloosd terwijl iedereen op mij rekende. Niet de rommel zelf — maar dat ik de teugels losliet die ik zelf had opgepakt."
+     "text": "In alles naar me toe trekken. Het draaide wel, maar niemand mocht nog iets zelf beslissen — en hoeveel mensen ik daarmee klein hield, zag ik pas toen ze weg waren."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Ik hield afstand terwijl iemand dichtbij wilde komen. Iemand strekte zich naar me uit en ik was er niet — dat gemis zit nog in mijn lijf."
+     "text": "In opgaan in de ander. Ik voelde zijn stemming eerder dan de mijne en noemde dat liefde — tot ik niet meer wist wat ik zelf wilde."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Iemand had het moeilijk; ik kon helpen en hielp niet. Die ander moest het toen alleen dragen — en dat laat me niet los."
+     "text": "In blijven geven terwijl ik al op was. Ik zei ja tot het bitter werd — en die bitterheid kwam terecht bij de mensen voor wie ik het deed."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Het moment waarop het vertrouwen uit me wegliep. Niet de tegenslag — maar dat ik mijn hoop liet varen en het cynisme bij me binnenliet."
+     "text": "In blijven geloven in iemand die het allang niet meer verdiende. Ik zag het wel aankomen — ik wilde het alleen niet zien, en anderen betaalden mee."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Het moment waarop ik de deur zag openstaan en het avontuur niet aanging. Achteraf voelde dat als verstikking van mijn nieuwsgierigheid."
+     "text": "In verder trekken waar blijven nodig was. Ik zag wat er van me gevraagd werd — ik was alleen al onderweg, en anderen bleven ermee zitten."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Ik zweeg terwijl iemand zijn macht misbruikte. Ik probeerde het achteraf goed te praten — maar wie zwijgt, hoort bij het misbruik, en daar hoorde ik dus bij."
+     "text": "In doorvechten als het eigenlijk voorbij is. Dan raak ik ook wie naast me stond — en dat krijg ik niet zomaar van me af."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Dat ik er een grap van maakte terwijl het ertoe deed. Ik betrap mezelf erop dat lichtheid me beschermt — maar soms beschermt het me tegen precies dat wat ik had moeten voelen."
+     "text": "In doorprikken als het eigenlijk al lek is. Dan wordt een opmerking wreed in plaats van raak — en dat blijft langer hangen dan de reactie die het opleverde."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Ik ben begrijpen gaan gebruiken als reden om niet te handelen. Het voelt als grondigheid, maar het werkt als uitstel — zolang ik het niet volledig doorgrond, hoef ik niets te doen."
+     "text": "In blijven analyseren waar iemand gewoon mij nodig had. Ik begreep precies wat er speelde — en was er juist daardoor zelf niet bij."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Ik heb hevige emoties meteen omgezet in iets moois, nog voor ik ze had gevoeld. Het oogt als verwerking, maar het werkt als vlucht — de pijn kreeg een lijst voordat hij kleur had."
+     "text": "In wegdrijven in mijn eigen wereld waar iemand om mij vroeg. Ik maakte er in gedachten een beeld van — en liet het echte moment ondertussen lopen."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Ik bleef externe factoren bijsturen zonder de randgevolgen mee te rekenen. Ik kende het systeem tot in detail — en besef nu dat ik mensen als onderdelen behandelde."
+     "text": "In bijsturen waar niemand om vroeg. Het werkte — maar ik had mensen als stukken op een bord verschoven, en dat zit me nog steeds niet lekker."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Ik heb waarde gelijkgesteld aan mijn prestaties. Die vergelijking kost me elke keer dat iets mislukt — alsof ik dan zelf ook minder waard ben geworden."
+     "text": "In doorzetten waar ophouden verstandiger was. Ik won het — maar wat het anderen en mij kostte, heb ik pas veel later opgeteld."
     }
    ]
   },
@@ -104,11 +104,11 @@
    "level": "leerling",
    "subject": "zelf_zonde",
    "position": 2,
-   "text": "Je ontdekt dat iets waar je lang in geloofde niet klopt. Wat is je eerste beweging?",
+   "text": "Je ontdekt dat iets waarop je lang hebt gebouwd niet klopt. Wat is je eerste beweging?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Ik zet eerst op een rij wat hierdoor verandert."
+     "text": "Ik trek alles eerst strakker aan, nog voor ik voel wat het met me doet."
     },
     {
      "group": "Relational",
@@ -116,7 +116,7 @@
     },
     {
      "group": "Seeker",
-     "text": "Ik neem eerst alles in me op, voordat ik er iets van vind."
+     "text": "Ik maak het eerst kleiner dan het is, en kijk alvast naar wat er nog wel kan."
     },
     {
      "group": "Chaos",
@@ -128,19 +128,19 @@
     },
     {
      "group": "Agency",
-     "text": "Ik schakel meteen om naar wat ik er nu mee ga doen."
+     "text": "Ik ga er meteen harder tegenaan, alsof tempo het gat kan dichten."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Ik ga na welke beslissingen op die overtuiging rustten. Want als het uitgangspunt niet klopt, wil ik weten welke oordelen ik opnieuw moet toetsen voordat ik verder ga."
+     "text": "Ik word strenger, eerst voor mezelf. Wat ik nog wel zeker weet, houd ik extra scherp aan — zodat niemand ziet hoeveel er bij mij is gaan schuiven."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Ik houd eerst alles draaiende voor wie erop rekent. Want als zoiets onderuitgaat, verschuift alles eromheen — en dan moet er iemand zijn die het dak overeind houdt."
+     "text": "Ik houd alles draaiende alsof er niets is gebeurd. Want als zoiets onderuitgaat, kijkt iedereen naar mij — dus wat het met mij doet, komt later wel."
     },
     {
      "archetype": "Lover",
@@ -155,12 +155,12 @@
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Ik vraag me eerst af of ik het wel goed heb gezien. Want een overtuiging die valt, valt bij mij nooit alleen — er hangt altijd vertrouwen aan vast."
+     "text": "Ik zeg tegen mezelf dat het vast een misverstand is. Nog even niet kijken — zolang ik het zo noem, hoeft er nog niets te veranderen."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Ik scan meteen wat er nu mogelijk is. Want een overtuiging die valt maakt altijd meer ruimte vrij dan ze innam — in die vrijgekomen ruimte herken ik mezelf het meest."
+     "text": "Ik ben in gedachten al een stap verder. Er is vast een andere route — zolang ik beweeg, hoef ik niet te voelen wat hier is ingestort."
     },
     {
      "archetype": "Outlaw",
@@ -170,12 +170,12 @@
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Eerlijk gezegd lucht het op, alsof er een laag wegvalt die ik nog niet helemaal kon benoemen — geloven is sowieso een tijdelijk contract."
+     "text": "Alles moet lucht krijgen. Ik maak er meteen iets komisch van — niet omdat het me niets doet, maar omdat de grap sneller is dan de schrik."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Het wordt eerst stil in mijn hoofd. Dan loopt het denken terug langs alles wat erop leunde — pas als ik de samenhang begrijp, komt er rust."
+     "text": "Ik trek me eerst terug. Niet om het te voelen — om het te ordenen. Pas als ik het weer kan uitleggen, laat ik iemand toe."
     },
     {
      "archetype": "Artist",
@@ -185,7 +185,7 @@
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Ik word wakker. Er valt een aanname weg en ik zie het systeem scherper — en ik wil meteen weten waarom het zo lang toch werkte."
+     "text": "Ik ga meteen sleutelen. Er valt een aanname weg en ik stuur alles bij — sneller dan ik kan overzien wat ik eigenlijk kwijt ben."
     },
     {
      "archetype": "Hero",
@@ -199,93 +199,93 @@
    "level": "leerling",
    "subject": "zelf_zonde",
    "position": 3,
-   "text": "Welk deel van jezelf bescherm je het felst — ook tegen de mensen die het dichtst bij je staan?",
+   "text": "Welk gevoel bescherm je het felst — ook tegen de mensen die het dichtst bij je staan?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Hoe streng ik mezelf in het gareel houd."
+     "text": "De angst dat alles uit elkaar valt."
     },
     {
      "group": "Relational",
-     "text": "Wat mijn verbondenheid met anderen van mij vraagt."
+     "text": "De angst dat ik er voor een ander niet genoeg ben."
     },
     {
      "group": "Seeker",
-     "text": "Dat ik de wereld nog zonder filter beleef."
+     "text": "De angst dat het ooit dichtgaat."
     },
     {
      "group": "Chaos",
-     "text": "Hoe weinig ik eigenlijk geef om wat anderen normaal vinden."
+     "text": "Wat mijn scherpte afschermt."
     },
     {
      "group": "Abstract",
-     "text": "De gedachten en beelden die ik nog niet deel."
+     "text": "Hoeveel onrust er onder mijn rust zit."
     },
     {
      "group": "Agency",
-     "text": "Wat er achter mijn daadkracht schuilgaat."
+     "text": "Dat ik ook bang kan zijn."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Hoe hard ik over mezelf oordeel. Die interne rechtbank draait dag en nacht. Als mensen dat zouden zien, zouden ze schrikken."
+     "text": "Spanning bij onrecht dat ik niet kan stoppen. Ik kan het benoemen en aantonen — maar als het toch doorgaat, knaagt dat dagenlang, zonder dat iemand het aan me ziet."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Hoe dun mijn grip soms is. Achter de rust draait een controlekamer die nooit uitgaat. Als mensen dat zagen, zouden ze wankelen."
+     "text": "Angst voor wanorde. Ik straal rust uit en meen dat ook — maar achter die rust houdt een deel van mij voortdurend in de gaten of het niet gaat schuiven."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Hoe erg ik naar hen verlang. Als ze zouden voelen hoe ik me aan hen vastklamp, zouden ze me gaan sparen — en dan is het geen echte nabijheid meer."
+     "text": "Jaloezie. Ik kan veel delen en uitspreken — maar als iemand die ik liefheb naar een ander kijkt, schiet er iets door me heen wat ik liever niemand laat zien."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Hoeveel de zorg me kost. Als ze zouden weten hoe leeg de tank soms is, zouden ze zich inhouden — en dat voelt als verlies."
+     "text": "Mijn eigen zorgen. Die van anderen draag ik zichtbaar mee — maar wat mij 's nachts wakker houdt, houd ik voor me, zodat niemand zich om mij hoeft te bekommeren."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Dat ik de donkere kant wel degelijk zie. Wie dicht bij me staat, denkt dat die me ontgaat — en dat laat ik zo, want anders gaan ze mij ook nog beschermen."
+     "text": "Breekbaarheid. Ik kom licht over, en dat ben ik ook — maar als het echt misgaat, valt er in één keer veel om, en dat laat ik liever niemand zien."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Dat ik in beweging blijf. Wie dicht bij me staat, wil soms dat ik tot rust kom — maar die beweging is geen vlucht: zonder haar ontdek ik niets meer."
+     "text": "Hoe snel ik me opgesloten voel. Ik kom vrij over, en dat ben ik ook — maar als het om me heen dichtgaat, slaat de onrust toe, en dat houd ik liever voor me."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Hoe ver ik eigenlijk buiten de groep sta. Hoe hecht het ook is, vanuit andermans perspectief lijk ik afwezig — dan voelt zelfs een sterke knoop als een losse lus."
+     "text": "Wat er onder de verontwaardiging zit. Wie mij ziet, denkt dat het alleen woede is — maar het raakt me, elke keer weer, en dat laat ik zelfs mijn naasten niet zien."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Hoe onzeker ik eigenlijk ben. Want zodra mensen dat doorhebben, zoeken ze achter elke opmerking een wond — en dan kan ik nergens meer luchtig over doen."
+     "text": "Wat er onder de luchtigheid zit. Wie mij ziet, denkt dat niets me echt raakt — maar onder elke snelle opmerking zit iets wat ik zelfs thuis nooit hardop zeg."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Mijn denken over hen. Wat ik hardop zeg is altijd al gefilterd — de volledige analyse zou te koud klinken, en dat filteren kost me helderheid."
+     "text": "Het onbehagen als iets me ontglipt. Wat anderen zien is iemand die het overziet — maar als ik iets niet kan bevatten, word ik onrustiger dan ik ooit laat merken."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Mijn gevoeligheid voor kritiek. Wat ik laat zien lijkt altijd al af — maar elk commentaar raakt de maker, niet het werk, en dat verbergen kost kracht."
+     "text": "Hoe diep ik kan zakken. Wat anderen zien is iemand met een rijke binnenwereld — maar die wereld kan ook donker worden, en hoe donker laat ik zelfs dichtbij niemand zien."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Mijn methode. Want zodra mensen zien hoeveel ik stuur, verliest het mechanisme zijn werking — dat geef ik niet op."
+     "text": "Machteloosheid. Ik geef iedereen het idee dat alles te beïnvloeden is — maar bij wat echt niet wijkt, slaat er iets in me door wat ik niemand laat zien."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Mijn twijfel. Want zodra mensen die zien, wordt elk besluit van mij een vraag — en die ruimte geef ik niet op."
+     "text": "Vrees. Ik sta vooraan, en dat is echt — maar die vrees houd ik zo ver weg dat ik soms zelf vergeet dat hij er is."
     }
    ]
   },
@@ -389,93 +389,93 @@
    "level": "leerling",
    "subject": "zelf_zonde",
    "position": 5,
-   "text": "Er is iets in je leven dat je al maanden uitstelt. Waar wacht je eigenlijk op?",
+   "text": "Wat stel je al maanden uit, terwijl het eigenlijk precies is waar je goed in bent?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Op de zekerheid dat het niet misgaat."
+     "text": "Een besluit dat allang klaarligt."
     },
     {
      "group": "Relational",
-     "text": "Op een moment dat ik het kan verantwoorden bij een ander."
+     "text": "Er echt zijn voor iemand die ik al een tijd laat wachten."
     },
     {
      "group": "Seeker",
-     "text": "Op een richting die zich vanzelf aandient."
+     "text": "Me opnieuw openzetten voor wat ik had afgesloten."
     },
     {
      "group": "Chaos",
-     "text": "Op het moment dat het niet meer anders kan."
+     "text": "Ergens tegenin gaan waar ik inmiddels zelf in meedraai."
     },
     {
      "group": "Abstract",
-     "text": "Op helderheid over wat het eigenlijk moet worden."
+     "text": "Wat ik zie, ook echt uitwerken."
     },
     {
      "group": "Agency",
-     "text": "Op het punt waarop ik kan toeslaan."
+     "text": "Aan iets beginnen wat ik allang in gang had kunnen zetten."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Op de zekerheid dat ik geen fout maak. Want een verkeerde keuze kan ik mezelf niet vergeven — die strengheid herken ik, ook als ze me verlamt."
+     "text": "Een grens trekken bij iemand die ik graag mag. Bij vreemden doe ik het moeiteloos — juist hier schuif ik het op, en hoe langer ik wacht, hoe vager het wordt."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Op het moment dat ik de uitvoering volledig kan regisseren. Want half werk levert dubbele schade — dat is de duurste les die ik draag."
+     "text": "Mijn eigen zaken op orde brengen. Voor anderen regel ik alles moeiteloos — maar mijn eigen papieren en plannen liggen al die tijd op de stapel, en die stapel groeit."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Op iemand die met me meegaat. Ik weet wat ik wil, maar alleen voelt het koud en zinloos. Dus wacht ik tot iemand naast me staat."
+     "text": "Het gesprek met iemand van wie ik voel dat er iets is. Ik voel het al een hele tijd — maar ik schuif het op, alsof aanvoelen alleen al genoeg is."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Op een moment waarop het niemand raakt. Ik weet wat ik moet doen, maar elke optie heeft gevolgen voor iemand anders. Dus ik wacht."
+     "text": "Iemand helpen die er niet om vraagt. Ik zie het al lang — maar zonder verzoek durf ik niet in te stappen, en ondertussen blijft het liggen."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Op een teken dat het veilig is. Niet rationeel — ik weet dat het er misschien nooit komt. Maar iets in mij weigert te springen zolang de landing onzeker is."
+     "text": "Opnieuw beginnen met iemand die me teleurstelde. Ik wil het wel — maar ik houd de deur op een kier, en dat is niets voor mij."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Op een opening die niets afsluit. Niet uit twijfel — ik zie de mogelijkheden juist scherp. Maar kiezen voor één sluit de rest, dus houd ik ze nog even open."
+     "text": "Weer op pad gaan. Ik zit al een hele tijd op een plek waar ik eigenlijk al uitgekeken ben — en toch schuif ik de volgende stap op."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Op niks. Ik stel het niet uit omdat ik wacht — ik stel het uit omdat het systeem eromheen niet deugt. Vroeger zou ik het hebben opgeblazen. Nu wacht ik tot ik weet wát er moet veranderen."
+     "text": "Ergens uitstappen waar ik al lang niet meer achter sta. Ik weet wat er niet klopt — maar ik draai nog mee, en dat zit me dieper dwars dan ik toegeef."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Eigenlijk nergens op. Ik zie al waar het gaat haperen — en wat niet begonnen is, kan ook niet mislukken. Vroeger maakte ik daar een grap over. Nu zeg ik dat gewoon hardop."
+     "text": "Ergens weer de draak mee steken. Op één plek ben ik bloedserieus geworden — en intussen zie ik steeds minder wat daar eigenlijk absurd aan is."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Op het laatste stuk informatie. Ik kan beginnen wanneer ik wil, maar zonder begrip van het geheel is elke stap een gok. Dat ontbrekende stuk kan ik precies aanwijzen."
+     "text": "Iets echt uitzoeken wat me al lang dwarszit. Daar ben ik sterk in — maar hier kijk ik net niet scherp, want misschien wil ik het antwoord nog even niet weten."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Op het gevoel dat het klopt. Ik kan het technisch uitvoeren wanneer ik wil, maar zonder die innerlijke resonantie wordt het een lege handeling. Dat verschil peil ik feilloos."
+     "text": "Iets maken wat in mijn hoofd allang af is. Het beeld staat helemaal — maar zolang het daar zit, kan het nog niet tegenvallen, en dat is ook wel zo rustig."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Op het juiste moment. Want timing is alles — te vroeg bewegen verspilt de impact. Eén goed getimede zet doet meer dienst dan tien gehaaste."
+     "text": "Iets aanpakken wat al jaren hetzelfde is. Ik weet waar het anders kan — maar juist hier laat ik het zoals het is, alsof juist dit ene ding vastligt."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Op weerstand. Het is te klein om tegen te vechten, er valt niets te winnen — dus blijft het liggen terwijl ik me op iets zwaarders stort."
+     "text": "Aan iets beginnen waar ik geen overwinning in zie. Ik kan overal tegenaan — maar wat geen strijd belooft, blijft onaangeroerd, ook als ik weet dat het moet."
     }
    ]
   },
@@ -484,93 +484,93 @@
    "level": "leerling",
    "subject": "zelf_zonde",
    "position": 6,
-   "text": "Wat is het gevaarlijkste dat je ooit tegen jezelf hebt gezegd — en geloofde?",
+   "text": "Wat is het gevaarlijkste dat je tegen jezelf zegt, als het je eigenlijk al te veel wordt?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "“Iemand moet de lijn bewaken, en dat ben ik.”"
+     "text": "Dat ik het onder controle heb — terwijl ik al aan het verstijven ben."
     },
     {
      "group": "Relational",
-     "text": "“Ik besta eigenlijk alleen voor de mensen om me heen.”"
+     "text": "Dat ik nog wel wat meer kan dragen voor een ander — terwijl ik mezelf allang kwijt ben."
     },
     {
      "group": "Seeker",
-     "text": "“Daar hoef ik niet bij stil te staan.”"
+     "text": "Dat het wel meevalt — terwijl ik al lang geen grens meer zie."
     },
     {
      "group": "Chaos",
-     "text": "“Het heeft geen zin om ertegenin te gaan.”"
+     "text": "Dat ik juist nu op mijn scherpst ben — terwijl ik alles om me heen aan het slopen ben."
     },
     {
      "group": "Abstract",
-     "text": "“Wat ik vanbinnen zie, is hoe het is.”"
+     "text": "Dat ik het eerst moet doorgronden — terwijl ik intussen nergens meer aan meedoe."
     },
     {
      "group": "Agency",
-     "text": "“Met genoeg inzet krijg ik alles voor elkaar.”"
+     "text": "Dat ik nog wel iets harder kan — terwijl ik op reserve loop."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "“Ik weet hoe het hoort.” En meestal is dat ook zo. Maar dat weten sluit elke deur. Er blijft geen ruimte over voor de andere kant, de nuance, de genade."
+     "text": "Dat ik gewoon gelijk heb. Zolang ik de regel kan aanwijzen, hoef ik niet te zien hoe hard ik geworden ben — en dat is precies waar het misgaat."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "“Als ik het niet doe, doet niemand het.” En het klopt — meestal. Maar die overtuiging vult elke ruimte. Er blijft niks over voor de twijfel, de rust, het loslaten."
+     "text": "Dat het prima gaat. Dat zeg ik tegen anderen en tegen mezelf — en omdat alles blijft draaien, merkt niemand hoe gespannen ik ben, ik zelf al helemaal niet."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "“Zonder hen ben ik niemand.” Dat klonk als toewijding, maar eronder zat angst. Zolang ik in iemand opging, hoefde ik niet te voelen wie ik zelf was."
+     "text": "Dat het weer goed wordt als ik maar in de buurt blijf. Ik houd me vast aan de ander en noem het trouw — en verlies ondertussen mezelf."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "“Er kan altijd nog wel iets bij.” Dat klonk als ruimhartig, maar het werd een put zonder bodem. Zolang er iets bij kon, hoefde ik niet naar mezelf te kijken."
+     "text": "Dat ik dit nog wel even kan opvangen. Ik zeg ja en nog eens ja — en noem het zorg, terwijl het uitputting is."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "“Ze meenden het vast niet zo.” Ik noemde het vertrouwen. Nu weet ik dat het een blinddoek was. Achter die blinddoek kon het steeds verder misgaan."
+     "text": "Dat het vast een fase is. Ik ga ervan uit dat het overgaat — en merk pas hoe ver het al is als het niet meer te negeren valt."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "“Ik hoef nergens bij te horen.” Ik noemde het vrijheid. Nu zie ik dat het een verdedigingslinie was. Achter die linie werd het steeds stiller."
+     "text": "Dat ik er zo wel uit ben. Ik kijk al verder — en zie niet dat ik het tempo opvoer om niet te hoeven voelen."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "“Wie twijfelt, is al gekocht.” Want zodra ik dat geloofde, kon niemand me nog iets vertellen — en elke tegenspraak bewees alleen mijn gelijk."
+     "text": "Dat dit gevecht het waard is. Hoe zwaarder het wordt, hoe zekerder ik dat weet — en juist dan zie ik niet meer wat ik onderweg kapotmaak."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "“Benoemen is genoeg.” Want zodra ik dat geloofde, stopte het daar — en wat ik zo scherp had gezien, lag er daarna gewoon nog steeds."
+     "text": "Dat niets echt zo erg is. Hoe zwaarder het wordt, hoe lichter ik het breng — tot ik merk dat ik al dagen met geen mens echt heb gesproken."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "“Ik snap het.” Terwijl ik het helemaal niet snapte — ik had alleen een model dat klopte. Het gevaarlijkste moment is wanneer begrip aanvoelt als beleving."
+     "text": "Dat ik het pas kan laten rusten als ik het snap. Dus blijf ik malen — en hoe langer ik dat doe, hoe verder ik van iedereen af kom te staan."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "“Zo voel ik het nu eenmaal.” Terwijl ik het allang niet meer belichaamde — het was een verhaal geworden. Mijn gevaarlijkste moment is wanneer het verhaal aanvoelt als het gevoel."
+     "text": "Dat ik me eerst even moet terugtrekken in mijn werk. Dus verdwijn ik erin, dag na dag — en hoe langer dat duurt, hoe moeilijker de terugweg wordt."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "“Ik kan dit fixen.” Alles. Altijd. Het gevaarlijke is niet de arrogantie — het is dat het vaak klopt. En juist omdat het klopt, stopte ik met vragen of het ook móest."
+     "text": "Dat ik het nog steeds in de hand heb. Ik stuur alleen maar bij, steeds fijner — en merk pas dat het me ontglipt als het al te laat is."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "“Opgeven is geen optie.” Nooit. Nergens. Het gevaarlijke is niet de koppigheid — het is dat het zo vaak werkt. En juist daardoor bleef ik doorgaan, ook toen stoppen het enige verstandige was."
+     "text": "Dat ik nog niet moe ben. Ik schakel een versnelling hoger, en dan nog een — en de waarschuwing komt pas als het eigenlijk al te laat is."
     }
    ]
   },
@@ -579,93 +579,93 @@
    "level": "leerling",
    "subject": "zelf_zonde",
    "position": 7,
-   "text": "Wanneer heb je voor het laatst iets over jezelf ontdekt dat je liever niet had geweten?",
+   "text": "Welke kant van jezelf houd je al jaren klein, zonder dat je het doorhad?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Dat mijn behoefte aan orde eigenlijk vooral mezelf beschermt."
+     "text": "Spelen met wat nog niet bestaat."
     },
     {
      "group": "Relational",
-     "text": "Dat mijn inzet voor anderen niet altijd zo belangeloos is als ik dacht."
+     "text": "Het koele afwegen van wat iets mij kost."
     },
     {
      "group": "Seeker",
-     "text": "Dat ik soms vooruit kijk om iets niet onder ogen te zien."
+     "text": "Durven kiezen, en dus ook uitsluiten."
     },
     {
      "group": "Chaos",
-     "text": "Dat ik al reageer voordat ik weet wat iets waard is."
+     "text": "De adem voor de lange weg."
     },
     {
      "group": "Abstract",
-     "text": "Dat veel van wat ik in huis heb nooit het daglicht ziet."
+     "text": "Gewoon iets doen, zonder het eerst te doordenken."
     },
     {
      "group": "Agency",
-     "text": "Dat niet ik voor de actie kies, maar de actie voor mij."
+     "text": "Alleen maar ontvangen, zonder iets te hoeven."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Toen ik merkte dat mijn strengheid naar anderen een omweg was om mezelf niet aan te kijken. Dat inzicht bouwde zich over maanden op."
+     "text": "Mijn verbeelding. Ik dacht dat ik gewoon nuchter was — maar elke gedachte die niet te toetsen viel, heb ik zo snel afgedaan dat ik vergeten ben hoe fantaseren voelt."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Toen ik merkte dat ik de leiding neem om niet te hoeven voelen hoe onzeker ik ben. Dat besef kwam langzaam, en het kwam ongelegen."
+     "text": "Mijn gevoel voor betekenis. Ik dacht dat ik gewoon zakelijk was — maar wat iets voor mij betekende, heb ik zo vaak opzij gezet voor wat werkte, dat ik het nauwelijks nog hoor."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Dat ik meebuig met andermans gevoel om niet losgelaten te worden. Mijn warmte stroomt niet vanzelf — ze houdt ook vast."
+     "text": "Mijn eigen oordeel. Het verdween ongemerkt in wat een ander voelde — zo vaak, dat ik nu nauwelijks nog weet wat ik zelf eigenlijk vind."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Dat ik zorg om onmisbaar te zijn. Mijn hulp is niet alleen voor de ander — ze houdt mijn eigen identiteit ook overeind."
+     "text": "Mijn zakelijkheid. Die verdween ongemerkt achter het zorgen — uitrekenen wat iets mij kost, heb ik zo lang niet gedaan dat ik het nauwelijks nog kan."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Dat mijn optimisme soms een schild is. Er zijn momenten waarop ik het positieve opzoek, niet omdat ik erin geloof, maar omdat het alternatief te zwaar voelt."
+     "text": "Mijn scherpte. Die hoorde niet bij me, dacht ik — maar onderscheid maken tussen wie te vertrouwen is en wie niet, is geen lelijke eigenschap."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Dat mijn nieuwsgierigheid soms een vluchtroute is. Er zijn momenten waarop ik iets nieuws opzoek, niet omdat het me trekt, maar omdat blijven te dichtbij komt."
+     "text": "Mijn keuzevermogen. Dat hoorde niet bij me, dacht ik — maar ergens nee tegen zeggen om ergens anders echt ja tegen te zeggen, is geen opsluiting."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Dat ik sloop om het slopen. Niet om de zaak — het gebeurt gewoon. Het breken komt eerder dan de vraag wat erna moet komen, en ik weet niet of dat lef is of gewoon honger."
+     "text": "Mijn geduld. Daar had ik nooit tijd voor, vond ik — terwijl iets stap voor stap overeind houden er wel degelijk in zit, als ik het een kans geef."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Dat ik grappen maak als het pijn doet. Niet als strategie — het gebeurt gewoon. De lach zit er eerder dan de traan, en ik weet niet of dat kracht is of een reflex waar ik niks aan kan doen."
+     "text": "Mijn standvastigheid. Daar tilde ik nooit zwaar aan, vond ik — terwijl een grens trekken en die ook houden er wel degelijk in zit, als ik het niet wegwuif."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Dat ik in een gesprek vaak het verkeerde patroon volg. De analyse klopt, de redenering klopt — maar waar het die ander om ging, heb ik gemist."
+     "text": "Mijn handen. Ik heb zo lang in mijn hoofd gewoond dat iets maken, iets doen zonder het eerst uit te denken, onwennig is gaan voelen — terwijl het me goed doet."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Dat ik meer voel dan ik ooit kan laten zien. Het beeld is er, de kleur is er — maar zodra ik het naar buiten breng, verliest het zijn adem."
+     "text": "Mijn praktische talent. Ik heb zo lang in mijn verbeelding gewoond dat plannen, regelen en organiseren iets voor anderen werd — terwijl ik het best kan."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Dat ik dingen niet verander omdat ze beter moeten, maar omdat ik zoiets niet met rust kan laten, alsof dat buiten mijn invloed ligt. Die drang staat altijd aan — en ik weet niet wie ik ben als hij uitgaat."
+     "text": "Mijn ontvankelijkheid. Die sloeg ik over — iets binnenlaten zonder er meteen iets mee te willen, deed ik zo zelden dat ik pas laat merkte hoeveel ik miste."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Dat ik niet onbevreesd ben omdat ik sterk ben, maar omdat ik mijn angst gewoon niet binnenlaat. Die schakelaar staat altijd om — en ik weet niet wat er dan komt als hij ooit terugspringt."
+     "text": "Mijn stilte. Die sloeg ik over — gewoon zitten en laten binnenkomen wat er is, deed ik zo zelden dat ik pas laat merkte dat het geen zwakte is."
     }
    ]
   },
@@ -781,11 +781,11 @@
     },
     {
      "group": "Seeker",
-     "text": "Het gevoel dat de toekomst nog openligt."
+     "text": "Dat ik nog steeds alles kan opnemen wat er op me afkomt."
     },
     {
      "group": "Chaos",
-     "text": "Mijn neus voor wat er werkelijk telt."
+     "text": "Het vermogen om niet mee te spelen."
     },
     {
      "group": "Abstract",
@@ -810,7 +810,7 @@
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Het verlangen naar nabijheid. Zelfs zonder iemand om me heen blijf ik zoeken naar contact, naar iemand die terugvoelt. Dat verlangen houdt me in leven, en het maakt me afhankelijk."
+     "text": "Het meevoelen. Zelfs zonder iemand om me heen stem ik me af op wie ik tegenkom — een vreemde, een stem aan de telefoon. Dat houdt me in leven, en het laat me nooit helemaal met rust."
     },
     {
      "archetype": "Caregiver",
@@ -979,11 +979,11 @@
     },
     {
      "group": "Abstract",
-     "text": "Als iemand haastig over iets heen gaat dat aandacht verdient."
+     "text": "Als iemand me opjaagt voordat iets tot me is doorgedrongen."
     },
     {
      "group": "Agency",
-     "text": "Als iemand blijft hangen terwijl het vijf voor twaalf is."
+     "text": "Als iemand mij afremt waar het erop aankomt."
     }
    ],
    "l2_answers": [
@@ -1030,22 +1030,22 @@
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Als iemand iets stellig beweert zonder het te hebben doordacht. Niet het ongelijk zelf — maar de slordigheid van de redenering. Dan zit ik in gedachten de stappen al te corrigeren."
+     "text": "Als iemand me dwingt te kiezen voor ik het heb kunnen doordenken. Niet de haast zelf — maar handelen op iets wat ik nog niet begrijp, voelt als blind springen."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Als iemand oppervlakkig is en het niet eens merkt. Niet oppervlakkig als keuze — maar als staat. Die platte blik op de wereld maakt me bijna verdrietig."
+     "text": "Als iemand ongevraagd mijn ruimte binnendendert. Niet de persoon zelf — maar het lawaai dat meekomt; dan komt alles tegelijk binnen en kan ik niets meer filteren."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Als iemand niet wil terwijl de deur al openstaat. Ik zie de opening die zij weigeren — en dat verschil frustreert me fysiek, op een manier die ik niet kan uitleggen."
+     "text": "Als iemand zich vastzet en niet te bewegen is. Ik zie de opening — en dat er een wil tegenover staat die ik niet om krijg, frustreert me fysiek."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Als iemand blijft klagen over iets wat hij zelf kan aanpakken. Ik heb de veters al gestrikt — voor ik het weet, los ik het voor hem op."
+     "text": "Als iemand me openlijk onderuithaalt. Niet de kritiek zelf — dat ik even zwak sta waar anderen bij zijn, daar reageer ik veel feller op dan nodig is."
     }
    ]
   },
@@ -1058,89 +1058,89 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Voor een fout van iemand die het zorgvuldig aanpakte."
+     "text": "Een fout die niemand ziet — bij een ander laat ik hem gaan, bij mezelf niet."
     },
     {
      "group": "Relational",
-     "text": "Voor iemand die het even niet meer trekt."
+     "text": "Mijn woord aan iemand — een ander mag een keer afhaken, ik niet."
     },
     {
      "group": "Seeker",
-     "text": "Voor de toewijding die iemand te snel weggeeft."
+     "text": "Mijn eigen zuiverheid — een ander mag weleens de makkelijke weg kiezen, ik houd mezelf eraan."
     },
     {
      "group": "Chaos",
-     "text": "Voor iemand die iets waars op het verkeerde moment zegt."
+     "text": "Meegaan met wat er van me verwacht wordt — een ander gun ik dat, mezelf niet."
     },
     {
      "group": "Abstract",
-     "text": "Voor iemand die minder ziet dan er te zien is."
+     "text": "Iets afleveren wat niet af is — een ander mag het afraffelen, ik niet."
     },
     {
      "group": "Agency",
-     "text": "Voor iemand die ervoor ging en toch tekortkwam."
+     "text": "Inzakken als het zwaar wordt — een ander mag dat, ik niet."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Een verkeerde inschatting. Niemand weegt altijd zuiver — die ruimte geef ik bewust, al blijft het wringen."
+     "text": "Kleine slordigheden. Een ander mag een getal verkeerd overnemen of een detail missen — bij mezelf loop ik alles twee keer na, en een fout blijft dagen hangen."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Fouten in de uitvoering. Leiderschap is feilbaar — die mildheid is aangeleerd en kost me nog steeds moeite."
+     "text": "Tijd verspillen. Een ander mag uitlopen of een afspraak vergeten — mijn eigen agenda houd ik strak, en een verloren uur reken ik mezelf aan."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Het moment dat iemand uitvalt omdat het hem te veel wordt. Dan hoor ik de pijn, niet de toon."
+     "text": "Ergens niet bij zijn. Een ander mag een keer afzeggen — als ik niet kom terwijl iemand op me rekent, voel ik me schuldig, ook al begrijpt hij het."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Het moment dat iemand het niet redt en het probeert te verbergen. Dan verdwijnt oordeel en blijft alleen de drang om te helpen."
+     "text": "Iemand laten zitten. Een ander mag een keer nee zeggen — als ik een belofte niet nakom, blijft dat aan me knagen, ook al zegt de ander dat het niet erg is."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Te makkelijk geloven. Iemand die er weer in trapt — dat zie ik als goedheid, niet als domheid. Behalve bij mezelf."
+     "text": "Iets doen wat niet deugt. Een ander mag weleens een randje opzoeken — als ik dat doe, voel ik me meteen schuldig, ook al is het klein."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Van koers veranderen. Iemand die halverwege een andere kant op gaat — dat herken ik als ademhaling, niet als gebrek. Behalve bij mezelf."
+     "text": "Me laten inkapselen. Een ander mag zich prima voelen bij een strak ritme — als ik merk dat mijn dagen een schema worden, verzet ik me ertegen."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Conflict uit eerlijkheid. Als iemand iets aanjaagt terwijl ze het juiste probeerden — dat snap ik meteen, dit is mijn taal."
+     "text": "Halve inzet. Een ander mag ergens slap in zitten — maar als ik voor iets sta, dan volledig, met een discipline die niemand van mij verwacht."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Een uitglijder. Als iemand per ongeluk zegt wat iedereen dacht — dat vergeef ik direct, zo'n uitspraak zou ik zelfs bewust doen."
+     "text": "Saai worden. Een ander mag zich in regels en schema's nestelen — mezelf sta ik dat niet toe, ook niet als het makkelijker zou zijn."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Dat ze het niet zien. Niet iedereen kijkt op dezelfde diepte — die correctie op mijn eigen verwachting heb ik bewust moeten maken."
+     "text": "Slordig denken. Een ander mag iets roepen zonder het te checken — bij mezelf moet een gedachte eerst echt kloppen voordat ik hem hardop uitspreek."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Iets onhandigs dat met hart gemaakt is. Niet iedereen heeft oog voor vorm — en dat hoeft ook niet, heb ik moeten leren."
+     "text": "Concessies aan wat ik maak. Een ander mag iets afronden omdat de deadline het vraagt — als ik dat doe, voelt het als verraad aan het werk."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Als iemand op een muur stuit. Wat niet wijkt, kun je niemand kwalijk nemen — die overtuiging heb ik bewust geconstrueerd. Bij mezelf geldt hij minder."
+     "text": "Een omweg die niet hoeft. Een ander mag de gebaande paden volgen — als ik iets niet slim aanpak, erger ik me aan mezelf."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Als iemand vecht en verliest. Wie alles gegeven heeft, valt niets te verwijten — dat meen ik echt. Bij mezelf zie ik alleen het verlies."
+     "text": "Een voornemen laten varen. Een ander mag zijn plannen bijstellen — als ik iets heb besloten, voer ik het uit, ook als het pijn doet."
     }
    ]
   },
@@ -1149,93 +1149,93 @@
    "level": "leerling",
    "subject": "ander_attentie",
    "position": 13,
-   "text": "Hoe weet jij of je iemand kunt vertrouwen?",
+   "text": "Hoeveel vertrouwen geef jij iemand, voordat je hem echt kent?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Of iemand overal en altijd dezelfde is."
+     "text": "Een voorschot, maar onder voorbehoud."
     },
     {
      "group": "Relational",
-     "text": "Aan hoe anderen zich in iemands buurt voelen."
+     "text": "Veel — ik begin liever open dan op mijn hoede."
     },
     {
      "group": "Seeker",
-     "text": "Dat weet ik pas achteraf; eerst geef ik het gewoon."
+     "text": "Meer dan de meeste mensen, en ik zie wel waar het strandt."
     },
     {
      "group": "Chaos",
-     "text": "Of iemand ook ongepolijst durft te zijn."
+     "text": "Weinig — beleefdheid alleen zegt mij niets."
     },
     {
      "group": "Abstract",
-     "text": "Of wat iemand uitdraagt ergens in geworteld is."
+     "text": "Een voorzichtig beetje, tot ik zie wie er werkelijk zit."
     },
     {
      "group": "Agency",
-     "text": "Wat iemand doet als er iets op het spel staat."
+     "text": "Genoeg om samen iets te kunnen beginnen."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Of hun woorden en daden overeenkomen. Die check draait continu — ik doe het niet bewust, het is hoe ik luister."
+     "text": "Geen voorschot. Ik ben niet wantrouwig — ik laat me alleen niet kopen door charme of een prettig gesprek. Wat iemand waard is, blijkt uit wat hij doet."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Aan wat er gebeurt als ik niet meekijk. Wie dan hetzelfde doet, durf ik het stuur te geven — de rest houd ik in de gaten."
+     "text": "Een werkrelatie. Ik leg iemand een taak voor en kijk hoe hij die oppakt — aardigheid is mooi, maar respect bouw je op door betrouwbaar te zijn."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Ik let op wat er gebeurt als ik iets van mezelf laat zien. Blijven ze, of verschuift er iets in hun blik — dat onthoud ik."
+     "text": "Bijna alles. Ik kan niet anders dan me openstellen — wie bij mij aan tafel zit, hoort er al half bij, ook als ik hem net ken."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Ik let op hoe die persoon de zwakste in de kamer behandelt. Niet mij — maar wie hem niets kan teruggeven. Dat vertelt me alles."
+     "text": "Heel veel. Ik zie eerst wat iemand doormaakt, pas veel later wat hij van plan is — en tegen die tijd heb ik allang geholpen."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Ik begin met vertrouwen. Dat is mijn startpositie. Pas als iemand het actief breekt, schakelt dat om — en dat kost ze moeite."
+     "text": "Alles. Ik ga ervan uit dat iemand het goed met me meent — en tot nu toe heeft dat me meer opgeleverd dan gekost."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Ik vertrouw wie meebeweegt. Dat merk ik onderweg. Pas als iemand me een richting wil opleggen, schakelt dat om — dan wordt elke stap ineens zwaar."
+     "text": "Genoeg om samen op weg te gaan. Ik ga makkelijk met mensen mee — maar wie mijn route wil bepalen, raakt me even snel weer kwijt."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Of ze tegen me in durven gaan. Wie dat doet, verstopt minder. Wrijving zegt me meer dan welk compliment ook."
+     "text": "Bijna niets. Wie meteen aardig is, wil vaak vooral dat ik meegaand ben — ik ben pas gerust als iemand een keer durft dwars te liggen."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Of ze kunnen lachen om zichzelf. Wie dat kan, draagt geen masker. Zelfspot is mijn betrouwbaarste detector."
+     "text": "Een beetje, met een scheve blik. Ik kijk eerst hoe iemand reageert als ik iets onverwachts zeg — wie daar tegen kan en terugkaatst, mag dichterbij."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Aan de consistentie van hun denken. Ik heb ontdekt dat wie helder redeneert ook helder handelt — en dat tegenstrijdigheid het eerste alarmsignaal is."
+     "text": "Een hypothese. Ik neem aan dat iemand het goed bedoelt, en kijk rustig hoe dat standhoudt — niet koud of afwijzend, gewoon zorgvuldig."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Of hun verhaal resoneert. Ik heb ontdekt dat wat gemeend is een eigen klank heeft — en dat een valse toon het eerste is wat ik hoor."
+     "text": "Genoeg om nieuwsgierig te zijn. Ik ga mee in iemands eigenheid — maar wie mijn werk niet serieus neemt, verliest het net zo snel weer."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Aan wat ze doen met een stukje invloed. Ik laat iets los en kijk wat ermee gebeurt — zo bepaal ik al jaren wie ik verder binnenlaat."
+     "text": "Genoeg om te zien wat iemand kan. Of ik hem mag, doet er minder toe — ik kijk vooral wat er mogelijk wordt met hem erbij."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Aan wie er blijft staan als het moeilijk wordt. Niet intentie maar actie onder druk — dat is de enige meetlat die ik nog hanteer."
+     "text": "Genoeg om naast me te staan. Of het klikt, maakt me weinig uit — wie meedoet en niet afhaakt, heeft het bij mij gewoon verdiend."
     }
    ]
   },
@@ -1244,93 +1244,93 @@
    "level": "leerling",
    "subject": "ander_attentie",
    "position": 14,
-   "text": "Wat zien andere mensen bij jou over het hoofd?",
+   "text": "Wat zien andere mensen over het hoofd aan hoe jij je voelt?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Dat wat hard is, juist voor de ander bedoeld is."
+     "text": "Dat er onder mijn kalmte wel degelijk iets beweegt."
     },
     {
      "group": "Relational",
-     "text": "Dat ik ook zelf soms iemand nodig heb."
+     "text": "Dat mijn eigen gevoel vaak achter dat van de ander staat."
     },
     {
      "group": "Seeker",
-     "text": "Dat mijn onbevangenheid anders werkt dan mensen denken."
+     "text": "Dat er onder het lichte ook iets donkers of onrustigs zit."
     },
     {
      "group": "Chaos",
-     "text": "Dat ik precies weet waarop ik reageer en waarop niet."
+     "text": "Dat mijn scherpte vaak gewoon wil zeggen dat iets me raakt."
     },
     {
      "group": "Abstract",
-     "text": "Dat ik er wel bij ben, ook als het niet zo lijkt."
+     "text": "Dat wat ik voel vaak via een omweg naar buiten komt."
     },
     {
      "group": "Agency",
-     "text": "Dat er al veel gebeurd is voordat iemand het ziet."
+     "text": "Dat ik ook iets voel als ik er een probleem van maak."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Dat mijn strengheid zorg is. Het lijkt ijzig — maar de rol die ik daarin speel is die van iemand die wil dat mensen hun beste versie zijn."
+     "text": "Dat ik ook over mezelf een oordeel klaar heb. Voor anderen ben ik iemand die beslist — dat ik mezelf daarna net zo streng toets, merkt bijna niemand."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Dat mijn structuur er voor hen is. Het lijkt soms controledwang — maar ik bouw zodat er voor iedereen een vloer ligt waar ze op kunnen staan."
+     "text": "Dat 'dit moet anders' eigenlijk betekent dat ik schrik. Voor anderen ben ik iemand die ingrijpt — dat ingrijpen mijn manier is om de klap niet te voelen, merkt bijna niemand."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Dat alles me raakt. Mensen denken dat mijn warmte vanzelf gaat — maar elke stemming in de kamer komt bij mij binnen. Dat houd ik stil."
+     "text": "Hoe bang ik ben voor afstand. Ik zeg veel van wat ik voel — maar onder elk 'ik mis je' zit een angst die groter is dan ik laat klinken."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Dat ik nooit echt vrij heb. Mensen zien iemand die graag helpt — maar ook op een feest houd ik bij wie erbuiten valt. Dat stopt niet."
+     "text": "Hoe moe ik ben. Ik benoem meteen wat een ander doormaakt — maar mijn eigen vermoeidheid noem ik zo terloops en zo tussendoor dat niemand het oppikt."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Dat ik sterker ben dan ik lijk. Mensen lezen mijn vertrouwen als zachtheid — terwijl het juist kracht kost: elke keer opnieuw beginnen."
+     "text": "Dat ik ook somber kan zijn. Ik ben vrolijk, echt — maar als er iets donkers binnenkomt, is het een indringer, en dat praat ik meestal weg."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Dat mijn beweeglijkheid niet over hen gaat. Mensen lezen het als afwijzing — terwijl het precies het tegenovergestelde doet: het houdt me beschikbaar."
+     "text": "Dat mijn onrust geen desinteresse is. Men denkt dat ik alweer verder wil — maar voor mij is het ademnood, en geen keuze die ik maak."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Hoeveel ik erom geef. Ze denken dat bijna alles me koud laat — maar ik kies mijn momenten precies. Wat niks waardevols toevoegt, laat ik lekker gaan."
+     "text": "Dat ik pas echt leef als ik zeg wat niet klopt. Mensen kennen me als tegendraads — hoe stil en dof het in me wordt zodra ik meega, kennen ze niet."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Hoeveel ik waarneem. Ze denken dat ik meega in de stroom — maar ik lees elke stroming. Dat zien ze niet. En eerlijk gezegd werkt het zo het best."
+     "text": "Dat mijn opmerkingen een soort jeuk zijn. Mensen kennen me als iemand die zich vermaakt — dat er iets uit móet en dat het onrustig blijft tot het gezegd is, kennen ze niet."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Dat ik meedenk. Ze zien iemand die zwijgt en afwacht — maar intussen heb ik het al van alle kanten bekeken. Wat ik uiteindelijk zeg, is het restant."
+     "text": "Dat mijn analyseren soms gewoon ongerustheid is. Men denkt dat ik helder blijf — maar ik reken vaak door omdat iets me zorgen baart."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Dat maken gewoon werk is. Ze zien iemand die zomaar iets moois neerzet — maar wat licht lijkt, is meestal tien keer opnieuw begonnen en weggegooid."
+     "text": "Dat mijn beelden vaak gewoon gevoelens zijn. Men denkt dat ik iets moois beschrijf — maar ik praat in beelden omdat het rechtstreeks zeggen te veel is."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Dat ik altijd drie stappen verder ben. Wat eruitziet als geduld is eigenlijk wachten tot zij inhalen. Dat zien ze niet — ze denken dat ik naast ze loop."
+     "text": "Dat een 'verlies' bij mij ook gewoon pijn doet. Men denkt dat ik het als een rekensom zie — maar ik breng het zo zakelijk omdat het anders te dichtbij komt."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Dat het me iets kost. Wat eruitziet als gemak is elke keer weer kracht zetten. Dat zien ze niet — ze denken dat ik nooit moe word."
+     "text": "Dat ik ook kan twijfelen. Men denkt dat ik gewoon doorga — maar ik behandel elke zwakte als een bedreiging, ook die van mezelf, en laat dus niets merken."
     }
    ]
   },
@@ -1438,7 +1438,7 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Als iemand willens en wetens afspraken breekt."
+     "text": "Als het meer openheid vraagt dan ik veilig vind."
     },
     {
      "group": "Relational",
@@ -1446,11 +1446,11 @@
     },
     {
      "group": "Seeker",
-     "text": "Als het muurvast komt te zitten en dat ook zo blijft."
+     "text": "Als het te zwaar wordt om nog licht te kunnen blijven."
     },
     {
      "group": "Chaos",
-     "text": "Als ik er alleen nog kan blijven door te doen alsof."
+     "text": "Als het te dichtbij komt en ik me ingesloten voel."
     },
     {
      "group": "Abstract",
@@ -1465,12 +1465,12 @@
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Als iets wat ik meerdere keren duidelijk heb benoemd, telkens opnieuw gebeurt. Dan sluit ik het dossier."
+     "text": "Als er meer warmte van me gevraagd wordt dan ik kan geven. Loyaal blijf ik — maar ik ga steeds meer toetsen en steeds minder troosten, en dan sluit ik het dossier."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Als iemand bewust ondermijnt waar alles op draait. Dan gaat er een deur dicht waar ik niet over onderhandel."
+     "text": "Als zorgen niet meer genoeg is. Ik regel, bescherm, draag — maar wil iemand vooral míj zien, dan voelt dat als een barst in het pantser, en gaat er een deur dicht."
     },
     {
      "archetype": "Lover",
@@ -1485,22 +1485,22 @@
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Als het niet meer goed te praten is. Niet uit wantrouwen, maar omdat ik er niet meer in geloof — en dat moment rek ik lang op."
+     "text": "Pas als ik me er niet meer veilig voel. Ik heb de ander nodig om rust te vinden — dus blijf ik lang, ook als het allang niet meer goed is."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Als het voorspelbaar wordt. Ik vertrek niet uit boosheid maar uit verveling — en dat laatste doet meer schade dan ik lang dacht."
+     "text": "Als het te zwaar wordt. Ik zoek iemand om mee te reizen, geen anker — en als er gewicht aan gaat hangen, ben ik onbereikbaar voor ik het zelf doorheb."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Als de oneerlijkheid groter wordt dan wat ons verbindt. Want zodra we die grens over zijn, ben ik weg zonder waarschuwing — die lijn ken ik precies."
+     "text": "Als het te benauwd wordt. Zodra het een kooi wordt, ga ik provoceren tot het knapt — en dan ben ik weg zonder waarschuwing."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Als mijn opmerkingen daar scherper worden dan ik wil. Dat is mijn teken: er is iets kapot, en dan ben ik al half weg — met een lach."
+     "text": "Als het te echt wordt. Zolang het licht blijft, ben ik er helemaal — maar wordt het kwetsbaar, dan ben ik al half weg."
     },
     {
      "archetype": "Sage",
@@ -1529,93 +1529,93 @@
    "level": "leerling",
    "subject": "ander_attentie",
    "position": 17,
-   "text": "Wat heb je van een ander nodig waar je bijna nooit om vraagt?",
+   "text": "Wat heb je van een ander nodig als je vastloopt, maar vraag je bijna nooit?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "De mogelijkheid om mijn eigen spiegelbeeld te breken."
+     "text": "Eén vast punt dat iemand anders even voor me bewaakt."
     },
     {
      "group": "Relational",
-     "text": "De ontkoppeling van mijn offer, loskomen van wat ik voor een ander ben."
+     "text": "Iemand die me helpt mezelf weer even los te zien van de ander."
     },
     {
      "group": "Seeker",
-     "text": "Dat iemand me opvangt als ik vastloop, zonder verwijt."
+     "text": "Iemand die me helpt kiezen waar ik voor ga staan."
     },
     {
      "group": "Chaos",
-     "text": "Dat iemand niet wegloopt als ik zeg hoe het werkelijk zit."
+     "text": "Iemand die me laat zien waarvoor het de moeite is om door te bouwen."
     },
     {
      "group": "Abstract",
-     "text": "Dat iemand er gewoon is, zonder het eerst te willen begrijpen."
+     "text": "Iemand die me uit mijn hoofd haalt en ergens bij betrekt."
     },
     {
      "group": "Agency",
-     "text": "Gewaardeerd worden zonder eerst iets te hoeven leveren."
+     "text": "Toestemming om het even neer te leggen."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Dat ik ongelijk mag hebben zonder dat het iets over mij zegt. Erom vragen voelt als mezelf vrijpleiten — en die uitzondering maak ik voor niemand."
+     "text": "Eén zekerheid die iemand anders voor me bewaakt. Als alles ter discussie staat, moet er iets overeind blijven — maar daarom aankloppen voelt als toegeven dat ik het kwijt ben."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Dat iemand het overneemt als het me boven het hoofd groeit. Erom vragen zou de barst tonen die ik juist overal dichtsmeer."
+     "text": "Iemand die één ding van me overneemt. Niet alles — één taak, één beslissing, zodat er weer iets is waar ik op kan steunen. Maar daarom aankloppen past niet bij de rol die ik heb."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Dat ik even afstand mag nemen zonder dat het ons iets kost. Dat verlangen durf ik niet uit te spreken — bang dat juist de vraag de afstand maakt."
+     "text": "Iemand die me even van zich af laat staan. Als ik vastzit in de ander, helpt het als iemand zegt: wat wil jij zelf? Maar daarom aankloppen voelt alsof ik de verbinding verbreek."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Dat iemand ziet dat ik moe ben zonder dat ik het hoef te uiten. Dat verlangen zit in mijn botten — het is te groot om in woorden te passen."
+     "text": "Iemand die informeert hoe het met mij gaat. En dat dan meent — zodat ik even niet de gever ben. Maar daar begin ik zelf niet over, want dan word ik zelf een zorg."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Dat ze het niet kapotmaken. Niet beschermen — gewoon niet kapotmaken. Ik kan tegen tegenslag, maar tegen bewuste vergiftiging van iets dat goed is heb ik geen verdediging."
+     "text": "Iemand die me helpt een besluit te nemen en vol te houden. Als het misgaat, blijf ik hopen — maar wat me echt helpt, is een richting, en daar begin ik zelf nooit over."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Dat iemand me een reden geeft om te blijven. Niet vasthouden — gewoon willen dat ik er ben. Ik kan overal heen, maar daar vraag ik nooit om."
+     "text": "Iemand die me een reden geeft om te blijven. Als het stokt, wil ik verder trekken — maar wat me echt helpt, is een doel om voor te staan, en dat uitspreken voelt als jezelf opsluiten."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Dat ze er nog zijn nadat ik alles heb gezegd. Ik spreek me altijd uit — dat is niet het probleem. Het probleem is de stilte erna."
+     "text": "Iemand die met me wil bouwen. Afbreken kan ik alleen — maar iets neerzetten wat beter is, lukt me niet in mijn eentje, en dat zeg ik niet hardop."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Dat iemand merkt wanneer het menens is. Grappen maken is niet het probleem. Het probleem is dat bijna niemand ziet wanneer het er geen meer is."
+     "text": "Iemand die zegt: dit is gewoon waar. Als alles relatief wordt, zoek ik houvast — maar dat erkennen voelt te zwaar, dus maak ik er iets luchtigs van."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Dat iemand me even uit mijn hoofd haalt. Niet met argumenten — met nabijheid. Wie dat kan zonder iets te zeggen, raakt wat mijn denken nooit bereikt."
+     "text": "Iemand die me erbij trekt. Als ik klem zit in mijn hoofd, helpt geen nieuw inzicht — wel iemand die zegt: kom, doe mee. Maar daar begin ik niet over, want ik denk dat ik het zelf moet oplossen."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Dat ze me niet vragen het uit te leggen. De vraag “waarom?” vernietigt precies datgene wat ik probeer te delen — die dynamiek doorzie ik scherp."
+     "text": "Iemand die me ergens bij wil hebben. Als ik wegdrijf, haalt een taak voor een ander me sneller terug dan welk idee ook — maar dat toegeven klinkt alsof ik ontrouw word aan wat ik maak."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Dat iemand nee zegt en niet te vermurwen is. Een grens die ik niet om kan buigen. Vragen kan ik het niet — dan had ik hem zelf gemaakt."
+     "text": "Iemand bij wie ik niets hoef te sturen. Als het stokt, ga ik harder trekken — terwijl ik eigenlijk iemand zoek bij wie ik kan loslaten. Maar dat uitspreken voelt als de controle uit handen geven."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Dat iemand zegt dat ik mag stoppen. Niet omdat ik faal — gewoon omdat het genoeg is geweest. Uit mezelf kom ik daar nooit, en vragen voelt als opgeven."
+     "text": "Iemand die zegt dat het goed is zo. Als het stokt, ga ik alleen maar harder — terwijl ik eigenlijk iemand zoek die me laat rusten. Maar dat uitspreken voelt als opgeven."
     }
    ]
   },
@@ -1628,7 +1628,7 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Slordigheid — ik verbied het mezelf, omdat ik weet dat het in me zit."
+     "text": "Lak hebben aan de regels — ik veroordeel het snel, juist omdat het ook aan mij trekt."
     },
     {
      "group": "Relational",
@@ -1640,11 +1640,11 @@
     },
     {
      "group": "Chaos",
-     "text": "Aardig gevonden willen worden — dat het mij niet uitmaakt, is meestal niet waar."
+     "text": "Vastigheid willen — ik noem het burgerlijk, maar ik zoek het zelf ook."
     },
     {
      "group": "Abstract",
-     "text": "Met alles te koop lopen — dat doe ik niet, al wil ik wel gezien worden."
+     "text": "Behoeftig zijn — ik vind het snel te veel, maar ik heb anderen meer nodig dan ik laat zien."
     },
     {
      "group": "Agency",
@@ -1655,12 +1655,12 @@
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Vaagheid. Wie geen kant kiest, roept bij mij weerzin op. Ik twijfel niet, zeg ik altijd — maar hun aarzeling raakt precies de twijfel die ik bij mezelf wegdruk."
+     "text": "Lichtzinnigheid. Wie overal een grap van maakt, vind ik onserieus. Maar die ergernis is vooral afgunst — op het gemak waarmee zij iets loslaten dat ik nooit durf los te laten."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Impulsieve uitingen. Als iemand totaal de controle verliest, voel ik geen medelijden — ik voel ongemak. Alsof hun chaos besmettelijk is en ik er afstand van moet nemen."
+     "text": "Opstandigheid. Wie zich nergens iets van aantrekt, zet ik weg als onverantwoordelijk. Maar een deel van mij verlangt er ook naar alles omver te gooien — en dat houd ik in bedwang."
     },
     {
      "archetype": "Lover",
@@ -1680,7 +1680,7 @@
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Vastklampen. Als iemand vasthoudt aan wat was, word ik sneller ongeduldig dan nodig. Ik zit nergens aan vast, denk ik graag — maar aan het bewegen klamp ik me net zo vast."
+     "text": "Verbetenheid. Wie koste wat kost een doel najaagt, vind ik krampachtig. Maar ik ben net zo hardnekkig — dan in het niet-kiezen, en dat noem ik vrijheid."
     },
     {
      "archetype": "Outlaw",
@@ -1690,7 +1690,7 @@
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Pathos. Als iemand zijn gevoel groots aankondigt, haak ik af en maak ik het luchtig. Maar wat ik zelf voel, is vaak net zo groot — ik durf het alleen niet zo te brengen."
+     "text": "Moraliseren. Wie het hoogste woord voert over wat hoort, prik ik meteen door. Maar ik heb zelf ook een scherp gevoel voor wat niet deugt — ik breng het alleen nooit zo plechtig."
     },
     {
      "archetype": "Sage",
@@ -1705,12 +1705,12 @@
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Passiviteit. Als iemand lijdt aan iets dat op te lossen is en het niet doet, jeuken mijn handen — alsof hun stilstand mij persoonlijk raakt, de perceptie van machteloosheid."
+     "text": "Naïviteit. Wie zomaar alles laat gebeuren, vind ik goedgelovig. Maar soms benijd ik die lichtheid — de controle eens neerleggen en vertrouwen dat het ook zonder mij gaat."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Hulpeloosheid. Als iemand meteen bij een ander aanklopt, voel ik minachting. Ik geef altijd 100%, hoe zwaar het ook wordt. Hulp vragen ligt mij überhaupt niet."
+     "text": "Doelloosheid. Wie maar wat rondzwerft zonder iets te bereiken, neem ik niet serieus. Maar ik zou zelf ook eens zonder plan op pad willen — en dat sta ik mezelf niet toe."
     }
    ]
   },
@@ -1719,93 +1719,93 @@
    "level": "leerling",
    "subject": "massa_macht",
    "position": 19,
-   "text": "Hoe reageren andere mensen op jouw binnenkomst?",
+   "text": "Wat verandert er in een groep, als jij erbij komt?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Ze rechten de rug en praten formeler."
+     "text": "Het gesprek krijgt richting, en het vrijblijvende verdwijnt."
     },
     {
      "group": "Relational",
-     "text": "Mensen komen dichter bij elkaar, vaak zonder dat ze het merken."
+     "text": "Mensen worden zachter tegen elkaar, en het harde valt weg."
     },
     {
      "group": "Seeker",
-     "text": "Mensen gaan lichter praten, alsof er meer kan dan net nog."
+     "text": "Er komt ruimte voor nieuwsgierigheid, en wat al vastlag, mag weer open."
     },
     {
      "group": "Chaos",
-     "text": "Mensen doen mee met mijn ongegeneerdheid."
+     "text": "Wat stroef liep, gaat schuiven — en het keurige wordt minder keurig."
     },
     {
      "group": "Abstract",
-     "text": "Mensen raken eerder geboeid."
+     "text": "Het gesprek wordt dieper, en het haastige zakt weg."
     },
     {
      "group": "Agency",
-     "text": "Er komt vaart in wat bleef liggen."
+     "text": "Er gaat iets gebeuren, en het afwachten houdt op."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "De standaard stijgt. Ik merk dat mensen scherper worden — en die functie vervul ik bewust."
+     "text": "Er wordt scherper gesproken. Wat vaag bleef, krijgt ineens een naam — en het losse fantaseren over hoe het ook zou kunnen, verstomt een beetje."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Er ontstaat orde. Mensen kijken naar mij voor de koers — en die rol neem ik graag aan."
+     "text": "Er komt een plan. Wie iets wil, weet opeens bij wie hij moet zijn — en het eindeloze praten zonder besluit is voorbij."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Mensen zoeken elkaar sneller op. De acceptatie stijgt — het gaat vanzelf, alsof de ruimte warmer wordt."
+     "text": "Mensen zoeken elkaar op. Wie aan de rand stond, schuift aan — en de scherpe toon van daarvoor verdwijnt bijna vanzelf."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Mensen gaan beter op elkaar letten. Het begint bij mij en werkt aanstekelijk — niemand hoeft er nog om te vragen."
+     "text": "Mensen ontspannen. Wie het moeilijk had, wordt gezien — en het rekenen wie wat heeft gedaan, valt even stil."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Mensen worden zachter en hoopvoller. Ze laten hun scherpe randjes vallen — alsof er bij mij even niets bewezen hoeft te worden."
+     "text": "Mensen worden lichter. Er wordt meer gelachen en minder op elkaar gelet — wie wantrouwig binnenkwam, laat dat vaak al snel vanzelf los."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Mensen vragen wat ik nu weer heb meegemaakt — en beginnen zelf over iets nieuws: een reis, een hobby, een andere baan."
+     "text": "Er ontstaan plannen die er nog niet waren. Mensen worden nieuwsgierig naar wat nog kan — en wat er gepland stond, wordt opeens onderhandelbaar."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "De pikorde wordt losser. Mensen gedragen zich vrijer, ook tegenover wie normaal de toon zet — alsof de ongeschreven regels even niet gelden."
+     "text": "Er wordt eerlijker gepraat. Wat iedereen dacht maar niemand hardop zei, komt op tafel — en de beleefde agenda raakt uit balans."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Het wordt sfeervoller. Als er spanning zit, zeg ik er iets over — meestal met een knipoog. Dan zakt het."
+     "text": "Er komt beweging in de stemming. Wat stijf en ernstig was, barst open — en de vaste volgorde van wie wat zegt, raakt door elkaar."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Mensen worden bedachtzamer. Niet altijd gewild — maar ze schakelen over zodra ik er ben. Alsof oppervlakte niet meer werkt."
+     "text": "Het gesprek gaat een laag dieper. Er worden betere vragen gesteld — en de haast om meteen een conclusie te trekken, neemt af."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Er valt meer op. Niet luid — maar mensen zien ineens wat er al die tijd al was. Alsof het gewone ergens over gaat."
+     "text": "Er komt een andere sfeer. Mensen gaan anders kijken naar wat ze al kenden — en het praktische regelen wijkt even naar de achtergrond."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Het speelveld verandert. Niet zichtbaar — maar wat vastzat, komt los, en niemand weet precies waardoor. Dat laat ik graag zo."
+     "text": "Er komt iets in beweging. Wat eerst onmogelijk leek, wordt bespreekbaar — en niemand wacht nog op toestemming om te beginnen."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Mensen gaan op aan. Niet richting mij — maar alsof ze plots iets hebben besloten. Die verwachting hang ik niet op, die is er."
+     "text": "Het tempo gaat omhoog. Er wordt aangepakt in plaats van besproken — en wie stond te twijfelen, doet alsnog mee."
     }
    ]
   },
@@ -1814,93 +1814,93 @@
    "level": "leerling",
    "subject": "massa_macht",
    "position": 20,
-   "text": "Wat is jouw relatie tot ambitie?",
+   "text": "Hoe zichtbaar wil jij zijn, als je iets wilt bereiken?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Ambitie moet deugen, anders hoeft het niet."
+     "text": "Pas echt in beeld als er iets besloten moet worden."
     },
     {
      "group": "Relational",
-     "text": "Ambitie meet ik af aan wat het met de mensen om me heen doet."
+     "text": "Samen met anderen, niet in mijn eentje vooraan."
     },
     {
      "group": "Seeker",
-     "text": "Ambitie mag de wereld niet kleiner maken."
+     "text": "Genoeg om anderen mee te krijgen, niet meer."
     },
     {
      "group": "Chaos",
-     "text": "Ambitie is prima, zolang ik er niet voor hoef te slijmen."
+     "text": "Volledig — wat er door mij in beweging komt, moet gezien worden."
     },
     {
      "group": "Abstract",
-     "text": "Ambitie gaat bij mij over de inhoud, niet over de positie."
+     "text": "Zo weinig mogelijk — het werk mag voor zich spreken."
     },
     {
      "group": "Agency",
-     "text": "Ambitie is voor mij hetzelfde als ademen."
+     "text": "Precies zo veel als het resultaat nodig heeft."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Ambitie is niet het punt. De standaard is het punt. Als wat ik doe niet klopt, doet bereiken er niet toe."
+     "text": "Pas aan het eind. Ik kijk lang toe en weeg alles — en kom pas in beeld als ik mijn conclusie kan uitspreken."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Ambitie is iets neerzetten dat blijft staan. Snel succes zegt me weinig — wat niet bijdraagt, laat ik liever liggen."
+     "text": "Vanaf het begin. Ik neem de leiding zonder dat iemand erom vraagt — mensen moeten weten bij wie ze moeten zijn."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Ambitie voelt alleen echt als het iemand raakt. Bereiken voor mezelf is hol — het moet landen bij een ander."
+     "text": "Midden tussen de mensen. Ik bereik het meest als ik iedereen bij elkaar breng — daar haal ik ook mijn energie uit."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Ambitie heb ik vooral voor anderen. Als iemand die ik help verder komt, voelt dat als mijn eigen succes."
+     "text": "Op de achtergrond. Ik ondersteun liever dan dat ik vooraan sta — het gaat om wie ik help, niet om mij."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Ambitie is mooi, zolang de verwondering blijft. Als het alleen nog om winnen gaat, verdwijnt het licht eruit."
+     "text": "Genoeg om mensen enthousiast te maken. Ik hoef niet vooraan — als mijn plezier aanstekelijk werkt, gaan anderen vanzelf mee."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Ambitie is richting, niet bestemming. Zodra het doel vaststaat, verliest het zijn lading. Het is de zoektocht."
+     "text": "Weinig. Ik ga het liefst mijn eigen weg — als het lukt, hoor je het later wel van me."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Ambitie snap ik — maar niet op andermans ladder. Hogerop komen in een systeem dat ik niet vertrouw, is tekenen bij het kruisje. Mijn ambitie is dat systeem veranderen."
+     "text": "Helemaal. Verzet in stilte telt niet — als ik ergens tegenin ga, moet iedereen het kunnen zien en voelen."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Ambitie heb ik — maar zodra het rigide wordt, verschuif ik het kader. Ik zie vaak als eerste wanneer een doel alleen nog voor de show is. Dan ga ik voor wat er nu leeft."
+     "text": "Volop. Ik heb publiek nodig — met een zaal erbij kan ik een hele stemming ombuigen."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Ambitie gaat bij mij over snappen, niet over stijgen. Een titel doet me niets — ik ben pas tevreden als ik iets echt doorgrond."
+     "text": "Nauwelijks. Ik werk het liefst alleen uit en geef het resultaat pas als het klopt — wie het presenteert, maakt me weinig uit."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Ambitie dient als brandstof, maar zodra het het maken gaat sturen in plaats van voeden, merk ik dat het me leegtrekt."
+     "text": "Pas als het af is. Tijdens het maken wil ik niemand om me heen — maar als het werk er staat, wil ik er wel bij zijn."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Ambitie is voor mij een middel — niet de positie, maar wat ik daarmee kan veranderen. Hoe meer bereik, hoe verder het doorwerkt."
+     "text": "Liefst helemaal niet. Ik stuur liever vanachter de schermen — wie op het podium staat, maakt me niet uit, als het maar verandert."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Ambitie is voor mij de strijd zelf — niet de beker. Hoe groter de weerstand, hoe meer zin ik krijg."
+     "text": "Vooraan. Als er iets bereikt moet worden, stap ik als eerste naar voren — en dat verwachten mensen ook van me."
     }
    ]
   },
@@ -1925,7 +1925,7 @@
     },
     {
      "group": "Chaos",
-     "text": "Erkenning houd ik liever op een armlengte afstand."
+     "text": "Erkenning valt in het niet bij het moment dat iets eindelijk scheurt."
     },
     {
      "group": "Abstract",
@@ -1970,12 +1970,12 @@
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Ik word er wantrouwig van. Als het zoveel erkenning waard is, waarom deden ze het dan niet zelf?"
+     "text": "Erkenning doet me weinig. Wat me echt voldoening schenkt, is het moment dat iemand eindelijk hardop zegt wat iedereen wist — als ik daaraan heb bijgedragen, is dat mijn beloning."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Ik draai het even om. Als iedereen applaudisseert, kijk ik wie er niet klapt — daar zit het interessante."
+     "text": "Erkenning is leuk, maar kort. Wat me echt plezier doet, is de verrassing — het gezicht van iemand die ineens doorheeft hoe het zit. Daar doe ik het voor."
     },
     {
      "archetype": "Sage",
@@ -1990,7 +1990,7 @@
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Erkenning zet ik in. Niet voor mezelf — wie gezien wordt, krijgt gewicht, en dat gewicht leg ik precies daar waar het verschil maakt."
+     "text": "Ik neem het mee, maar het echte genoegen zit eerder. Het moment dat iets verschuift omdat ik eraan trok — daar kan geen applaus tegenop."
     },
     {
      "archetype": "Hero",
@@ -2008,89 +2008,89 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Mijn normen gelden ook als er niemand bij is."
+     "text": "Ik loop in gedachten na of alles klopt."
     },
     {
      "group": "Relational",
-     "text": "Mijn gedachten blijven bij anderen, ook als ik alleen ben."
+     "text": "Ik denk aan de mensen om wie ik geef."
     },
     {
      "group": "Seeker",
-     "text": "Dan voel ik me het vrijst."
+     "text": "Ik denk aan wat er allemaal nog kan."
     },
     {
      "group": "Chaos",
-     "text": "Wat ik vind, verandert niet — ook zonder iemand om het tegen te zeggen."
+     "text": "Ik volg wat er in me opkomt, meteen."
     },
     {
      "group": "Abstract",
-     "text": "Dan komt er eindelijk iets op gang van binnen."
+     "text": "Ik laat mijn geest zijn eigen gang gaan."
     },
     {
      "group": "Agency",
-     "text": "Dan zet ik de grootste stappen."
+     "text": "Ik werk door aan wat ik van plan ben."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Dezelfde lat. Mijn oordeel hangt niet af van wie er in de buurt is — juist als ik alleen ben, merk ik of mijn maatstaf echt van mij is."
+     "text": "Ik weeg na. Een gesprek van vandaag, een beslissing van vorige week — mijn hoofd blijft nagaan of het rechtvaardig was, ook ongevraagd."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Orde scheppen in mijn directe omgeving. Mijn agenda, mijn huis, de week die eraan komt — pas als alles geregeld is, kom ik echt tot rust."
+     "text": "Ik werk door. Mijn hoofd schakelt niet uit — als de dag stil wordt, ga ik plannen, ordenen, vooruitdenken, alsof rust nog een taak is."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Hetzelfde. Maar zachter. In mijn eentje val ik terug op wat echt is — en dat is stiller dan mensen denken."
+     "text": "Ik denk aan iemand. Een blik, een zin van vandaag — die blijft door me heen gaan, en ik voel het weer, alsof hij hier is."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Ik blijf gewoon zorgen. Een appje hier, een klusje daar — niemand die het ziet, en dat vind ik wel goed zo."
+     "text": "Ik loop mensen langs. Wie had het zwaar, wie heb ik nog niet gesproken — mijn radar staat altijd aan, ook als ik alleen ben."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Op dat moment leef ik even in mijn eigen utopie — en het liefst nodig ik dan iemand uit."
+     "text": "Ik droom weg. Over hoe het kan worden, over mensen die het goed hebben — dat maakt me rustig en blij."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Dan pas beweeg ik echt. Op mezelf verdwijnt de richting en begint het ontdekken. Dat is waar ik het scherpst ben."
+     "text": "Ik zoek iets nieuws op. Een route, een plek, een idee — ik zoek net zo lang tot iets mijn aandacht pakt."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Precies hetzelfde. Gezelschap verandert niks — mijn kompas draait niet op goedkeuring. Het is het enige wat ik vertrouw."
+     "text": "Ik doe wat ik voel. Geen omweg via wat hoort — als iets me raakt, sta ik al op voordat ik erover heb nagedacht."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Ik zoek of maak een sfeer. Even bellen, wat kletsen, of anders iets grappigs opzetten — stil is het eigenlijk nooit in mijn hoofd."
+     "text": "Ik spring van idee naar idee. Het ene haakt aan het volgende, steeds gekker — en soms zit daar precies het inzicht tussen dat ik zocht."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Dan denk ik het helderst. Zonder input van buitenaf werkt mijn hoofd als het schoonste instrument — alles valt dan op zijn plek."
+     "text": "Ik zoek de rust in mijn gedachten. Daar is het helder — ik bekijk van een afstand wat er die dag gebeurde."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Dan maak ik. Er hangt geen oordeel boven, dus gaat het vanzelf — wat ik later laat zien, krijgt hier zijn vorm."
+     "text": "Ik dwaal. Beelden, kleuren, half verzonnen scènes — mijn binnenwereld gaat open, en voor ik het weet ben ik er uren in verdwenen."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Meer dan anders. Als niemand oplet, doe ik de echte zetten — wat later moeiteloos oogt, is allang voorbereid."
+     "text": "Ik puzzel aan wat anders kan. Wie waar staat, waar het knelt — in stilte werk ik aan wat er achter de schermen speelt."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Ik tegen mezelf, meer heb ik niet nodig."
+     "text": "Ik train, of ik werk iets af. Stilzitten zonder doel kan ik slecht — ook als ik helemaal alleen thuis ben."
     }
    ]
   },
@@ -2099,93 +2099,93 @@
    "level": "leerling",
    "subject": "massa_macht",
    "position": 23,
-   "text": "Wanneer zeg jij nee tegen meer?",
+   "text": "Wanneer is het voor jou genoeg?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Als het niet meer te verantwoorden valt."
+     "text": "Als alles op zijn plek staat."
     },
     {
      "group": "Relational",
-     "text": "Als het ten koste gaat van iemand anders."
+     "text": "Als iedereen om me heen het goed heeft."
     },
     {
      "group": "Seeker",
-     "text": "Als ik daarvoor water bij de wijn moet doen."
+     "text": "Als het moment zelf goed is."
     },
     {
      "group": "Chaos",
-     "text": "Als meer betekent dat ik een spel moet meespelen."
+     "text": "Als er gezegd is wat gezegd moest worden."
     },
     {
      "group": "Abstract",
-     "text": "Als meer het wezenlijke begint te verdrinken."
+     "text": "Als iets voor mij af en helder is."
     },
     {
      "group": "Agency",
-     "text": "Pas als het niets meer in beweging zet — tot dan is moe zijn geen reden."
+     "text": "Als het doel bereikt is — even."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Als ik er een oogje voor moet dichtknijpen. Groei met een beetje geschuifel hoef ik niet — dan liever minder, en recht."
+     "text": "Als ieder krijgt wat hem toekomt. Niet meer, niet minder — op dat moment is er voor mij niets meer om te wegen."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Als de complexiteit de architectuur overstijgt. Groeien mag, zolang ik het nog in één hand kan houden — daarbuiten verliest het geheel zijn houvast."
+     "text": "Als het geheel staat. Iedereen weet wat hij moet doen en het loopt — dan zit ik even stil, al is het maar kort."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Als meer me weghaalt bij de mensen om wie ik geef. Niets is dat waard — een lege stoel aan tafel weegt zwaarder dan een promotie."
+     "text": "Als we samen zijn. Niets hoeft — naast iemand die ik liefheb, wil ik verder niets."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Als meer betekent dat iemand tekortkomt. Die afweging maak ik bewust — de schaal waarop ik weeg, heeft altijd een ander erop."
+     "text": "Als niemand meer iets tekortkomt. Dan kan ik gaan zitten — eerder lukt me dat niet."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Als meer de zuiverheid van wat er is bedreigt. Niet alles wat groeit, wordt beter — sommige dingen zijn goed zoals ze zijn."
+     "text": "Als het licht is om me heen. Mensen die lachen, een dag zonder scheuren — meer hoef ik niet."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Als meer me verankert. Hoe meer ik bezit en beloof, hoe trager ik word — en stilstand is voor mij het echte gevaar."
+     "text": "Als ik iets nieuws heb gezien. Voor even is de honger gestild — tot de volgende horizon zich aandient."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Als meer betekent dat ik me moet aanpassen aan een systeem dat niet klopt. Die conditie is mijn hardste grens — wordt die geraakt, dan stop ik."
+     "text": "Als het klopt. Als mensen zeggen wat ze denken en niets meer verborgen hoeft te worden — dan word ik rustig."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Als het een ego-project wordt. Meer is prima zolang het speels blijft — maakt iemand er een prestigekwestie van, dan is voor mij de lol eraf."
+     "text": "Als de pose eraf is. Als iemand eindelijk zegt hoe absurd het eigenlijk was — dan ben ik tevreden."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Als het mijn denkruimte opeet. Meer informatie, meer mensen, meer tempo — op een gegeven moment begrijp ik minder in plaats van meer."
+     "text": "Als ik het snap. Het verband is rond, de vraag beantwoord — dan wordt het stil in mijn hoofd, en dat volstaat."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Als het de vorm verstikt. Meer is niet rijker — het is voller. En in een volle ruimte kan niets meer ademen."
+     "text": "Als het klopt wat ik maak. Niet perfect — maar als het beeld zegt wat ik voelde, kan ik het laten gaan."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Als meer transformatie in de weg staat. Het punt is niet hoeveel — het punt is wat ik ermee kan doen. Meer zonder effect is ballast."
+     "text": "Als het veranderd is. Wat ik wilde verschuiven, is anders geworden — daar geniet ik even van, voor ik het volgende zie."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Als mijn lijf het zegt — en dat is meestal eerder dan ik. Meer voelt voor mij als uitdaging, nooit als last."
+     "text": "Als het gelukt is. Even sta ik op de top — en dan voel ik al waar de volgende berg ligt."
     }
    ]
   },
@@ -2194,93 +2194,93 @@
    "level": "leerling",
    "subject": "massa_macht",
    "position": 24,
-   "text": "Wat triggert jou als iemand anders de leiding heeft?",
+   "text": "Hoe ga jij een conflict aan met iemand die de leiding heeft?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Als de leiding ondermaats is — al laat ik mijn ongenoegen niet snel zien."
+     "text": "Met feiten en regels — al maakt dat me harder dan nodig."
     },
     {
      "group": "Relational",
-     "text": "Als iemand in het team eronder lijdt — dan vang ik die op."
+     "text": "Ik schik me liever — ook als dat ten koste gaat van mezelf."
     },
     {
      "group": "Seeker",
-     "text": "Als leiding de mensen klein houdt — al merk ik dat vaak pas laat."
+     "text": "Liever niet — ik doe alsof het meevalt, of ik ga mijn eigen weg."
     },
     {
      "group": "Chaos",
-     "text": "Als leiding meer vertoon is dan inhoud — dan word ik juist feller."
+     "text": "Recht op de man af, of met een kwinkslag — en dan ligt er soms meer aan scherven dan gewild."
     },
     {
      "group": "Abstract",
-     "text": "Als leiding geen oog heeft voor wat eronder zit — dan houd ik mijn beste ideeën voor me."
+     "text": "Met argumenten, en als dat niet werkt, trek ik me terug en praat ik niet meer mee."
     },
     {
      "group": "Agency",
-     "text": "Als ik onnodig word afgeremd — dan duw ik alleen maar harder."
+     "text": "Ik ga ervoor om te winnen — ook als het me meer kost dan het oplevert."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Als ze willekeurig beslissen. Vandaag zo, morgen anders — ik zeg er niet meteen iets van, maar ik houd elk besluit bij, tot ik het kan aantonen."
+     "text": "Als een zitting. Ik verzamel de feiten, haal de emotie eruit en leg het besluit naast wat eerlijk is — wie boven me staat, doet er dan niet toe."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Als ze slordiger zijn dan ik zou zijn. Die vergelijking maak ik automatisch — en ik doorzie dat dat meer over mijn standaard zegt dan over hun leiderschap."
+     "text": "Via de regels. Ik praat niet over gevoel maar over afspraken — als die niet deugen, stel ik nieuwe voor, zodat dit niet nog eens gebeurt."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Als iemand zich onder hun leiding buitengesloten voelt. Ik voel het al voordat het gezegd wordt — en dan blijf ik extra dicht bij die persoon."
+     "text": "Eigenlijk niet. Onenigheid voelt als iets wat ons uit elkaar trekt — dus geef ik toe, ook als ik het oneens ben."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Als de groep eronder lijdt. Niet het leiderschap zelf — maar het effect op de mensen erin. Dat registreer ik eerder dan wie ook."
+     "text": "Door het zelf op te vangen. Ik zeg niets en vang de schade op — liever dat ik het draag dan dat een ander geraakt wordt."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Als ze met angst sturen. Ik geef ze lang het voordeel van de twijfel — tot ik zie dat iedereen op zijn tenen loopt."
+     "text": "Ik doe alsof er niets is. Zolang ik het niet benoem, blijft het fijn samenwerken — tot het echt niet meer te ontkennen valt."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Als ze de ruimte dichtmetselen. Leiding is prima — maar zodra het verstikt, zoek ik mijn eigen weg eromheen. Niet uit protest, uit noodzaak."
+     "text": "Ik ga eromheen. Als het benauwd wordt, zoek ik een andere plek of een ander project — praten levert me minder op dan verder gaan."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Als ze leiden vanuit positie en niet vanuit waarheid. Dan voelt het als bedrog — mijn lijf verzet zich voor mijn hoofd het registreert."
+     "text": "Recht voor zijn raap. Ik bemiddel niet — als de top iets verbergt, zet ik het op tafel, ook als dat de verhoudingen voorgoed verandert."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Als ze te hoog uit de toren blazen. Wie alles doodserieus moet houden, laat zien hoe onzeker hij is — en dan kan ik het juist niet laten."
+     "text": "Met humor. Ik maak het belachelijk in plaats van ruzie te maken — en soms ontloop ik zo precies het gesprek dat eigenlijk gevoerd moest worden."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Als ze niet snappen waarom ze leiden. Leiderschap zonder zelfkennis is gevaarlijk — die inschatting werkt bij mij als automatische scan."
+     "text": "Als een discussie. Ik zoek de zwakke plek in het betoog — gevoel laat ik erbuiten, en met logica win ik meer dan met volume."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Als ze alles in één mal willen persen. Dan verdwijnt elke nuance — en ik ga op in wat ik zelf nog wel kan vormgeven."
+     "text": "Persoonlijk, helaas. Kritiek op wat ik maak, raakt mij zelf — dus trek ik me terug in mijn werk, waar niemand er iets van vindt."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Als ze de situatie niet lezen. Ik zie de kansen die ze laten liggen — dat ongeduld werkt als motor, ook al is dat niet altijd fair."
+     "text": "Ik verander het kader. Ik maak het gesprek ergens anders over, tot de ander twijfelt aan wat hij zeker wist — niet altijd netjes, wel effectief."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Als ze zelf niet vooraan staan. Wie anderen de klappen laat opvangen, verliest mij — dan stap ik zelf naar voren, of ze dat nu willen of niet."
+     "text": "Frontaal. Ik wil het winnen, niet uitpraten — ook als die ander boven me staat, en ik verwacht dat hij net zo hard terugkomt."
     }
    ]
   },
@@ -2289,93 +2289,93 @@
    "level": "leerling",
    "subject": "wereld_wijsheid",
    "position": 25,
-   "text": "Wanneer houd je kennis voor jezelf?",
+   "text": "Met wie deel jij wat je weet — en met wie niet?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Zolang ik er nog niet voor in kan staan."
+     "text": "Met wie er iets mee moet, en verder met niemand."
     },
     {
      "group": "Relational",
-     "text": "Als het iemand onnodig verdriet zou doen."
+     "text": "Met wie me na staat, of wie het zwaar heeft."
     },
     {
      "group": "Seeker",
-     "text": "Als het iets zou afsluiten wat nog open mag blijven."
+     "text": "Met bijna iedereen — ik ga ervan uit dat het goed terechtkomt."
     },
     {
      "group": "Chaos",
-     "text": "Bijna nooit — alleen als het op dat moment niets goeds zou doen."
+     "text": "Met wie het durft te horen — niet met wie het netjes wil houden."
     },
     {
      "group": "Abstract",
-     "text": "Als het nog niet rijp is — voor mij of voor de ander."
+     "text": "Met wie het echt wil begrijpen — de rest hoort het niet."
     },
     {
      "group": "Agency",
-     "text": "Als delen het resultaat in de weg zou zitten."
+     "text": "Met wie het verschil kan maken."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Als ik het nog niet heb kunnen toetsen. Een oordeel dat nog niet staat, houd ik voor me — dat zou niet eerlijk zijn."
+     "text": "Met wie zich aan de regels houdt. Wie zuiver speelt, krijgt alles van me — wie dat niet doet, krijgt alleen wat strikt noodzakelijk is."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Als het onrust zou zaaien voordat er een plan ligt. Eerst orde, dan pas het verhaal."
+     "text": "Met wie op mij rekent. Mijn mensen krijgen wat ze nodig hebben om te draaien — buiten die kring houd ik het voor me."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Als het de verbinding tussen ons zou verstoren. Dat voel ik sneller dan ik het kan uitleggen."
+     "text": "Met wie ik in mijn hart heb. Kennis is voor mij iets wat je deelt als je elkaar vertrouwt — met een vreemde voelt het als niets."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Als iemand het nu niet kan dragen. Ik wacht tot er lucht is — de waarheid komt beter aan als iemand niet al overloopt."
+     "text": "Met wie er iets aan heeft. Mijn kennis gaat naar wie ermee geholpen is — wie het alleen uit nieuwsgierigheid vraagt, laat ik meestal staan."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Als het iemands vertrouwen zou breken. Kennis die het licht uitdoet, hou ik vast. Dat is geen keuze — dat is bescherming."
+     "text": "Met iedereen die het goed bedoelt. En dat is bijna iedereen — pas als iemand me een keer bedriegt, word ik voorzichtiger."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Als anderen er meteen een plan van zouden maken. Wat ik ontdek, houd ik even voor mezelf — anders hebben zij het eerder dan ik."
+     "text": "Met wie ik onderweg tegenkom. Een tip, een route, een ontdekking — ik geef het makkelijk door, en daarna ben ik weer verder."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Zelden. Alleen als de verkeerde er macht mee zou krijgen — dan is zwijgen geen meedoen, maar verzet."
+     "text": "Met wie over de lijntjes heen durft te kijken. Wie braaf meedoet aan het spel, krijgt van mij niets — wie twijfelt of het wel klopt, krijgt alles."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Als het deelmoment de vibe zou doden. Ik doorzie dat timing meer doet dan inhoud — die mechanica zet ik bewust in."
+     "text": "Met wie nog niet ziet hoe het zit. Ik vertel het graag aan een publiek dat nog verrast kan worden — wie het allang kent, krijgt van mij weinig."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Als het ontvangen van de kennis meer schade zou doen dan het niet-weten. Deze afweging is mijn handvat."
+     "text": "Met wie mee kan denken. Een goed gesprek met een scherpe geest is het mooiste wat er is — wie alleen een antwoord wil, krijgt een kort antwoord."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Als het nog niet af is. Wat half gevormd is, deel ik niet — te vroeg uitgesproken verliest het zijn kracht."
+     "text": "Met wie de nuance ziet. Wat ik begrijp, is vaak een gevoel of een beeld — dat geef ik alleen aan wie het niet platslaat."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Als weten mijn voorsprong is. Wat ik zie en een ander nog niet, gebruik ik eerst — uitleggen komt later, als het al gebeurd is."
+     "text": "Met wie het in beweging kan zetten. Kennis is een middel — ik geef haar daar waar ze iets in gang zet, en de rest houd ik bij me."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Als het de actie zou vertragen. Kennis die verlamt in plaats van activeert, laat ik weg — twijfel helpt niemand vooruit."
+     "text": "Met wie met mij meevecht. Wie aan mijn kant staat, krijgt alles wat ik heb, tot het laatste — een tegenstander krijgt van mij helemaal niets."
     }
    ]
   },
@@ -2384,93 +2384,93 @@
    "level": "leerling",
    "subject": "wereld_wijsheid",
    "position": 26,
-   "text": "Wat weet je zeker — zonder bewijs?",
+   "text": "Waaraan merk jij dat je iets zeker weet, ook zonder bewijs?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Dat het goede uiteindelijk standhoudt."
+     "text": "Aan hoe stevig het staat als ik het toets."
     },
     {
      "group": "Relational",
-     "text": "Dat mensen elkaar nodig hebben."
+     "text": "Aan wat er gebeurt als ik bij iemand ben."
     },
     {
      "group": "Seeker",
-     "text": "Dat er nog zoveel moois te beleven is."
+     "text": "Aan een gevoel van ruimte als ik eraan denk."
     },
     {
      "group": "Chaos",
-     "text": "Dat alles ergens betekenis heeft."
+     "text": "Aan dat ik er niet meer omheen kan."
     },
     {
      "group": "Abstract",
-     "text": "Dat de werkelijkheid nooit helemaal te kennen is."
+     "text": "Aan dat het in mijn hoofd of in een beeld ineens klopt."
     },
     {
      "group": "Agency",
-     "text": "Dat er echt 1001 wegen zijn naar Rome."
+     "text": "Aan dat het werkt."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Dat integriteit werkt. Niet als moreel ideaal — als operationeel systeem. Die overtuiging functioneert als fundament voor alles wat ik bouw."
+     "text": "Aan de toets. Ik leg het naast wat ik als juist ken — past het daar zonder kraken naast, dan staat het voor mij vast."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Dat orde het uiteindelijk wint. Niet als wens — als uitkomst. Wat goed is opgezet, staat er nog als de rest allang is ingestort."
+     "text": "Aan hoe het draait. Als een opzet maand na maand overeind blijft, heb ik genoeg gezien — daar is geen studie voor nodig."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Dat verbinding geneest. Niet als geloof — als observatie. Ik voel het in elke relatie die ik aanraak, telkens weer."
+     "text": "Aan wat ik opvang als ik naast iemand zit. Daar liegt niets — als het warm of koud wordt, is het duidelijk, ook als de woorden iets anders zeggen."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Dat zorg nooit verspild is. Niet als plicht — als iets wat ik terugzie, soms pas jaren later, bij iemand die het allang vergeten was."
+     "text": "Aan wat er gebeurt als ik iets voor iemand doe. Als het helpt, is het goed — als het niets doet, wist ik het eigenlijk al."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Dat er in iedereen iets goeds zit. Ook bij wie het diep verstopt, duikt het vroeg of laat op."
+     "text": "Aan een rust die over me komt. Het zit erin of het zit er niet in — en als het erin zit, hoef ik verder nergens naar te zoeken."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Dat er altijd meer is. Die overtuiging werkt als een horizon — die stuurt elke keuze die ik maak."
+     "text": "Aan de ruimte die opengaat. Als ik een weg voor me zie, klopt het — ook als niemand hem ooit voor me heeft getekend of bewandeld."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Dat de waarheid altijd bovenkomt. Niet als strijdkreet — als natuurwet. Wat verstopt wordt, gaat rotten — en rot valt op."
+     "text": "Aan dat ik niet kan meedoen. Als iets in mij niet meer wil meespelen, hoef ik niets aan te tonen — mijn lichaam is mijn hoofd dan al voor."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Dat niks permanent is. Niet nihilistisch — bevrijdend. Het is de grond onder alles wat ik doe en voel."
+     "text": "Aan de kanteling. Als ik het ineens van de andere kant zie en het geheel verschuift — dan staat het vast, ook al kan ik het niet uitleggen."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Dat er onder elk antwoord een nieuwe vraag ligt. Niet als twijfel — als ervaring. Hoe beter ik iets begrijp, hoe scherper ik zie wat ik nog niet weet."
+     "text": "Aan de redenering. Als elke stap logisch volgt, durf ik er vast van uit te gaan — ook als niemand het nog heeft aangetoond."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Dat schoonheid ertoe doet. Niet als mening — als feit. Het zit in alles, en ik voel het voor ik het zie."
+     "text": "Aan het beeld. Als ik zie hoe het voelt, is het waar voor mij — de onderbouwing komt daarna, als die al komt."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Dat bijna alles maakbaar is. Niet als arrogantie — als waarneming. Elke situatie heeft een hefboom. Ik zie ze voor ik ze zoek."
+     "text": "Aan het mechanisme. Als ik zie hoe het systeem werkt en welke draden waar lopen, is het helder — ook als niemand het heeft getest."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Dat je meer kunt dan je denkt. Niet als peptalk — als iets wat ik keer op keer aan den lijve heb gemerkt."
+     "text": "Aan het resultaat. Ik doe het, en dan zie ik het meteen — eindeloos aantonen is voor wie nooit aan iets begint."
     }
    ]
   },
@@ -2725,7 +2725,7 @@
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Dat ook het nieuwste went. Wat eerst alles openzet, wordt gewoon — en ik zie het steeds sneller slijten."
+     "text": "Dat ook het nieuwste went — en hoe sneller ik verder trek, hoe sneller het slijt."
     },
     {
      "archetype": "Outlaw",
@@ -2745,12 +2745,12 @@
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Dat mijn esthetiek tussen mij en de werkelijkheid in staat. Ik polijst het rauwe zo automatisch weg dat het filteren zelf onzichtbaar is geworden."
+     "text": "Dat mijn esthetiek tussen mij en de werkelijkheid staat. Ik polijst het rauwe weg — en hoe mooier het wordt, hoe verder ik ervan af sta."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Dat niet alles maakbaar is. Die grens werkt als de strengste les die ik draag — hij definieert waar mijn kracht ophoudt."
+     "text": "Dat niet alles maakbaar is. Hoe harder ik stuur bij wat niet wijkt, hoe meer het me kost — loslaten werkt daar beter."
     },
     {
      "archetype": "Hero",
@@ -2772,7 +2772,7 @@
     },
     {
      "group": "Relational",
-     "text": "Dat er gewoon zijn voor iemand meestal al genoeg is."
+     "text": "Dat ik dichterbij kom als ik mezelf niet kwijtraak."
     },
     {
      "group": "Seeker",
@@ -2780,11 +2780,11 @@
     },
     {
      "group": "Chaos",
-     "text": "Dat één ware zin soms een hele toespraak overbodig maakt."
+     "text": "Dat iets laten staan soms moediger is dan het omgooien."
     },
     {
      "group": "Abstract",
-     "text": "Dat inzichten vaak komen terwijl ik met iets anders bezig ben."
+     "text": "Dat ik meer begrijp als ik ergens middenin sta."
     },
     {
      "group": "Agency",
@@ -2810,7 +2810,7 @@
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Dat zorgen pas werkt als het niet om mij gaat. Het zuiverste geven is waar ik er zelf niet meer in voorkom — dat voel ik steeds vaker."
+     "text": "Dat ik er zelf ook mag zijn. Mijn eigen smaak, mijn eigen wens — die maken mijn zorg niet minder, maar echter. Dat leer ik nog."
     },
     {
      "archetype": "Innocent",
@@ -2859,93 +2859,93 @@
    "level": "leerling",
    "subject": "mysterie_magie",
    "position": 31,
-   "text": "Wat voel je als je iets niet kunt verklaren?",
+   "text": "Hoeveel ruimte geef jij aan wat je niet kunt verklaren?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Ongemak — zolang ik het nergens kan plaatsen."
+     "text": "Weinig — wat zich niet laat uitleggen, zet ik apart tot het wel kan."
     },
     {
      "group": "Relational",
-     "text": "Begrip — mensen zijn van nature onverklaarbare wezens."
+     "text": "Veel, zolang het iets met mensen te maken heeft."
     },
     {
      "group": "Seeker",
-     "text": "Verlichting — zo benieuwd waar het heen gaat."
+     "text": "Alles — al kijk ik liever naar het wonder dan naar het donker."
     },
     {
      "group": "Chaos",
-     "text": "Een kick — bijna een soort erotische kietel."
+     "text": "Meer dan aan wat wel klopt."
     },
     {
      "group": "Abstract",
-     "text": "Bewondering — en de wens er langer bij stil te staan."
+     "text": "Eindeloos — wat ik niet begrijp, houdt me juist bezig."
     },
     {
      "group": "Agency",
-     "text": "Energie — ik wil er iets mee doen, maar weet nog niet precies wat."
+     "text": "Genoeg om te ontdekken hoe het werkt."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Twijfel. Zolang ik niet weet of het juist is, blijft het knagen — dat houdt me wel scherp."
+     "text": "Weinig. Wat ik niet kan controleren, krijgt een plek in een apart vakje — tot het verklaard is, beslis ik er niets op. Maar dat vakje wordt met de jaren voller."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Een los eind. Ik zet er een groter kader omheen — dan mag het er gewoon zijn."
+     "text": "Weinig. Ik werk met wat zich bewezen heeft — wat ik niet kan plaatsen, laat ik staan, zolang het het geheel niet stoort. Maar dat het er is, merk ik steeds vaker."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Verbinding. Het onverklaarbare brengt me dichter bij iets — en dan wil ik iemand naast me hebben."
+     "text": "Veel. Wat er tussen mensen gebeurt, kan ik zelden benoemen — en dat hoeft ook niet, zolang ik het voel."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Zachtheid. Wat ik niet kan verklaren, hoef ik ook niet te verhelpen — ik kan er gewoon bij blijven."
+     "text": "Een beetje. Ik ben eerder praktisch — maar wat iemand troost, ook als ik niet snap waarom, laat ik gewoon gebeuren."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Geborgenheid. Dat het goed zit, weet ik al — uitleg komt later, of niet."
+     "text": "Veel — als het mooi is. Een wonder laat ik graag bestaan, maar het donkere wat ik niet begrijp, kijk ik liever niet aan."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Een uitnodiging. Daar wil ik meteen naartoe — zoiets moet ik zelf gaan bekijken."
+     "text": "Alles. Wat niemand kan duiden, trekt me juist aan — daar wil ik als eerste gaan kijken, voordat iemand anders er een verhaal over heeft."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Iets echts. Eindelijk iets zonder etiket erop — en wie er toch een wil opplakken, lach ik vierkant uit."
+     "text": "Veel. Als iets niet in het gangbare verhaal past, wil ik het juist horen — daar begint vaak een ander verhaal."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Ruimte. Alsof er iets opengaat dat eerder dichtgetimmerd was. Niet alles hoeft te kloppen — en dat voelt als een feestje, niet als gemis."
+     "text": "Alles. Het raadselachtige is mijn speelveld — daar verbind ik wat nergens bij hoort, en soms ontstaat er iets wat niemand zag aankomen."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Honger. Diepere honger. Het onkenbare is geen muur — het is een vraag die harder trekt dan elk antwoord."
+     "text": "Alles wat er is. Een raadsel zet mijn denken pas echt aan het werk — zonder raadsels zou ik me vervelen."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Kippenvel. Het zit meer in mijn huid dan in mijn hoofd — en ik laat het er graag nog even zitten."
+     "text": "Oneindig veel. Wat zich niet laat uitleggen, laat zich vaak wel maken — mijn mooiste werk begint waar woorden ophouden."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Uitdaging. Wat ik niet kan verklaren, kan ik nog niet sturen — en juist dat 'nog' houdt me bezig."
+     "text": "Veel, als iets wat ik nog niet doorzie. Het raadselachtige is voor mij een systeem dat zijn regels nog niet heeft prijsgegeven — en die wil ik vinden."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Onrust. Mijn handen willen iets vastpakken — en er is niks. Dus zoek ik iets wat wél te pakken is."
+     "text": "Een beetje. Ik heb weinig geduld met wat zich niet laat aanpakken — maar als het me raakt, wil ik het wel onder ogen zien."
     }
    ]
   },
@@ -3144,93 +3144,93 @@
    "level": "leerling",
    "subject": "mysterie_magie",
    "position": 34,
-   "text": "Wat lees jij erin, als het noodlot toeslaat?",
+   "text": "Wat wordt er van jou, als het noodlot blijft toeslaan?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Iets dat uit het lood is geslagen — en ik zet het recht, al knapt het daarbij."
+     "text": "Iemand die zich vastklampt aan controle, tot er niets meer beweegt."
     },
     {
      "group": "Relational",
-     "text": "Een roep om elkaar vast te houden — en ik antwoord, tot er van mezelf niets overblijft."
+     "text": "Iemand die opgaat in anderen tot er niemand meer van over is."
     },
     {
      "group": "Seeker",
-     "text": "Een deur naar iets beters — en blijkt die dicht, dan is ineens de hele wereld dicht."
+     "text": "Iemand die nergens meer in gelooft en maar wat ronddrijft."
     },
     {
      "group": "Chaos",
-     "text": "Dat de schijn eindelijk barst — en ik sla door tot er alleen puin over is."
+     "text": "Iemand voor wie niets meer ergens toe doet."
     },
     {
      "group": "Abstract",
-     "text": "Een hoofdstuk in een veel groter verhaal — en ik blijf erin bladeren terwijl anderen al blussen."
+     "text": "Iemand die zich opsluit in zijn eigen hoofd, onbereikbaar."
     },
     {
      "group": "Agency",
-     "text": "Geen teken, maar een startschot — en ik geef alles, tot het in één keer op is."
+     "text": "Iemand die doorgaat tot hij in één keer breekt."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Een afweging. Ik scheid wat verdiend was van wat toeval is — en waar die twee vermengd zijn, komt mijn weegschaal niet tot rust."
+     "text": "Een rechter zonder genade. Elke klap maakt mijn oordeel harder — tot ik niemand meer iets vergeef, en mezelf nog het minst. Wat begon als rechtvaardigheid, wordt een vonnis over alles."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Een lek in het plan. Ik dicht het, en het volgende, en het volgende — tot ik kwijt ben welk plan ik eigenlijk bewaakte."
+     "text": "Een tiran. Elke klap maakt mijn greep strakker — tot iedereen om me heen verstijft, en ik met hen. Wat begon als zorg voor het geheel, wordt een kooi voor iedereen."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Wie ik nog heb. Ik hou hen zo stevig vast dat ik niet meer weet waar ik ophoud en zij beginnen."
+     "text": "Iemand die verdwijnt in een ander. Hoe meer er verloren gaat, hoe harder ik me vastklamp — tot ik niet meer weet waar ik ophoud en de ander begint."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Wie het nu het zwaarst heeft. Daar ga ik heen — en ik draag tot mijn benen het niet meer houden."
+     "text": "Iemand die alleen nog geeft. Ik zorg door tot er van mij niets meer over is — en het geven verandert in stille wrok die ik niemand laat zien."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Een verborgen geschenk. Ik blijf zoeken naar wat dit goedmaakt — en vind ik het niet, dan valt mijn geloof in één klap weg."
+     "text": "Iemand die het niet meer begrijpt. Het paradijs is weg, en ik verlies me in een hulpeloosheid waar ik niet uit kom."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Een afgesloten weg. Ik zoek koortsachtig elke andere route — en is er geen, dan dwaal ik rond zonder nog ergens echt te zijn."
+     "text": "Iemand die nergens meer aankomt. Ik drijf van plek naar plek, zonder richting en zonder doel — een zwerver die geen thuis meer heeft."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Bewijs. Dit is wat de macht aanricht — en nu gaat het tot de grond toe neer, ook wat nog te redden was."
+     "text": "Iemand die niet meer kan stoppen met vechten. Alles wordt vijand, ook wat ooit goed was — de strijd tegen het valse wordt een strijd tegen alles."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "De ironie. Het universum heeft een zieke humor — en ik lach het hardst op de momenten dat ik het minst kan."
+     "text": "Iemand achter een masker dat barst. De grappen worden bitter, daarna stil — de lichtere blik wordt een leegte waar niets meer grappig is."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Een oorzaak. Zodra ik het verband zie, raakt het me niet langer — ook niet waar het dat zou moeten."
+     "text": "Iemand in een toren. Ik verschans me in mijn denken tot er geen contact meer is — alles verklaard, niets meer gevoeld."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Een schilderij in wording. Alles wat stukgaat, wordt vanbinnen al een beeld — terwijl ik nog op de scherven sta."
+     "text": "Iemand in een droom die niet meer ophoudt. Ik vlucht in mijn verbeelding tot de echte wereld vervaagt — en niemand me daar nog vindt."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Een knop. Ik blijf eraan draaien tot het meegeeft — en geeft het niet mee, dan draai ik door tot er iets breekt."
+     "text": "Iemand die denkt dat hij alles kan dwingen. Met elke klap wordt het plan groter en wilder — tot het in één keer instort, en ik met hem."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Een gevecht. Kom maar op — ik sta weer op, keer op keer, ook als mijn lijf al lang heeft opgegeven."
+     "text": "Iemand die zichzelf opbrandt. Ik vecht door, steeds hoger en steeds verder — tot ik zonder enige waarschuwing omval en er niets over is."
     }
    ]
   },
@@ -3239,93 +3239,93 @@
    "level": "leerling",
    "subject": "mysterie_magie",
    "position": 35,
-   "text": "Waar zit de grens van jouw controle?",
+   "text": "Wat gebeurt er in jou, als je de controle echt kwijt bent?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Bij wat gewoon gebeurt, zonder reden — daar valt niets aan te regelen."
+     "text": "Ik ga alles tot in het kleinste sturen, uit pure paniek."
     },
     {
      "group": "Relational",
-     "text": "Bij wat alleen de ander kan voelen — hoe dichtbij ik ook kom."
+     "text": "Alles in me raakt overspoeld, en ik zoek houvast bij een ander."
     },
     {
      "group": "Seeker",
-     "text": "Al vrij snel — en wat daarna komt, is het mooiste deel."
+     "text": "Eerst niets, en dan stort het ineens in."
     },
     {
      "group": "Chaos",
-     "text": "Bij mezelf — wat eruit moet, moet eruit, of de zaal erop zit te wachten of niet."
+     "text": "Het jaagt door me heen — een uitbarsting of een snelle grap."
     },
     {
      "group": "Abstract",
-     "text": "Bij de eerste stap naar buiten — in gedachten is alles nog mogelijk."
+     "text": "Ik ga malen, of ik raak er los van."
     },
     {
      "group": "Agency",
-     "text": "Bij wat niet te verplaatsen is — en dat is veel minder dan je denkt."
+     "text": "Ik zet door, tot het me in één keer onderuithaalt."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Waar twee dingen allebei juist zijn. Toetsen lukt nog — kiezen niet, want welke het ook wordt, de tweede komt tekort."
+     "text": "Mijn hoofd wordt smal en hard. Ik grijp naar het enige wat nog klopt — de regel — en houd me daaraan vast, ook als hij niet meer past."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Bij andere mensen. Elke structuur kan ik dragen — maar een dwarse geest past in geen enkel schema, hoe goed ook."
+     "text": "Paniek, die niemand ziet. Ik ga micromanagen — elke mail, elk detail — alsof ik het geheel kan redden door de kleinste dingen strak te houden."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Bij een hart dat voor mij dichtgaat. Ik voel nog precies wat erachter zit — maar ik kom er niet meer in."
+     "text": "Mijn lichaam schreeuwt. Een uitblijvend bericht wordt een ramp — alles in me zoekt de ander, tot ik weer iets van hem hoor."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Bij iemand die zich niet laat dragen. Dan sta ik ernaast met volle handen — en mag niets geven."
+     "text": "Ik ga helpen, wie dan ook. Mijn onrust wordt pas minder als ik voor iemand kan zorgen — dus zorg ik door, ook als niemand erom vroeg."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Waar mijn vertrouwen begint. Tot daar doe ik wat ik kan — de rest leg ik in betere handen dan de mijne."
+     "text": "Eerst niets. Ik houd vol dat het wel meevalt — en dan, ineens, zak ik helemaal in elkaar."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Bij één leven. Er valt verder te kijken dan ik ooit kan lopen — en precies dat houdt me in beweging."
+     "text": "Ik wil weg, nu. Zodra ik me ingesloten voel, gaat alles in me op zoek naar een uitgang."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Waar mijn eerlijkheid de ander meer schaadt dan beschermt. Daar houd ik in — het ene nee dat ik tegen mezelf zeg."
+     "text": "Het ontploft. Alles wat ik inhield, komt er in één klap uit — pas achteraf merk ik hoe hard het aankwam."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Bij waar het landt. Wat eruit floept, heeft zijn eigen baan — hoe het aankomt, merk ik pas als het te laat is."
+     "text": "Ik word razendsnel grappig. Het ene na het andere — en pas als het stil wordt, voel ik hoe bang ik eigenlijk was."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Bij het denken zelf. Ik kan alles ontleden, tot op de bodem — behalve het hoofd waarmee ik dat doe."
+     "text": "Mijn hoofd draait door. Elk scenario, elke variabele — ik reken en reken, alsof ik het geheel weer terug kan denken."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Bij het onbenoembare. Waar taal stopt en het beeld begint — daar stopt mijn controle en begint alles wat ertoe doet."
+     "text": "Ik raak los van mezelf. Alles wordt wazig en ver weg — alsof ik in een film zit die over iemand anders gaat."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Bij de dood — en bij een wil die net zo sterk is als de mijne. Daartussen is bijna alles te buigen."
+     "text": "Alles valt weg. Zolang ik denk dat ik invloed heb, ben ik kalm — maar als dat echt niet meer kan, slaat er iets door wat ik niet herken."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Bij de tijd. Tegenwind, pijn, een overmacht — dat kan ik allemaal aan. Maar de tijd wordt nooit moe, en die wint uiteindelijk altijd."
+     "text": "Ik merk het niet — of wil het niet merken. Ik ga door, ook als alles protesteert — tot mijn lichaam het in één keer opgeeft."
     }
    ]
   },

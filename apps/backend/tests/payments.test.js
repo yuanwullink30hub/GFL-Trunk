@@ -37,12 +37,16 @@ const fakeStripe = {
 };
 
 let pay;
+const seenLevels = []; // the level each payment asked the config for
 before(async () => {
   await h.start();
   // payments.js destructures these at load, so they are swapped in BEFORE it is first required.
   require('../services/stripe').getStripe = () => fakeStripe;
   const cfg = require('../services/paymentConfig');
-  cfg.resolvePaymentConfig = async () => ({ enabled: true, allowedCountries: ['NL'], priceId: 'price_test', priceKey: 'launch' });
+  cfg.resolvePaymentConfig = async (now, opts = {}) => {
+    seenLevels.push(opts.level);
+    return { enabled: true, allowedCountries: ['NL'], priceId: 'price_test', priceKey: 'launch', priceTier: opts.level === 'beginner' ? 'beginner' : 'full' };
+  };
   cfg.priceInfo = async () => ({ unitAmount: 1452, taxCode: null });
   pay = require('../services/payments');
 });
@@ -51,10 +55,10 @@ after(h.stop);
 const { sealCode } = require('../services/sealedCode');
 const { TERMS_VERSION } = require('../services/paymentConfig');
 
-function request(orbCode) {
+function request(orbCode, level) {
   return {
     confirmationTokenId: 'ctoken_test123',
-    sealedOrbCode: sealCode(orbCode),
+    sealedOrbCode: sealCode(orbCode, Date.now(), level ? { level } : {}),
     email: 'buyer@example.com',
     country: 'NL',
     consent: true,
@@ -133,4 +137,14 @@ test('every status write that leaves the live states drops the slot (toStatus)',
   // No raw $set of a non-live status may remain: each must go through toStatus(), or it would keep the slot.
   const raw = src.match(/status:\s*'(failed|canceled|refunded|rejected_country)'/g) || [];
   assert.deepEqual(raw, [], `raw non-live status writes found: ${raw.join(', ')}`);
+});
+
+test('the price follows the level sealed into the report, and the payment records it', async () => {
+  const orbCode = `LC_ORB3_level-${Date.now()}`;
+  const { ref } = await pay.payFullReport(request(orbCode, 'beginner'));
+  assert.equal(seenLevels.at(-1), 'beginner');
+  const { collections } = require('../db');
+  const doc = await collections.payments().findOne({ ref });
+  assert.equal(doc.level, 'beginner');
+  assert.equal(doc.priceTier, 'beginner');
 });

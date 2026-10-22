@@ -41,6 +41,26 @@ export function currentPrice(now = new Date()) {
 }
 
 /**
+ * Full price per test level, excl. VAT, as the intro card shows it on each level (owner, 22 Oct 2026):
+ * Beginner € 12, Gevorderd and Leerling € 30. Until the equinox each is LAUNCH_DISCOUNT_PCT off, so
+ * Gevorderd/Leerling show € 12 (= LAUNCH_PRICE) and Beginner € 4,80. Display fallback like the rest: the
+ * backend charges the Stripe Price of the report's level (Beginner its own pair, paymentConfig.js).
+ */
+export const LAUNCH_DISCOUNT_PCT = 60;
+export const LEVEL_REGULAR_PRICE = {
+  quick: { netCents: 1200, currency: 'EUR' },
+  standard: REGULAR_PRICE,
+  deep: REGULAR_PRICE,
+};
+
+/** A level's price right now (excl. VAT): the full price, minus the launch discount until the equinox. */
+export function levelPrice(levelId, now = new Date()) {
+  const full = LEVEL_REGULAR_PRICE[levelId] || REGULAR_PRICE;
+  if (!isLaunchPricing(now)) return full;
+  return { ...full, netCents: Math.round((full.netCents * (100 - LAUNCH_DISCOUNT_PCT)) / 100) };
+}
+
+/**
  * The terms version the paywall's consent refers to. Sent with every payment and checked by the
  * backend (apps/backend/services/paymentConfig.js TERMS_VERSION) — bump BOTH when the terms change.
  */

@@ -26,7 +26,7 @@ const config = require('../config');
 const { getStripe, webhooks } = require('./stripe');
 const { resolvePaymentConfig, priceInfo, normCountry, TERMS_VERSION } = require('./paymentConfig');
 const paymentEvents = require('./paymentEvents');
-const { unsealCode, SealError } = require('./sealedCode');
+const { unsealCode, openSeal, SealError } = require('./sealedCode');
 const { orbKeyFor } = require('./orbKey');
 const { encrypt, hash } = require('./encryption');
 const {
@@ -167,16 +167,17 @@ async function claimPaymentSlot(codeHash, doc) {
 }
 
 async function payFullReport({ confirmationTokenId, sealedOrbCode, email, country, consent, consentText, termsVersion, language, origin, testAccess = false }) {
-  const cfg = await resolvePaymentConfig(new Date(), { testAccess });
-  const stripe = getStripe();
-  if (!cfg.enabled || !stripe) throw new PaymentError('unavailable', 503);
-
   // 1. The report: only the holder of the seal can pay for it. An expired seal can't be unlocked.
+  //    The seal's level picks the price (Beginner has its own).
   let orbCode;
-  try { orbCode = unsealCode(sealedOrbCode); } catch (e) {
+  let level;
+  try { ({ code: orbCode, level } = openSeal(sealedOrbCode)); } catch (e) {
     if (e instanceof SealError && e.code === 'expired') throw new PaymentError('report_expired', 410);
     throw new PaymentError('malformed', 400);
   }
+  const cfg = await resolvePaymentConfig(new Date(), { testAccess, level });
+  const stripe = getStripe();
+  if (!cfg.enabled || !stripe) throw new PaymentError('unavailable', 503);
   const codeHash = codeHashFor(orbCode);
   if (!codeHash) throw new PaymentError('malformed', 400);
 
@@ -282,6 +283,8 @@ async function payFullReport({ confirmationTokenId, sealedOrbCode, email, countr
     codeHash,
     liveCodeHash: codeHash,
     status: 'creating',
+    level,
+    priceTier: cfg.priceTier,
     priceKey: cfg.priceKey,
     priceId: cfg.priceId,
     amountCents: calc.amount_total,

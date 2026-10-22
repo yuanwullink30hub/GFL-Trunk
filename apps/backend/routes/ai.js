@@ -674,7 +674,8 @@ router.post('/analyze', analyzeLimit, uploadCaps, scoringVersionGate, promptGate
       // Authoritative orb profile code (LC_ORB3_…), radial+purple-gated with the one polar_norm —
       // SEALED (services/sealedCode.js): the browser cannot read it. The raw code is handed over
       // only when the full report is unlocked (payment or activation code). '' when geometry incomplete.
-      sealedOrbCode: orbCode ? sealCode(orbCode) : '',
+      // The seal carries the report's level (promptGate validated it): the payment prices from it.
+      sealedOrbCode: orbCode ? sealCode(orbCode, Date.now(), { level: req.body?.level ?? DEFAULT_LEVEL }) : '',
       // The profile card's copy, signed for this code — printed in the unlocked PDF's data block.
       kaart: kaartCard,
       analysis: result.analysis,

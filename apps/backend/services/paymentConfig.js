@@ -13,6 +13,10 @@
  * request, so a payment created one second before flipAt charges the launch price and one second
  * after charges the normal price.
  *
+ * Price per level (owner, 22 Oct 2026): Leerling and Gevorderd share the 'full' pair of Prices
+ * (STRIPE_PRICE_LAUNCH / _NORMAL), Beginner has its own (STRIPE_PRICE_BEGINNER_LAUNCH / _NORMAL). The
+ * level comes from the report's seal (services/sealedCode.js), never from the browser alone.
+ *
  * Amounts come from the Stripe Price objects (scripts/stripe-setup.js), not from this file.
  * FALLBACK_CENTS is display-only for when Stripe is not configured (payments disabled then).
  *
@@ -30,7 +34,16 @@ const DEFAULTS = {
   flipAt: '2027-03-20T20:25:00.000Z',
   gate: { launchCountries: ['NL'], openCountries: ['NL', ...EU_26], openAtFlip: false },
 };
-const FALLBACK_CENTS = { launch: 1452, normal: 3630 };
+const FALLBACK_CENTS = {
+  full: { launch: 1452, normal: 3630 },    // € 12 / € 30 excl. btw
+  beginner: { launch: 581, normal: 1452 }, // € 4,80 / € 12 excl. btw
+};
+const PRICE_IDS = {
+  full: { launch: 'priceLaunch', normal: 'priceNormal' },
+  beginner: { launch: 'priceBeginnerLaunch', normal: 'priceBeginnerNormal' },
+};
+/** The report level (beginner | intermediate | advanced) → its price tier. Unknown → full. */
+const tierFor = (level) => (level === 'beginner' ? 'beginner' : 'full');
 const SETTINGS_ID = 'payments';
 const SETTINGS_TTL_MS = 15 * 1000;
 const PRICE_TTL_MS = 10 * 60 * 1000;
@@ -123,30 +136,33 @@ function paymentDiagnostics() {
     webhookSecret: !!s.webhookSecret,
     priceLaunch: !!s.priceLaunch,
     priceNormal: !!s.priceNormal,
+    priceBeginnerLaunch: !!s.priceBeginnerLaunch,
+    priceBeginnerNormal: !!s.priceBeginnerNormal,
     testAccessToken: !!s.testAccessToken,
   };
 }
 
 /**
- * The configuration that applies at `now`.
+ * The configuration that applies at `now` for a report of `level` (absent → advanced).
  * `testAccess`: the request carries the production test token (see hasTestAccess).
- * @returns {Promise<{ enabled, publishableKey, priceKey, priceId, grossCents, currency, locale,
+ * @returns {Promise<{ enabled, publishableKey, priceTier, priceKey, priceId, grossCents, currency, locale,
  *   allowedCountries, launch, gateOpen, flipAt, termsVersion, mode, locked }>}
  */
-async function resolvePaymentConfig(now = new Date(), { testAccess = false } = {}) {
+async function resolvePaymentConfig(now = new Date(), { testAccess = false, level } = {}) {
   const settings = await loadSettings();
   const flipAt = new Date(settings.flipAt);
   const launch = now.getTime() < flipAt.getTime();
   const gateOpen = !launch && settings.gate.openAtFlip === true;
   const priceKey = launch ? 'launch' : 'normal';
-  const priceId = launch ? config.stripe.priceLaunch : config.stripe.priceNormal;
+  const priceTier = tierFor(level);
+  const priceId = config.stripe[PRICE_IDS[priceTier][priceKey]];
 
   const production = process.env.NODE_ENV === 'production';
   // Production in TEST mode exists for the gates only. Open to everyone, Stripe's test cards would
   // unlock real reports for free — so it is locked to holders of PAYMENTS_TEST_TOKEN.
   const locked = production && config.stripe.mode === 'test' && !testAccess;
   let enabled = !locked && !!(getStripe() && config.stripe.publishableKey && priceId && (!production || config.stripe.webhookSecret));
-  let grossCents = FALLBACK_CENTS[priceKey];
+  let grossCents = FALLBACK_CENTS[priceTier][priceKey];
   let currency = 'EUR';
   if (enabled) {
     try {
@@ -166,6 +182,7 @@ async function resolvePaymentConfig(now = new Date(), { testAccess = false } = {
   return {
     enabled,
     publishableKey: enabled ? config.stripe.publishableKey : '',
+    priceTier,
     priceKey,
     priceId: enabled ? priceId : '',
     grossCents,
@@ -187,6 +204,7 @@ function clearPaymentConfigCache() { settingsCache = null; priceCache.clear(); }
 module.exports = {
   TERMS_VERSION,
   EU_26,
+  tierFor,
   DEFAULTS,
   normCountry,
   hasTestAccess,

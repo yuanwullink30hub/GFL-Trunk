@@ -12,7 +12,7 @@ import { SciFiButton } from '@gfl/ui';
 const cellsImage = '/images/Model imports/Cells within Cells png.png';
 import OceanManualInputModal from './OceanManualInputModal';
 import ReferencesPanel from './ReferencesPanel';
-import { formatNetPrice, formatLaunchPriceEndShort, isLaunchPricing, REGULAR_PRICE } from '../../config/pricing';
+import { formatNetPrice, formatLaunchPriceEndShort, isLaunchPricing, levelPrice, LEVEL_REGULAR_PRICE, LAUNCH_DISCOUNT_PCT } from '../../config/pricing';
 
 /** Render translated copy that carries inline markers.
  *    \n                -> <br/>
@@ -1071,15 +1071,13 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
             {(() => {
               const launch = isLaunchPricing()
                 ? t('assessmentIntro.pricing.launchSuffix')
+                  .replace('{pct}', LAUNCH_DISCOUNT_PCT)
                   .replace('{end}', formatLaunchPriceEndShort())
-                  .replace('{regularNet}', formatNetPrice(language, REGULAR_PRICE))
                 : '';
-              const full = t('assessmentIntro.pricing.paid')
-                .replace('{net}', formatNetPrice(language))
-                .replace('{launch}', launch);
+              const full = t('assessmentIntro.pricing.paid').replace('{launch}', launch);
               // Split on the LAST dash: the launch suffix carries its own " — ".
               const idx = full.lastIndexOf(' — ') >= 0 ? full.lastIndexOf(' — ') + 1 : full.indexOf('—');
-              const head = idx >= 0 ? full.slice(0, idx) : full; // "Optioneel voor € 12,00 (introductieprijs …) " — prices from config/pricing.js
+              const head = idx >= 0 ? full.slice(0, idx) : full; // "Optioneel betaald rapport — 60 % korting tot Equinox 3-27 "
               const tail = idx >= 0 ? full.slice(idx) : ''; // "— De volledige…" (white, incl. dash)
               return (
                 <p style={{ fontSize: s.featureTitleFont, lineHeight: 1.5 }}>
@@ -1113,7 +1111,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                       onMouseLeave={closeWhoLevelSoon}
                       onClick={(e) => { e.stopPropagation(); whoLevel === level.id ? setWhoLevel(null) : openWhoLevel(level.id); }}
                       style={{
-                        position: 'absolute', top: '-0.55rem', right: '-0.55rem', zIndex: 30,
+                        position: 'absolute', top: '0.45rem', right: '0.55rem', zIndex: 30, // inside the card, clear of the corner curve (owner, 22 Oct)
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                         width: '1.15rem', height: '1.15rem', borderRadius: '50%',
                         backgroundColor: 'rgba(2,0,3,0.9)', border: '1px solid rgba(167,139,250,0.6)',
@@ -1151,6 +1149,26 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                           </div>
                         </div>
                       )}
+                    </span>
+                    {/* The level's price, green, inside the card top-left — the info icon's counterpart, clear of the four orange
+                        corner curves (owner, 22 Oct): during the launch discount the full price struck through (smaller), then the
+                        discounted one. Excl. VAT, from config/pricing.js. */}
+                    <span
+                      style={{
+                        position: 'absolute', top: '0.45rem', left: '0.6rem', zIndex: 30,
+                        height: '1.15rem', display: 'inline-flex', alignItems: 'baseline', gap: '0.35rem',
+                        paddingTop: '0.1rem',
+                        color: '#1d9904', fontSize: 'max(10px, 0.55vw)', fontWeight: 700, lineHeight: 1.3,
+                        whiteSpace: 'nowrap', pointerEvents: 'none',
+                      }}
+                    >
+                      {isLaunchPricing() && (
+                        <span style={{ textDecoration: 'line-through', opacity: 0.6, fontWeight: 400, fontSize: 'max(8px, 0.42vw)' }}>
+                          {formatNetPrice(language, LEVEL_REGULAR_PRICE[level.id])}
+                        </span>
+                      )}
+                      <span>{formatNetPrice(language, levelPrice(level.id))}</span>
+                      <span style={{ fontWeight: 400, opacity: 0.8 }}>{t('assessmentIntro.pricing.excl')}</span>
                     </span>
                     <SciFiButton
                       onClick={(e) => !isLocked && !isInert && !serverWait && openConsent(level.id, e)}

@@ -1,5 +1,5 @@
 /**
- * The service worker of the installed management app (gardenforlife.nl/admin-dashboard on a phone).
+ * The service worker of the installed management app (gardenforlife.nl/beheer on a phone).
  * It caches nothing and never touches API calls: page loads go to the network, so the app is always the
  * latest deploy, and only when the phone is offline does it answer with a short notice.
  */

@@ -1509,3 +1509,28 @@ export async function deleteInvoice(id) {
   }
   return response.json();
 }
+
+// ── Install links for the management phone app (admin) ──
+
+/** @returns {Promise<{ links: { _id, hint, createdAt, usedAt, revokedAt, status }[] }>} */
+export async function getAppLinks() {
+  const response = await fetch(`${API_BASE}/admin/app-links`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(`Failed to load install links (${response.status})`);
+  return response.json();
+}
+
+/** A new one-time install link. Its `url` is in this response ONLY — the backend keeps a hash. */
+export async function createAppLink() {
+  const response = await fetch(`${API_BASE}/admin/app-links`, { method: 'POST', headers: authHeaders() });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Failed to create an install link (${response.status})`);
+  }
+  return response.json();
+}
+
+export async function revokeAppLink(id) {
+  const response = await fetch(`${API_BASE}/admin/app-links/${id}`, { method: 'DELETE', headers: authHeaders() });
+  if (!response.ok) throw new Error(`Failed to revoke the install link (${response.status})`);
+  return response.json();
+}

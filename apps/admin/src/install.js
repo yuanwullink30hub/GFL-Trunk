@@ -1,12 +1,12 @@
 /**
- * The installed management app on a phone (owner, 23 Oct 2026): at gardenforlife.nl/admin-dashboard a phone
- * browser only logs in and offers the install; the dashboard itself opens in the installed app (standalone).
+ * The installed management app on a phone (owner, 23 Oct 2026): at gardenforlife.nl/beheer (reached through a one-time
+ * install link, apps/backend/services/adminAppLinks.js) a phone browser only logs in and offers the install; the dashboard itself opens in the installed app (standalone).
  * The desktop shell (window.gflAdmin) and desktop browsers are untouched.
  */
 import { useEffect, useState } from 'react';
 
 const ON_SITE = typeof window !== 'undefined' && window.location.protocol === 'https:'
-  && window.location.pathname.startsWith('/admin-dashboard') && !window.gflAdmin;
+  && window.location.pathname.startsWith('/beheer') && !window.gflAdmin;
 
 /** A phone or tablet: narrow, or a touch screen without hover. */
 export function isPhone() {
@@ -16,6 +16,11 @@ export function isPhone() {
 /** Running as the installed app (home-screen icon), not in a browser tab. */
 export function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+/** The installed phone app: it alone shows the Settings tab (update, install links). */
+export function isPhoneApp() {
+  return ON_SITE && isStandalone();
 }
 
 /** Phone browser on the website: the dashboard is not shown there, only the install. */
@@ -38,7 +43,7 @@ export function initInstall() {
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; notify(); });
   window.addEventListener('appinstalled', () => { deferred = null; installed = true; notify(); });
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/admin-dashboard/sw.js', { scope: '/admin-dashboard/' }).catch(() => {});
+    navigator.serviceWorker.register('/beheer/sw.js', { scope: '/beheer/' }).catch(() => {});
   }
 }
 

@@ -33,6 +33,9 @@ import {
   downloadPaymentRecordsArchive,
   getPaymentConfigAdmin,
   updatePaymentConfigAdmin,
+  getAppLinks,
+  createAppLink,
+  revokeAppLink,
 } from '@gfl/api-client';
 import {
   BTN, LABEL, FIELD_LABEL, TEXTAREA, INPUT_SM,
@@ -176,7 +179,7 @@ class TabBoundary extends React.Component {
  *   footer      →  telemetry line
  */
 
-const AdminDashboardModal = memo(({ user, onLogout }) => {
+const AdminDashboardModal = memo(({ user, onLogout, phoneApp = false }) => {
   const { t, language } = useLanguage();
   const [tab, setTab] = useState('overview');
   // Bumped when the server was woken from the header: the open tab mounts again and fetches afresh.
@@ -256,11 +259,14 @@ const AdminDashboardModal = memo(({ user, onLogout }) => {
     { key: 'paymentRecords', label: t('admin.dashboard.tabs.paymentRecords') },
     { key: 'audit', label: t('admin.dashboard.tabs.audit') },
     { key: 'contact', label: t('admin.dashboard.tabs.contact') },
+    ...(phoneApp ? [{ key: 'settings', label: t('admin.dashboard.tabs.settings') }] : []),
   ];
   const mobileTabs = [
     ...desktopTabs.slice(0, 10),
     { key: 'feedback', label: t('admin.dashboard.tabs.feedback') },
     desktopTabs[10],
+    // The installed phone app only: its update and the one-time install links (the desktop app is unchanged).
+    ...(phoneApp ? [{ key: 'settings', label: t('admin.dashboard.tabs.settings') }] : []),
   ];
   const activeMobileTab = mobileTabs.find(mt => mt.key === tab) || mobileTabs[0];
   // Header, content and footer share one side gutter; the shell itself caps the width (75% of the window).
@@ -421,6 +427,7 @@ const AdminDashboardModal = memo(({ user, onLogout }) => {
           {tab === 'paymentRecords' && <PaymentRecordsTab />}
           {tab === 'audit' && <AuditLogTab />}
           {tab === 'contact' && <ContactTab />}
+          {tab === 'settings' && phoneApp && <PhoneAppSettingsTab />}
           </TabBoundary>
         </div>
       </main>
@@ -2254,6 +2261,144 @@ const fmtDateTime = (d) => (d ? new Date(d).toLocaleString('nl-NL', {
 }) : '—');
 
 const CODE_GRID = '1fr 1.6fr 1fr 0.8fr';
+
+/* ═══════════════════════════════════════════════════════
+   SETTINGS — the installed phone app only (owner, 23 Oct 2026)
+   Update: compares the app's own script with the one the site serves now and reloads into it.
+   Share: one-time install links (apps/backend/services/adminAppLinks.js); the plain link is shown once.
+   ═══════════════════════════════════════════════════════ */
+
+const PHONE_APP_ROOT = '/beheer/';
+const appScript = (doc) => {
+  const el = doc.querySelector('script[type="module"][src*="/assets/index-"]');
+  return el ? el.getAttribute('src') : null;
+};
+
+const PhoneAppSettingsTab = memo(() => {
+  const { t } = useLanguage();
+  const [update, setUpdate] = useState('idle'); // idle | checking | current | ready | failed
+  const [links, setLinks] = useState([]);
+  const [error, setError] = useState(null);
+  const [creating, setCreating] = useState(false);
+  const [fresh, setFresh] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const body = { fontFamily: "'Figtree', sans-serif", fontSize: 'max(14px, 0.75vw)', lineHeight: 1.6, color: '#FFFEF0' };
+
+  const loadLinks = useCallback(async () => {
+    try { setLinks((await getAppLinks()).links || []); } catch (err) { setError(err.message); }
+  }, []);
+  useEffect(() => { loadLinks(); }, [loadLinks]);
+  // The plain link must not outlive this tab.
+  useEffect(() => () => setFresh(null), []);
+
+  const checkUpdate = async () => {
+    setUpdate('checking');
+    try {
+      const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(PHONE_APP_ROOT);
+      if (reg) reg.update().catch(() => {});
+      const res = await fetch(PHONE_APP_ROOT, { cache: 'no-store', credentials: 'same-origin' });
+      if (!res.ok) throw new Error(String(res.status));
+      const served = appScript(new DOMParser().parseFromString(await res.text(), 'text/html'));
+      if (!served) throw new Error('no app script');
+      setUpdate(served === appScript(document) ? 'current' : 'ready');
+    } catch {
+      setUpdate('failed');
+    }
+  };
+
+  const makeLink = async () => {
+    setCreating(true);
+    setError(null);
+    try {
+      setFresh(await createAppLink());
+      setCopied(false);
+      await loadLinks();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const copyLink = async () => {
+    try { await navigator.clipboard.writeText(fresh.url); setCopied(true); } catch (err) { setError(err.message); }
+  };
+  const shareLink = () => {
+    navigator.share({ title: 'Admin GFL', text: t('admin.dashboard.settings.shareText'), url: fresh.url }).catch(() => {});
+  };
+  const revoke = async (id) => {
+    if (!window.confirm(t('admin.dashboard.settings.confirmRevoke'))) return;
+    try { await revokeAppLink(id); await loadLinks(); } catch (err) { setError(err.message); }
+  };
+
+  const statusColor = { open: '#4ade80', used: '#60a5fa', revoked: '#f87171' };
+  const statusLabel = {
+    open: t('admin.dashboard.settings.statusOpen'),
+    used: t('admin.dashboard.settings.statusUsed'),
+    revoked: t('admin.dashboard.settings.statusRevoked'),
+  };
+  const when = (d) => (d ? new Date(d).toLocaleString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '');
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+      {error && <ErrorBox msg={error} />}
+
+      <DashboardCard title={t('admin.dashboard.settings.updateTitle')} color="gold">
+        <div style={{ ...body, marginBottom: '0.9rem', color: 'rgba(255, 254, 240, 0.8)' }}>{t('admin.dashboard.settings.updateHelp')}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', flexWrap: 'wrap' }}>
+          {update === 'ready' ? (
+            <SciFiButton onClick={() => window.location.reload()}>{t('admin.dashboard.settings.apply')}</SciFiButton>
+          ) : (
+            <SciFiButton onClick={checkUpdate} disabled={update === 'checking'}>
+              {update === 'checking' ? t('admin.dashboard.settings.checking') : t('admin.dashboard.settings.check')}
+            </SciFiButton>
+          )}
+          {update === 'current' && <span style={body}>{t('admin.dashboard.settings.current')}</span>}
+          {update === 'ready' && <span style={{ ...body, color: '#4ade80' }}>{t('admin.dashboard.settings.ready')}</span>}
+          {update === 'failed' && <span style={{ ...body, color: '#fca5a5' }}>{t('admin.dashboard.settings.checkFailed')}</span>}
+        </div>
+      </DashboardCard>
+
+      <DashboardCard title={t('admin.dashboard.settings.shareTitle')} color="gold">
+        <div style={{ ...body, marginBottom: '0.9rem', color: 'rgba(255, 254, 240, 0.8)' }}>{t('admin.dashboard.settings.shareHelp')}</div>
+        <SciFiButton onClick={makeLink} disabled={creating}>
+          {creating ? t('admin.dashboard.settings.creating') : t('admin.dashboard.settings.create')}
+        </SciFiButton>
+
+        {fresh && (
+          <div style={{ marginTop: '1rem', padding: '0.8rem', borderRadius: '0.15rem', border: '1px solid rgba(74, 222, 128, 0.35)', background: 'rgba(74, 222, 128, 0.05)' }}>
+            <div style={{ ...LABEL, color: '#4ade80', opacity: 1 }}>{t('admin.dashboard.settings.newLink')}</div>
+            <div style={{ margin: '0.5rem 0 0.8rem', fontFamily: 'monospace', fontSize: 'max(14px, 0.7vw)', color: '#FFFEF0', wordBreak: 'break-all', userSelect: 'all' }}>{fresh.url}</div>
+            <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+              <SciFiButton size="sm" onClick={copyLink}>{copied ? t('admin.dashboard.settings.copied') : t('admin.dashboard.settings.copy')}</SciFiButton>
+              {typeof navigator !== 'undefined' && navigator.share && (
+                <SciFiButton size="sm" variant="purple" onClick={shareLink}>{t('admin.dashboard.settings.share')}</SciFiButton>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div style={{ ...LABEL, marginTop: '1.2rem' }}>{t('admin.dashboard.settings.recent')}</div>
+        {links.length === 0 ? (
+          <div style={{ ...body, color: 'rgba(255, 254, 240, 0.5)' }}>{t('admin.dashboard.settings.none')}</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '0.4rem' }}>
+            {links.map((l) => (
+              <div key={l._id} style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', flexWrap: 'wrap', padding: '0.45rem 0.6rem', borderLeft: `2px solid ${statusColor[l.status]}`, background: 'rgba(168, 85, 247, 0.03)' }}>
+                <span style={{ fontFamily: 'monospace', color: '#FFFEF0', fontWeight: 'bold', letterSpacing: '0.1em' }}>…{l.hint}</span>
+                <span style={{ ...CHROME('max(9px, 0.45vw)', statusColor[l.status]), fontWeight: 'bold' }}>{statusLabel[l.status]}</span>
+                <span style={{ ...body, fontSize: 'max(12px, 0.6vw)', color: 'rgba(255, 254, 240, 0.5)' }}>{when(l.usedAt || l.revokedAt || l.createdAt)}</span>
+                {l.status === 'open' && (
+                  <span style={{ marginLeft: 'auto' }}><SciFiButton size="sm" variant="danger" onClick={() => revoke(l._id)}>{t('admin.dashboard.settings.revoke')}</SciFiButton></span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </DashboardCard>
+    </div>
+  );
+});
 
 const ActivationCodesTab = memo(() => {
   const { t, tFunc } = useLanguage();

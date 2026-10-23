@@ -52,6 +52,8 @@ async function connectDB() {
   // Used and revoked codes stay as the logbook, so there is deliberately no TTL.
   await db.collection('activationCodes').createIndex({ codeHash: 1 }, { unique: true });
   await db.collection('activationCodes').createIndex({ status: 1, createdAt: -1 });
+  // One-time install links for the management phone app (hashed, see services/adminAppLinks.js).
+  await db.collection('adminAppLinks').createIndex({ tokenHash: 1 }, { unique: true });
 
   // Report unlocks — which full report (by crystal-code hash) was unlocked how, and whether
   // it was refunded under the 14-day guarantee (see services/reportAccess.js). No TTL: a
@@ -307,6 +309,7 @@ const collections = {
   assessmentReviews: () => getDB().collection('assessmentReviews'),
   orbCodes: () => getDB().collection('orbCodes'),
   activationCodes: () => getDB().collection('activationCodes'),
+  adminAppLinks: () => getDB().collection('adminAppLinks'),
   reportUnlocks: () => getDB().collection('reportUnlocks'),
   refundGreylist: () => getDB().collection('refundGreylist'),
   paymentRecords: () => getDB().collection('paymentRecords'),

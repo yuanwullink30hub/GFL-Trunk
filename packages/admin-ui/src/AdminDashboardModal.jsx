@@ -1300,7 +1300,7 @@ const AssessmentsTab = memo(({ adminEmail }) => {
 
 // One Master Prompt per level (apps/backend/services/promptRouting.js); Advanced is the Leerling prompt.
 const PROMPT_SLOT_TABS = [
-  { key: 'beginner', label: 'Beginner', hintKey: 'admin.dashboard.prompts.slotHint.locked' },
+  { key: 'beginner', label: 'Beginner' }, // open since 23 Oct 2026
   { key: 'intermediate', label: 'Intermediate', hintKey: 'admin.dashboard.prompts.slotHint.locked' },
   { key: 'advanced', label: 'Advanced' },
 ];
@@ -1408,6 +1408,8 @@ const LEVEL_TABS = [
 const QuestionsTab = memo(() => {
   const { t } = useLanguage();
   const [level, setLevel] = useState('advanced');
+  // Every level has its own two-layer bank now (Beginner since 23 Oct 2026).
+  const BANK_OF = { advanced: 'leerling', intermediate: 'gevorderd', beginner: 'beginner' };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
@@ -1420,8 +1422,8 @@ const QuestionsTab = memo(() => {
         ))}
       </div>
 
-      {level === 'advanced' || level === 'intermediate' ? (
-        <QuestionBankEditor key={level} level={level === 'advanced' ? 'leerling' : 'gevorderd'} />
+      {BANK_OF[level] ? (
+        <QuestionBankEditor key={level} level={BANK_OF[level]} />
       ) : (
         <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
           <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: C.gold, marginBottom: '0.8rem' }}>

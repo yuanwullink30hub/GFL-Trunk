@@ -386,13 +386,16 @@ const SingleLayerPanel = ({
     const baseConfig = LEVEL_CONFIGS[assessmentLevel];
     if (!baseConfig) return {};
 
-    // The two-layer test (owner, 15 Oct): every level runs Leerling's card — same cards, forward only from
-    // question to question. Beginner and Gevorderd may turn back from Layer 2 to Layer 1 of the same question;
-    // Beginner has no timer at all.
+    // The two-layer test: every level runs Leerling's card (owner, 15 Oct). Per level (owner, 23 Oct 2026):
+    //   Leerling   timers, forward only
+    //   Gevorderd  no timer, forward only
+    //   Beginner   no timer, a back button, and within a subject any answered question (or the next open one)
+    //              can be opened again from its number
     if (twoLayer) {
       const leerling = { ...LEVEL_CONFIGS.deep, name: baseConfig.name, hasTimer: true, allowBacktrack: false, allowQuestionJump: false };
-      if (assessmentLevel === 'quick') return { ...leerling, hasTimer: false, timerType: 'none', layerTimers: undefined, allowLayerBack: true };
-      if (assessmentLevel === 'standard') return { ...leerling, allowLayerBack: true };
+      const untimed = { hasTimer: false, timerType: 'none', layerTimers: undefined };
+      if (assessmentLevel === 'quick') return { ...leerling, ...untimed, allowLayerBack: true, allowQuestionBack: true, allowQuestionJump: true };
+      if (assessmentLevel === 'standard') return { ...leerling, ...untimed };
       return leerling;
     }
 

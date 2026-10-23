@@ -43,13 +43,13 @@ const translations = {
         en: "Free Analysis — a prompt worth ~€3 on average, plus priceless scientific self-knowledge"
       },
       free: {
-        nl: "Download de fundering om je archetype in kaart te brengen — De identiteit, de verklaring, gevisualiseerd op ons eigen model, en uiteraard de prijs die je betaalt voor de belichaming van dit archetype.",
-        en: "Download the basics to map your archetype — the identity, the explanation, visualized on our own model, and of course the price you pay for the embodiment of this archetype."
+        nl: "Download gratis de fundering om je archetype in kaart te brengen — bevat alles om in beweging te komen ongeacht je huidige ontwikkeling.",
+        en: "Download the foundation to map your archetype for free — it holds everything you need to get moving, wherever you are in your development."
       },
       paid: {
         // {launch} is filled in by AssessmentIntro while the launch discount runs; the prices sit on the level cards.
-        nl: "Optioneel betaald rapport{launch} — De volledige uiteenzetting (3x de hoeveelheid data), lezen = transformeren op zich. Incl. AI-prompt en toegang tot de complete online-extensie.",
-        en: "Optional paid report{launch} — The full exposition (3× the data), reading = transforming in itself. Incl. AI prompt and access to the complete online extension."
+        nl: "Optioneel{launch} — De volledige uiteenzetting (3x zoveel data) lezen = transformeren op zich. AI-prompt en toegang platform + app",
+        en: "Optional{launch} — The full exposition (3× the data) reading = transforming in itself. AI prompt and access to platform + app"
       },
       // Behind the price on each level card.
       excl: { nl: "excl.", en: "excl." },

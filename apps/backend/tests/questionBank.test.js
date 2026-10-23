@@ -91,7 +91,7 @@ test('drafts seed from the ratified bank, save pinned to a version, publish swap
     assert.equal((await call('PATCH', `/api/questions/bank/leerling/${Q1}`, { token: admin, body })).status, 400, JSON.stringify(body));
   }
   assert.equal((await call('PATCH', '/api/questions/bank/leerling/leerling-nope-01', { token: admin, body: { version: 1, text: 'x' } })).status, 404);
-  assert.equal((await call('GET', '/api/questions/bank/beginner', { token: admin })).status, 404);
+  assert.equal((await call('GET', '/api/questions/bank/expert', { token: admin })).status, 404);
 
   // the live test still serves the ratified text
   r = await call('GET', '/api/questions/two-layer');
@@ -146,7 +146,7 @@ test('Gevorderd has its own bank (owner, 21 Oct): served by level, edited and pu
   const servedG = () => r.body.subjects.flatMap((s) => s.questions).find((q) => q.id === G1);
   assert.equal(servedG().text, gBank.questions[0].text);
   assert.ok(servedG().l1.every((a) => a.text.length > 0) && servedG().l2.every((a) => a.text.length > 0));
-  assert.equal((await call('GET', '/api/questions/two-layer?level=beginner')).status, 404);
+  assert.equal((await call('GET', '/api/questions/two-layer?level=expert')).status, 404);
   const leerling = await call('GET', '/api/questions/two-layer');
   assert.equal(leerling.body.level, 'leerling');
 
@@ -168,9 +168,31 @@ test('Gevorderd has its own bank (owner, 21 Oct): served by level, edited and pu
   assert.deepEqual(after.body, leerling.body, 'Leerling is untouched by a Gevorderd publish');
 });
 
+test('Beginner has its own bank (owner, 23 Oct): 36 questions, 648 answers, served and editable by level', async () => {
+  const admin = await account('admin');
+  const bBank = require('../engine/data/question_bank_beginner_v1_0.json');
+  assert.equal(bBank.questions.length, 36);
+  assert.equal(bBank.questions.reduce((n, q) => n + q.l1_answers.length + q.l2_answers.length, 0), 648);
+  assert.ok(bBank.questions.every((q) => q.text && q.l1_answers.every((a) => a.text) && q.l2_answers.every((a) => a.text)));
+  assert.ok(!JSON.stringify(bBank.questions).includes('*'), 'no asterisks in the served texts');
+
+  let r = await call('GET', '/api/questions/two-layer?level=beginner');
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.level, 'beginner');
+  assert.match(r.body.rotation_sequence_id, /^beginner:\d{4}-Q\d:[0-9a-f]{12}$/);
+  assert.deepEqual(r.body.subjects.map((s) => s.questions.length), [9, 9, 6, 6, 6]);
+  const first = r.body.subjects.flatMap((s) => s.questions).find((q) => q.id === bBank.questions[0].question_id);
+  assert.equal(first.text, bBank.questions[0].text);
+
+  r = await call('GET', '/api/questions/bank/beginner', { token: admin });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.questions.length, 36);
+  assert.ok(r.body.questions.every((q) => q.live && q.level === 'beginner'));
+});
+
 test('every level with a bank has a valid rotation for the next eight quarters', () => {
   const B = require('../services/twoLayerBank');
-  assert.deepEqual(B.LEVELS, ['leerling', 'gevorderd']);
+  assert.deepEqual(B.LEVELS, ['leerling', 'gevorderd', 'beginner']);
   for (const level of B.LEVELS) {
     for (const q of B.quartersFrom(new Date(), 8)) {
       const plan = B.twoLayerPlanFor(q, level);

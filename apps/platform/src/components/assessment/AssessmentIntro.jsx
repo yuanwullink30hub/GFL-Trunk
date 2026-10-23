@@ -331,9 +331,9 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   }, []);
 
   // Breakpoint-based sizing:  Desktop(≥1800) / Laptop(≥1079) / Tablet(≥768) / Mobile(<768)
-  const s = windowWidth >= 1800 ? {
+  const sTier = windowWidth >= 1800 ? {
     // ── Desktop ── all vertical spacings in vh so they track viewport height
-    modalMaxWidth: '64.4vw',
+    modalMaxWidth: '70.8vw', // 64.4vw + 10% (owner, 22 Oct 2026)
     modalMinHeight: 'calc(73.8vh - 0.5rem)', // 82vh − 10%
     modalMaxHeight: '99vh',
     padding: '1.8vh 2rem',
@@ -373,7 +373,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
     footerBtnFont: '0.75rem',
   } : windowWidth >= 1079 ? {
     // ── Laptop ── 77vw wide (48.1 × 1.6), fonts/spacing at original pre-30% scale
-    modalMaxWidth: '77vw',
+    modalMaxWidth: '84.7vw', // 77vw + 10% (owner, 22 Oct 2026)
     modalMinHeight: 'calc(73.8vh - 0.5rem)', // 82vh − 10%
     modalMaxHeight: '99vh',
     padding: '1.4vh 1.05vw',
@@ -413,7 +413,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
     footerBtnFont: '0.71vw',
   } : windowWidth >= 768 ? {
     // ── Tablet ── vh for vertical, rem for horizontal
-    modalMaxWidth: '39.6rem',
+    modalMaxWidth: '43.6rem', // 39.6rem + 10% (owner, 22 Oct 2026)
     modalMinHeight: 'calc(73.8vh - 0.5rem)', // 82vh − 10%
     modalMaxHeight: '99vh',
     padding: '1.4vh 1.2rem',
@@ -492,6 +492,11 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
     footerBtnPad: '0.35vh 0.85rem',
     footerBtnFont: '0.6rem',
   };
+  // Body copy never smaller than the headline ("De meest complete…", pyramidLabelFont) on any tier (owner, 22 Oct
+  // 2026); larger text and the uppercase chrome labels keep their size. CSS max() compares across units.
+  // The level buttons' grey line keeps its own size (owner, 22 Oct 2026).
+  const BODY_FLOOR_KEYS = ['featureTitleFont', 'featureDescFont', 'pyramidDescFont', 'descFontSize'];
+  const s = { ...sTier, ...Object.fromEntries(BODY_FLOOR_KEYS.map((k) => [k, `max(${sTier[k]}, ${sTier.pyramidLabelFont})`])) };
 
   const features = [
     { 
@@ -564,6 +569,13 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
 
   // CSS keyframes for info overlay expand/contract
   const infoAnimStyles = `
+    /* Price chip on the level cards: a light sweep inside its cut-corner frame (transform only — no repaint). */
+    .gfl-price-chip-sweep { position: absolute; inset: 0; overflow: hidden; clip-path: polygon(6% 0, 100% 0, 100% 73%, 94% 100%, 0 100%, 0 27%); }
+    .gfl-price-chip-sweep::before { content: ''; position: absolute; top: 0; bottom: 0; left: -45%; width: 45%;
+      background: linear-gradient(105deg, transparent, rgba(255,254,240,0.14), transparent);
+      animation: gflChipSweep 5s ease-in-out infinite; }
+    @keyframes gflChipSweep { 0% { transform: translateX(0); } 55%, 100% { transform: translateX(330%); } }
+    @media (prefers-reduced-motion: reduce) { .gfl-price-chip-sweep::before { animation: none; display: none; } }
     @keyframes infoExpand {
       0% { transform: scale(0); opacity: 0; }
       60% { opacity: 1; }
@@ -986,7 +998,9 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                     key={layer.nameKey}
                     className="flex items-center rounded border transition-all duration-500 hover:scale-105 relative group"
                     style={{
-                      width: `${s.pyramidBaseWidth + index * s.pyramidStepWidth}px`,
+                      // 10% wider on every layer (owner, 22 Oct 2026), so the top bar's description fits in full
+                      width: `${Math.round((s.pyramidBaseWidth + index * s.pyramidStepWidth) * 1.1)}px`,
+                      maxWidth: '100%',
                       justifyContent: 'center',
                       borderColor: 'rgba(51, 65, 85, 0.5)',
                       background: 'rgba(15, 23, 42, 0.3)',
@@ -1095,12 +1109,11 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                 {t('assessmentIntroExtra.server.checking')}
               </p>
             )}
-            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'}`} style={{ gap: s.levelsGap }}>
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'}`} style={{ columnGap: s.levelsGap, rowGap: `calc(${s.levelsGap} + 1.5rem)`, paddingBottom: '1.5rem' }}>
               {levels.map((level) => {
                 const isLocked = false; // all three levels open (owner, 15 Oct)
-                // Beginner is held back while its question sheet is written (owner, 21 Oct): the card looks as
-                // it always does, but a click starts nothing. Remove this line to open it again.
-                const isInert = level.id === 'quick';
+                // Beginner was held back until its question sheet existed (21–23 Oct); open since its sheet arrived.
+                const isInert = false;
                 const serverWait = serverStatus !== 'ok'; // the levels wait for the server check (owner, 17 Oct)
                 return (
                   <div key={level.id} style={{ position: 'relative', width: '90%', margin: '0 auto' }}>
@@ -1150,25 +1163,39 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                         </div>
                       )}
                     </span>
-                    {/* The level's price, green, inside the card top-left — the info icon's counterpart, clear of the four orange
-                        corner curves (owner, 22 Oct): during the launch discount the full price struck through (smaller), then the
-                        discounted one. Excl. VAT, from config/pricing.js. */}
+                    {/* The level's price as a holographic price chip (owner, 22 Oct 2026): it sits on the card's bottom edge,
+                        pushed right up to the bottom-right corner curve (which stays visible), half on the card, half below it. Outline only: a cut-corner neon frame in the pricing green with a soft glow, inside only a green glow (no other tint), a
+                        slow light sweep across it (decorative: frozen on low-gpu, off with reduced motion). During the launch
+                        discount the full price is struck through (small), then the discounted one. Excl. VAT, config/pricing.js. */}
                     <span
+                      className="gfl-price-chip"
+                      aria-label={`${formatNetPrice(language, levelPrice(level.id))} ${t('assessmentIntro.pricing.excl')}`}
                       style={{
-                        position: 'absolute', top: '0.45rem', left: '0.6rem', zIndex: 30,
-                        height: '1.15rem', display: 'inline-flex', alignItems: 'baseline', gap: '0.35rem',
-                        paddingTop: '0.1rem',
-                        color: '#1d9904', fontSize: 'max(10px, 0.55vw)', fontWeight: 700, lineHeight: 1.3,
-                        whiteSpace: 'nowrap', pointerEvents: 'none',
+                        position: 'absolute', right: '1.1rem', bottom: '-1.45rem', zIndex: 30, pointerEvents: 'none',
+                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                        height: '1.75rem', padding: '0 0.75rem 0 0.85rem',
+                        color: '#1d9904', fontSize: s.pyramidLabelFont, fontWeight: 700, lineHeight: 1, whiteSpace: 'nowrap',
+                        fontVariantNumeric: 'tabular-nums', filter: 'drop-shadow(0 0 6px rgba(29,153,4,0.45))',
                       }}
                     >
+                      <svg aria-hidden="true" viewBox="0 0 100 30" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible' }}>
+                        <defs>
+                          <linearGradient id={`chipFill-${level.id}`} x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0" stopColor="rgba(29,153,4,0.20)" />
+                            <stop offset="0.5" stopColor="rgba(29,153,4,0.04)" />
+                            <stop offset="1" stopColor="rgba(29,153,4,0.14)" />
+                          </linearGradient>
+                        </defs>
+                        <path d="M6 0 H100 V22 L94 30 H0 V8 Z" fill={`url(#chipFill-${level.id})`} stroke="#1d9904" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                      </svg>
+                      <span className="gfl-price-chip-sweep" aria-hidden="true" />
                       {isLaunchPricing() && (
-                        <span style={{ textDecoration: 'line-through', opacity: 0.6, fontWeight: 400, fontSize: 'max(8px, 0.42vw)' }}>
+                        <span style={{ position: 'relative', textDecoration: 'line-through', opacity: 0.6, fontWeight: 400, fontSize: 'max(8px, 0.42vw)' }}>
                           {formatNetPrice(language, LEVEL_REGULAR_PRICE[level.id])}
                         </span>
                       )}
-                      <span>{formatNetPrice(language, levelPrice(level.id))}</span>
-                      <span style={{ fontWeight: 400, opacity: 0.8 }}>{t('assessmentIntro.pricing.excl')}</span>
+                      <span style={{ position: 'relative', textShadow: '0 0 8px rgba(29,153,4,0.55)' }}>{formatNetPrice(language, levelPrice(level.id))}</span>
+                      <span style={{ position: 'relative', fontWeight: 400, opacity: 0.8, fontSize: '0.8em', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('assessmentIntro.pricing.excl')}</span>
                     </span>
                     <SciFiButton
                       onClick={(e) => !isLocked && !isInert && !serverWait && openConsent(level.id, e)}
@@ -1358,8 +1385,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'hidden',
-                width: `calc(0.8 * ${s.modalMaxWidth})`,
-                maxWidth: '90vw',
+                width: `calc(0.88 * ${s.modalMaxWidth})`, // a little wider (owner, 22 Oct 2026)
+                maxWidth: '92vw',
                 height: `calc(0.7 * ${s.modalMinHeight})`,
                 maxHeight: `calc(0.7 * ${s.modalMaxHeight})`,
                 boxShadow: isLowGpu ? '0 6px 30px rgba(0,0,0,0.7)' : '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
@@ -1367,7 +1394,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
             >
               {/* Body: everything above the buttons. Scrolls as a whole only if even the closed content does not
                   fit (small screens); the details below take the remaining room and scroll on their own. */}
-              <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+              <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', overflowY: 'auto', paddingInline: '0.35rem' /* the checkboxes sit at the edge: keep them inside the scroll clip */ }}>
               {/* Title */}
               {/* Header size: it sat at the body step, which read as smaller than the bold uppercase
                   "Het belangrijkste" label below it. */}

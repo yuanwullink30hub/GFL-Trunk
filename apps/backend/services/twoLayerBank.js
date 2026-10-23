@@ -12,7 +12,7 @@
  *   leerling   the ratified Leerling Question Bank v1.0 (owner, 16 Oct 2026: 648 answers accepted; Bleed v2 gate
  *              G2). Its question ids are the placeholder's, so the rotation sequences are unchanged.
  *   gevorderd  the Gevorderd sheet as it stood on 21 Oct 2026 (owner: installed as is, 648 answers).
- *   beginner   no bank of its own yet: the screen keeps Beginner on the Leerling plan without answer texts.
+ *   beginner   the Beginner sheet as it stood on 23 Oct 2026 (owner: the last sheet, 648 answers).
  * Once the admin editor publishes a level, the published texts replace the file's (useBank / loadPublishedBank);
  * the question ids never change, so neither do the sequences. Every function defaults to Leerling.
  */
@@ -25,6 +25,7 @@ const { generateSequence, validateSequence, quarterOf, SUBJECTS } = require('../
 const BANK_FILES = Object.freeze({
   leerling: '../engine/data/question_bank_leerling_v1_0.json',
   gevorderd: '../engine/data/question_bank_gevorderd_v1_0.json',
+  beginner: '../engine/data/question_bank_beginner_v1_0.json',
 });
 const LEVELS = Object.freeze(Object.keys(BANK_FILES));
 const DEFAULT_LEVEL = 'leerling';

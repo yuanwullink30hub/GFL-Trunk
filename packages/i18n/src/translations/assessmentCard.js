@@ -22,6 +22,11 @@ export default {
         nl: 'Elk {c:#f97316|woord} is met {c:#a855f7|intentie} gezet. Twee opties die op elkaar lijken kunnen fundamenteel anders zijn. Lees niet alleen wát er staat, maar hoe het {c:#a855f7|voelt}. De timer is er om je hoofd uit te schakelen.',
         en: 'Every {c:#f97316|word} has been placed with {c:#a855f7|intention}. Two options that look alike can be fundamentally different. Read not only what is written, but how it {c:#a855f7|feels}. The timer is there to switch off your head.',
       },
+      // The same without the timer sentence: Beginner and Gevorderd have no timer (owner, 23 Oct 2026).
+      wordsNoTimer: {
+        nl: 'Elk {c:#f97316|woord} is met {c:#a855f7|intentie} gezet. Twee opties die op elkaar lijken kunnen fundamenteel anders zijn. Lees niet alleen wát er staat, maar hoe het {c:#a855f7|voelt}.',
+        en: 'Every {c:#f97316|word} has been placed with {c:#a855f7|intention}. Two options that look alike can be fundamentally different. Read not only what is written, but how it {c:#a855f7|feels}.',
+      },
       picks: {
         nl: 'Zes antwoorden per vraag. Kies eerst wat het dichtst bij je {c:#a855f7|kern} zit. Kies daarna wat je ook raakt, maar minder.\nLet op: Dus twee antwoorden kiezen!\n \n{c:#f97316|Geen antwoord is ook een antwoord...} één mag ook. dit verandert verder niks aan de verdeling van het puntensysteem, onze data is dynamisch, net zoals jij.',
         en: 'Six answers per question. First choose what sits closest to your {c:#a855f7|core}. Then choose what also touches you, but less.\nNote: so pick two answers!\n \n{c:#f97316|No answer is an answer too...} one is fine as well. this changes nothing about how the point system is distributed, our data is dynamic, just like you.',
@@ -139,17 +144,22 @@ export default {
         nl: '\n \nElke laag heeft zijn eigen timer. Loopt die af, dan gaat de kaart door met wat je tot dan koos.\nJe kunt altijd zelf doorklikken, niet terug,\nhier alleen voorwaartse beweging.',
         en: '\n \nEach layer has its own timer. When it runs out, the card moves on with what you chose so far.\nYou can always click ahead yourself, not back,\nonly forward movement here.',
       },
-      // Gevorderd (owner, 15 Oct): the timer stays; from Layer 2 one step back to Layer 1 of the same question.
+      // (Gevorderd until 23 Oct 2026, when it lost its timer: one step back from Layer 2 to Layer 1. Unused now.)
       timerOutroBack: {
         nl: '\n \nElke laag heeft zijn eigen timer. Loopt die af, dan gaat de kaart door met wat je tot dan koos.\nVan laag 2 kun je terug naar laag 1 van dezelfde vraag,\nnooit naar een eerdere vraag: alleen voorwaartse beweging.',
         en: '\n \nEach layer has its own timer. When it runs out, the card moves on with what you chose so far.\nFrom layer 2 you can go back to layer 1 of the same question,\nnever to an earlier question: forward movement only.',
       },
-      // Beginner (owner, 15 Oct): no timer at all, and the same step back from Layer 2 to Layer 1.
+      // Gevorderd (owner, 23 Oct 2026): no timer, forward only.
       noTimer: {
-        nl: '36 vragen over 5 onderwerpen, zonder timer: neem de tijd die je nodig hebt.\nVan laag 2 kun je terug naar laag 1 van dezelfde vraag,\nnooit naar een eerdere vraag: alleen voorwaartse beweging.',
-        en: '36 questions across 5 subjects, without a timer: take the time you need.\nFrom layer 2 you can go back to layer 1 of the same question,\nnever to an earlier question: forward movement only.',
+        nl: '36 vragen over 5 onderwerpen, zonder timer: neem de tijd die je nodig hebt.\nJe klikt zelf door wanneer je klaar bent, niet terug,\nhier alleen voorwaartse beweging.',
+        en: '36 questions across 5 subjects, without a timer: take the time you need.\nYou click ahead yourself when you are ready, not back,\nonly forward movement here.',
       },
-      // The step back from Layer 2 to Layer 1 (Beginner, Gevorderd)
+      // Beginner (owner, 23 Oct 2026): no timer, a back button, and within a subject any earlier question again.
+      noTimerBack: {
+        nl: '36 vragen over 5 onderwerpen, zonder timer: neem de tijd die je nodig hebt.\nMet Terug ga je een stap terug, en binnen een onderwerp\nopen je een eerdere vraag via zijn nummer om je antwoord aan te passen.',
+        en: '36 questions across 5 subjects, without a timer: take the time you need.\nBack takes you one step back, and within a subject\nyou can open an earlier question by its number to change your answer.',
+      },
+      // The back button (Beginner)
       back: {
         nl: 'Terug',
         en: 'Back',

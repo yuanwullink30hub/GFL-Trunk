@@ -3,6 +3,7 @@ import { LanguageProvider, useLanguage } from '@gfl/i18n';
 import AdminDashboardModal from '@gfl/admin-ui';
 import { login, getMe, getToken, logout, checkServerHealth } from '@gfl/api-client';
 import { SciFiButton, INPUT, FIELD_LABEL, CornerAccents, FONT, inputFocus, inputBlur } from '@gfl/ui';
+import { installOnly, isIos, useInstall } from './install';
 
 /** Installed app only (window.gflAdmin): "new version ready — restart". The update comes from the private feed. */
 function UpdateBar() {
@@ -19,6 +20,41 @@ function UpdateBar() {
     <div style={{ position: 'fixed', left: '50%', bottom: '1.25rem', transform: 'translateX(-50%)', zIndex: 2147483000, display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.7rem 1.1rem', borderRadius: '0.5rem', background: 'rgba(2, 0, 3, 0.3)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
       <span style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(12px, 0.65vw)', color: '#FFFEF0' }}>{t('admin.app.updateReady')} {status.version}</span>
       <SciFiButton size="sm" onClick={() => window.gflAdmin.update.install()}>{t('admin.app.restart')}</SciFiButton>
+    </div>
+  );
+}
+
+/** Phone browser, logged in: only the install of the app (the dashboard opens in the installed app). */
+function InstallScreen({ onLogout }) {
+  const { t } = useLanguage();
+  const { canPrompt, installed, prompt } = useInstall();
+  const body = { fontFamily: "'Figtree', sans-serif", fontSize: 'max(14px, 0.75vw)', lineHeight: 1.6, color: '#FFFEF0' };
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 1rem', background: '#0a0510' }}>
+      <div style={{
+        position: 'relative', width: '100%', maxWidth: '26rem', padding: '1.5rem', borderRadius: '0.5rem',
+        background: 'rgba(2, 0, 3, 0.3)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), inset 0 0 12px rgba(168,85,247,0.06)',
+        display: 'flex', flexDirection: 'column', gap: '1rem',
+      }}>
+        <CornerAccents color="#f97316" />
+        <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: 'max(16px, 0.9vw)', letterSpacing: '0.16em', textTransform: 'uppercase', color: '#f97316' }}>
+          {t('admin.install.title')}
+        </div>
+        {installed ? (
+          <div style={body}>{t('admin.install.installed')}</div>
+        ) : (
+          <>
+            <div style={body}>{t('admin.install.text')}</div>
+            {canPrompt ? (
+              <div><SciFiButton size="md" onClick={prompt}>{t('admin.install.button')}</SciFiButton></div>
+            ) : (
+              <div style={{ ...body, color: 'rgba(255, 254, 240, 0.7)' }}>{t(isIos() ? 'admin.install.manualIos' : 'admin.install.manual')}</div>
+            )}
+          </>
+        )}
+        <div><SciFiButton size="sm" variant="white" onClick={onLogout}>{t('admin.install.logout')}</SciFiButton></div>
+      </div>
     </div>
   );
 }
@@ -105,6 +141,7 @@ function Shell() {
   }, [user]);
 
   if (checking) return null;
+  if (user && installOnly()) return <InstallScreen onLogout={signOut} />;
   if (user) return (<><AdminDashboardModal user={user} onLogout={signOut} onClose={signOut} /><UpdateBar /></>);
 
   if (offline) {

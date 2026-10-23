@@ -1,2 +1,6 @@
+# The management app (scripts/build-admin.mjs): its own single-page app under /admin-dashboard.
+/admin-dashboard    /admin-dashboard/index.html  200
+/admin-dashboard/*  /admin-dashboard/index.html  200
+
 # SPA catch-all — MUST be last (Cloudflare Pages: first match wins)
 /* /index.html 200

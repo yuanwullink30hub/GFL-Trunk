@@ -132,6 +132,9 @@ const STYLES = `
   .qb-acells { margin-top: 0.6rem; padding-left: 0.7rem; border-left: 1px solid rgba(${O}, 0.5); }
   .qb-acell { grid-template-columns: minmax(0, 1fr); gap: 0.25rem; }
   .qb-aname { padding-top: 0; }
+  /* phones: 16px in the boxes, or iOS zooms the page on every tap into one (owner, 23 Oct 2026: admin on a phone) */
+  .qb-field { font-size: 16px; }
+  .qb-question { font-size: 17px; }
 }
 `;
 

@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 
-// The management app — runs only on the management computer, never deployed. No three.js.
+// The management app — the desktop shell, and gardenforlife.nl/admin-dashboard (apps/platform/scripts/build-admin.mjs). No three.js.
 // `pnpm --filter @gfl/admin live` talks to the production API; `dev` to a local backend on :8080.
 export default defineConfig(({ mode }) => ({
   plugins: [react()],

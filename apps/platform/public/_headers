@@ -4,5 +4,12 @@
 /index.html
   Cache-Control: no-cache, no-store, must-revalidate
 
+/admin-dashboard/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+
+/admin-dashboard/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
 /static/*
   Cache-Control: public, max-age=31536000, immutable

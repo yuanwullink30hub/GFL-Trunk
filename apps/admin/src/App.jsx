@@ -24,9 +24,10 @@ function UpdateBar() {
 }
 
 /**
- * The management app. Runs ONLY on the management computer — installed as Admin GFL
- * (apps/admin-desktop) or from the repo with `pnpm --filter @gfl/admin live` — never deployed: the
- * website and the desktop app ship no management UI at all. It logs in like any account; the server's
+ * The management app. Installed as Admin GFL (apps/admin-desktop), run from the repo with
+ * `pnpm --filter @gfl/admin live`, and since 23 Oct 2026 also at gardenforlife.nl/admin-dashboard so it
+ * works on a phone (apps/platform/scripts/build-admin.mjs). The desktop app ships no management UI.
+ * It logs in like any account; the server's
  * management API answers only a valid management token and looks nonexistent to anything else
  * (apps/backend/routes/admin.js).
  */

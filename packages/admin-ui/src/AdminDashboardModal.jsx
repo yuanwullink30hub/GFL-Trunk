@@ -2324,7 +2324,7 @@ const PhoneAppSettingsTab = memo(() => {
     try { await navigator.clipboard.writeText(fresh.url); setCopied(true); } catch (err) { setError(err.message); }
   };
   const shareLink = () => {
-    navigator.share({ title: 'GardenForLife', text: t('admin.dashboard.settings.shareText'), url: fresh.url }).catch(() => {});
+    navigator.share({ title: 'Garden For Life', text: t('admin.dashboard.settings.shareText'), url: fresh.url }).catch(() => {});
   };
   const revoke = async (id) => {
     if (!window.confirm(t('admin.dashboard.settings.confirmRevoke'))) return;

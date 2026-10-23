@@ -174,7 +174,11 @@ test('Beginner has its own bank (owner, 23 Oct): 36 questions, 648 answers, serv
   assert.equal(bBank.questions.length, 36);
   assert.equal(bBank.questions.reduce((n, q) => n + q.l1_answers.length + q.l2_answers.length, 0), 648);
   assert.ok(bBank.questions.every((q) => q.text && q.l1_answers.every((a) => a.text) && q.l2_answers.every((a) => a.text)));
-  assert.ok(!JSON.stringify(bBank.questions).includes('*'), 'no asterisks in the served texts');
+  // '*' marks a highlight in an answer (owner, 23 Oct: the Beginner Flow Sheet keeps them): always in pairs,
+  // never in a question text, which shows them literally.
+  assert.ok(bBank.questions.every((q) => !q.text.includes('*')), 'no asterisks in a question text');
+  assert.ok(bBank.questions.every((q) => [...q.l1_answers, ...q.l2_answers].every((a) => (a.text.match(/\*/g) || []).length % 2 === 0)),
+    'every highlight in an answer is closed');
 
   let r = await call('GET', '/api/questions/two-layer?level=beginner');
   assert.equal(r.status, 200, JSON.stringify(r.body));

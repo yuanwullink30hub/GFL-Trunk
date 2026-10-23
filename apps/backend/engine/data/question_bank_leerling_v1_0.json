@@ -13,27 +13,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "In blijven eisen hoe het hoort, tot er voor niemand nog ruimte was."
+     "text": "In *blijven eisen hoe het hoort*, tot er voor niemand nog ruimte is."
     },
     {
      "group": "Relational",
-     "text": "In meebuigen, tot ik mezelf niet meer terugvind."
+     "text": "In *meebuigen*, tot ik mezelf niet meer terugvind."
     },
     {
      "group": "Seeker",
-     "text": "In nergens een grens trekken, ook toen ik die allang had moeten zien."
+     "text": "In *nergens een grens trekken*, ook toen ik die allang had moeten zien."
     },
     {
      "group": "Chaos",
-     "text": "In afbreken, ook als er al niets meer overeind staat."
+     "text": "In *afbreken*, ook als er al niets meer overeind staat."
     },
     {
      "group": "Abstract",
-     "text": "In me terugtrekken in mijn hoofd, terwijl buiten het leven doorging."
+     "text": "In *me terugtrekken in mijn hoofd*, terwijl buiten het leven doorging."
     },
     {
      "group": "Agency",
-     "text": "In doordrukken, ook toen er niets meer te halen viel."
+     "text": "In *doordrukken*, ook toen er niets meer te halen viel."
     }
    ],
    "l2_answers": [
@@ -45,7 +45,7 @@
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "In alles naar me toe trekken. Het draaide wel, maar niemand mocht nog iets zelf beslissen — en hoeveel mensen ik daarmee klein hield, zag ik pas toen ze weg waren."
+     "text": "In alles naar me toe trekken. Het draaide wel, maar niemand mocht nog iets zelf beslissen — en hoeveel mensen ik daarmee kleinhield, zag ik pas toen ze weg waren."
     },
     {
      "archetype": "Lover",
@@ -108,27 +108,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Ik trek alles eerst strakker aan, nog voor ik voel wat het met me doet."
+     "text": "Ik *trek alles eerst strakker aan*, nog voor ik voel wat het met me doet."
     },
     {
      "group": "Relational",
-     "text": "Ik zoek eerst contact met wie dit ook raakt."
+     "text": "Ik *zoek eerst contact* met wie dit ook raakt."
     },
     {
      "group": "Seeker",
-     "text": "Ik maak het eerst kleiner dan het is, en kijk alvast naar wat er nog wel kan."
+     "text": "Ik *maak het eerst kleiner dan het is*, en kijk alvast naar wat er nog wel kan."
     },
     {
      "group": "Chaos",
-     "text": "Ik word er meteen scherper van."
+     "text": "Ik *word er meteen scherper van.*"
     },
     {
      "group": "Abstract",
-     "text": "Ik keer eerst naar binnen om te bevatten wat er gebeurt."
+     "text": "Ik *keer eerst naar binnen* om te bevatten wat er gebeurt."
     },
     {
      "group": "Agency",
-     "text": "Ik ga er meteen harder tegenaan, alsof tempo het gat kan dichten."
+     "text": "Ik ga er *meteen harder tegenaan*, alsof tempo het gat kan dichten."
     }
    ],
    "l2_answers": [
@@ -203,27 +203,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "De angst dat alles uit elkaar valt."
+     "text": "De angst *dat alles uit elkaar valt.*"
     },
     {
      "group": "Relational",
-     "text": "De angst dat ik er voor een ander niet genoeg ben."
+     "text": "De angst *dat ik er voor een ander niet genoeg ben.*"
     },
     {
      "group": "Seeker",
-     "text": "De angst dat het ooit dichtgaat."
+     "text": "De angst *dat het ooit dichtgaat.*"
     },
     {
      "group": "Chaos",
-     "text": "Wat mijn scherpte afschermt."
+     "text": "De *scherpte onder mijn onverschilligheid.*"
     },
     {
      "group": "Abstract",
-     "text": "Hoeveel onrust er onder mijn rust zit."
+     "text": "Hoeveel *onrust er onder mijn rust zit.*"
     },
     {
      "group": "Agency",
-     "text": "Dat ik ook bang kan zijn."
+     "text": "Dat ik *ook bang* kan zijn."
     }
    ],
    "l2_answers": [
@@ -298,27 +298,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Als de orde in mij zoekraakt."
+     "text": "Als de *orde in mij zoekraakt.*"
     },
     {
      "group": "Relational",
-     "text": "Als ik er wel ben voor anderen, maar het contact kwijt is."
+     "text": "Als ik er wel ben voor anderen, maar *het contact kwijt is.*"
     },
     {
      "group": "Seeker",
-     "text": "Als er niets nieuws meer binnen mag komen."
+     "text": "Als er *niets nieuws meer binnen mag komen.*"
     },
     {
      "group": "Chaos",
-     "text": "Als ik me moet aanpassen aan wat van mij verwacht wordt."
+     "text": "Als ik me *moet aanpassen* aan wat van mij verwacht wordt."
     },
     {
      "group": "Abstract",
-     "text": "Als er zoveel op me afkomt dat het nergens kan bezinken."
+     "text": "Als er zoveel op me afkomt dat *het nergens kan bezinken.*"
     },
     {
      "group": "Agency",
-     "text": "Als er niets is om in beweging te zetten."
+     "text": "Als er *niets is om in beweging te zetten.*"
     }
    ],
    "l2_answers": [
@@ -335,7 +335,7 @@
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Als ik functioneer in plaats van voel. Iemand praat tegen me en het raakt me niet meer — het is hoe ik overleef, niet hoe ik leef."
+     "text": "Als ik functioneer in plaats van voel. Iemand praat tegen me en het raakt me niet meer — zo overleef ik, maar zo leef ik niet."
     },
     {
      "archetype": "Caregiver",
@@ -350,7 +350,7 @@
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Als ik te lang op dezelfde plek zit. Door de tijd heen is dat mijn betrouwbaarste waarschuwing geworden — onbewuste herhaling is mijn signaal dat ik vastzit."
+     "text": "Als ik te lang op dezelfde plek zit. Na verloop van tijd is dat mijn betrouwbaarste waarschuwing geworden — onbewuste herhaling is mijn signaal dat ik vastzit."
     },
     {
      "archetype": "Outlaw",
@@ -389,93 +389,93 @@
    "level": "leerling",
    "subject": "zelf_zonde",
    "position": 5,
-   "text": "Wat stel je al maanden uit, terwijl het eigenlijk precies is waar je goed in bent?",
+   "text": "Je stelt al maanden iets uit, zonder goed te weten waarom. Welke reactie herken je dan bij jezelf?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Een besluit dat allang klaarligt."
+     "text": "*Ik trek alles strakker aan*, tot er iets knapt."
     },
     {
      "group": "Relational",
-     "text": "Er echt zijn voor iemand die ik al een tijd laat wachten."
+     "text": "*Ik ben overgevoelig* en het minste laat dan opeens de emmer overlopen."
     },
     {
      "group": "Seeker",
-     "text": "Me opnieuw openzetten voor wat ik had afgesloten."
+     "text": "Lang merk ik niks, en dan *gooi ik ineens alles om.*"
     },
     {
      "group": "Chaos",
-     "text": "Ergens tegenin gaan waar ik inmiddels zelf in meedraai."
+     "text": "Het borrelt een tijd, en dan *blaas ik iets op.*"
     },
     {
      "group": "Abstract",
-     "text": "Wat ik zie, ook echt uitwerken."
+     "text": "Ik trek me terug in mijn hoofd en *sluit me opeens af.*"
     },
     {
      "group": "Agency",
-     "text": "Aan iets beginnen wat ik allang in gang had kunnen zetten."
+     "text": "*Ik begin dingen te forceren*, en het breekt meer dan me lief is."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Een grens trekken bij iemand die ik graag mag. Bij vreemden doe ik het moeiteloos — juist hier schuif ik het op, en hoe langer ik wacht, hoe vager het wordt."
+     "text": "Ik word strenger, vooral over kleine dingen. Elke slordigheid valt me op en blijft hangen — ik oordeel harder dan nodig, en dat zakt niet meer vanzelf."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Mijn eigen zaken op orde brengen. Voor anderen regel ik alles moeiteloos — maar mijn eigen papieren en plannen liggen al die tijd op de stapel, en die stapel groeit."
+     "text": "Ik ga alles plannen en controleren. Lijsten, schema’s, iedereen moet zich bij mij melden — en op een dag knapt het, en heb ik niets meer in de hand."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Het gesprek met iemand van wie ik voel dat er iets is. Ik voel het al een hele tijd — maar ik schuif het op, alsof aanvoelen alleen al genoeg is."
+     "text": "Ik zoek meer contact dan anders. Ik app vaker en vraag waar iemand is — en als er dan eens geen antwoord komt, stort er ineens veel in me in."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Iemand helpen die er niet om vraagt. Ik zie het al lang — maar zonder verzoek durf ik niet in te stappen, en ondertussen blijft het liggen."
+     "text": "Ik ga voor iedereen zorgen. Ik zeg overal ja op en sta altijd klaar — totdat ik op een avond merk dat er niets meer over is, ook niet voor mezelf."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Opnieuw beginnen met iemand die me teleurstelde. Ik wil het wel — maar ik houd de deur op een kier, en dat is niets voor mij."
+     "text": "Ik zeg tegen mezelf dat het wel goed komt. Dat houd ik lang vol — maar als het dan toch misgaat, zie ik ineens alles somber, en iedereen."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Weer op pad gaan. Ik zit al een hele tijd op een plek waar ik eigenlijk al uitgekeken ben — en toch schuif ik de volgende stap op."
+     "text": "Ik laat ineens alles vallen. Een tijd zit ik onrustig te scrollen — en dan boek ik iets radicaals: een verre reis, een nieuwe baan, een andere stad."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Ergens uitstappen waar ik al lang niet meer achter sta. Ik weet wat er niet klopt — maar ik draai nog mee, en dat zit me dieper dwars dan ik toegeef."
+     "text": "Op een dag zeg ik alles wat ik heb ingeslikt. Een tijd houd ik me in — dan gaat het in één keer, en sla ik deuren dicht die daarna dicht blijven."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Ergens weer de draak mee steken. Op één plek ben ik bloedserieus geworden — en intussen zie ik steeds minder wat daar eigenlijk absurd aan is."
+     "text": "Mijn grappen worden scherper. Eerst merkt niemand iets — tot ik iemand zo raak dat het stil wordt, en ik zelf schrik van hoe gemeen het klonk."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Iets echt uitzoeken wat me al lang dwarszit. Daar ben ik sterk in — maar hier kijk ik net niet scherp, want misschien wil ik het antwoord nog even niet weten."
+     "text": "Ik ga piekeren en analyseren. Ik reken alles tien keer door, in mijn eentje — en hoe dieper ik erin zit, hoe minder ik iemand anders binnenlaat."
     },
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Iets maken wat in mijn hoofd allang af is. Het beeld staat helemaal — maar zolang het daar zit, kan het nog niet tegenvallen, en dat is ook wel zo rustig."
+     "text": "Ik verdwijn in mijn eigen wereld. Muziek op, dagdromen, uren kwijt — wat buiten gebeurt voelt steeds verder weg, en ik mis het niet eens."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Iets aanpakken wat al jaren hetzelfde is. Ik weet waar het anders kan — maar juist hier laat ik het zoals het is, alsof juist dit ene ding vastligt."
+     "text": "Ik begin aan een groot nieuw project. Een verbouwing, een nieuw systeem, een plan dat alles omgooit — zo voelt het alsof er iets beweegt, en blijft dat ene liggen."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Aan iets beginnen waar ik geen overwinning in zie. Ik kan overal tegenaan — maar wat geen strijd belooft, blijft onaangeroerd, ook als ik weet dat het moet."
+     "text": "Ik ga harder werken, aan van alles tegelijk. Ik maak lange dagen en sla elke rust over — tot mijn lijf op een dag gewoon de stekker eruit trekt."
     }
    ]
   },
@@ -488,27 +488,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Dat ik het onder controle heb — terwijl ik al aan het verstijven ben."
+     "text": "*Dat ik het onder controle heb* — terwijl ik al aan het verstijven ben."
     },
     {
      "group": "Relational",
-     "text": "Dat ik nog wel wat meer kan dragen voor een ander — terwijl ik mezelf allang kwijt ben."
+     "text": "*Dat ik nog wel wat meer kan dragen voor een ander* — terwijl ik mezelf allang kwijt ben."
     },
     {
      "group": "Seeker",
-     "text": "Dat het wel meevalt — terwijl ik al lang geen grens meer zie."
+     "text": "*Dat het wel meevalt* — terwijl ik al lang geen grens meer zie."
     },
     {
      "group": "Chaos",
-     "text": "Dat ik juist nu op mijn scherpst ben — terwijl ik alles om me heen aan het slopen ben."
+     "text": "*Dat ik juist nu op mijn scherpst ben* — terwijl ik alles om me heen aan het slopen ben."
     },
     {
      "group": "Abstract",
-     "text": "Dat ik het eerst moet doorgronden — terwijl ik intussen nergens meer aan meedoe."
+     "text": "*Dat ik het eerst moet doorgronden* — terwijl ik intussen nergens meer aan meedoe."
     },
     {
      "group": "Agency",
-     "text": "Dat ik nog wel iets harder kan — terwijl ik op reserve loop."
+     "text": "*Dat ik nog wel iets harder kan* — terwijl ik op reserve loop."
     }
    ],
    "l2_answers": [
@@ -520,7 +520,7 @@
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Dat het prima gaat. Dat zeg ik tegen anderen en tegen mezelf — en omdat alles blijft draaien, merkt niemand hoe gespannen ik ben, ik zelf al helemaal niet."
+     "text": "Dat het prima gaat. Dat zeg ik tegen anderen en tegen mezelf — en omdat alles blijft draaien, merkt niemand hoe gespannen ik ben, ikzelf al helemaal niet."
     },
     {
      "archetype": "Lover",
@@ -579,31 +579,31 @@
    "level": "leerling",
    "subject": "zelf_zonde",
    "position": 7,
-   "text": "Welke kant van jezelf houd je al jaren klein, zonder dat je het doorhad?",
+   "text": "Wat was al jaren een muur in je zelfontwikkeling, zonder dat je het doorhad?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Spelen met wat nog niet bestaat."
+     "text": "*Spelen* met wat nog niet bestaat."
     },
     {
      "group": "Relational",
-     "text": "Het koele afwegen van wat iets mij kost."
+     "text": "*Het koele afwegen* van wat iets mij kost."
     },
     {
      "group": "Seeker",
-     "text": "Durven kiezen, en dus ook uitsluiten."
+     "text": "Durven kiezen, en dus ook *uitsluiten.*"
     },
     {
      "group": "Chaos",
-     "text": "De adem voor de lange weg."
+     "text": "De adem voor *de lange weg.*"
     },
     {
      "group": "Abstract",
-     "text": "Gewoon iets doen, zonder het eerst te doordenken."
+     "text": "*Gewoon iets doen*, zonder het eerst te doordenken."
     },
     {
      "group": "Agency",
-     "text": "Alleen maar ontvangen, zonder iets te hoeven."
+     "text": "Alleen maar *ontvangen*, zonder iets te hoeven."
     }
    ],
    "l2_answers": [
@@ -615,7 +615,7 @@
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Mijn gevoel voor betekenis. Ik dacht dat ik gewoon zakelijk was — maar wat iets voor mij betekende, heb ik zo vaak opzij gezet voor wat werkte, dat ik het nauwelijks nog hoor."
+     "text": "Mijn gevoel voor betekenis. Ik dacht dat ik gewoon zakelijk was — maar wat iets voor mij betekende, heb ik zo vaak opzijgezet voor wat werkte, dat ik het nauwelijks nog hoor."
     },
     {
      "archetype": "Lover",
@@ -625,7 +625,7 @@
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Mijn zakelijkheid. Die verdween ongemerkt achter het zorgen — uitrekenen wat iets mij kost, heb ik zo lang niet gedaan dat ik het nauwelijks nog kan."
+     "text": "Mijn zakelijke kant. Die verdween ongemerkt achter het zorgen — ik reken al zo lang niet meer uit wat iets mij kost, dat ik het bijna verleerd ben."
     },
     {
      "archetype": "Innocent",
@@ -655,17 +655,17 @@
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Mijn praktische talent. Ik heb zo lang in mijn verbeelding gewoond dat plannen, regelen en organiseren iets voor anderen werd — terwijl ik het best kan."
+     "text": "Mijn praktische talent. Ik heb zo lang in mijn verbeelding gewoond dat plannen, regelen en organiseren iets voor anderen werd — terwijl ik het prima kan."
     },
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Mijn ontvankelijkheid. Die sloeg ik over — iets binnenlaten zonder er meteen iets mee te willen, deed ik zo zelden dat ik pas laat merkte hoeveel ik miste."
+     "text": "Gewoon kijken hoe iets loopt, zonder in te grijpen. Ik zat er altijd al bovenop — dat ik daardoor veel niet zag, besefte ik pas veel later."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Mijn stilte. Die sloeg ik over — gewoon zitten en laten binnenkomen wat er is, deed ik zo zelden dat ik pas laat merkte dat het geen zwakte is."
+     "text": "Mijn stilte. Gewoon zitten en laten binnenkomen wat er is, deed ik zo zelden dat ik pas laat merkte dat het geen zwakte is."
     }
    ]
   },
@@ -678,27 +678,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Dat ik alles overeind houd en zelf nauwelijks word vastgehouden."
+     "text": "Dat ik alles overeind houd en *zelf nauwelijks word vastgehouden.*"
     },
     {
      "group": "Relational",
-     "text": "Dat ik van anderen meer overneem dan goed voor me is."
+     "text": "Dat ik van anderen *meer overneem dan goed voor me is.*"
     },
     {
      "group": "Seeker",
-     "text": "Dat ik me steeds weer openstel, ook als dat me iets kost."
+     "text": "Dat ik me steeds weer *openstel, ook als dat me iets kost.*"
     },
     {
      "group": "Chaos",
-     "text": "Dat mensen langs mijn eigenlijke boodschap heen kijken."
+     "text": "Dat mensen *langs mijn eigenlijke boodschap heen kijken.*"
     },
     {
      "group": "Abstract",
-     "text": "Dat ik het leven vaker verwerk dan echt beleef."
+     "text": "Dat ik het leven *vaker verwerk dan echt beleef.*"
     },
     {
      "group": "Agency",
-     "text": "Dat ik altijd doorga en de rekening pas later voel."
+     "text": "Dat ik *altijd doorga* en de rekening pas later voel."
     }
    ],
    "l2_answers": [
@@ -715,7 +715,7 @@
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Dat ik te veel voel. Wat mensen dichtbij voelen, raakt mij harder dan henzelf, en dat maakt me goed in verbinden maar kwetsbaar op plekken waar anderen beschermd zijn."
+     "text": "Dat ik te veel voel. Wat mensen om me heen voelen, raakt mij harder dan henzelf, en dat maakt me goed in verbinden maar kwetsbaar op plekken waar anderen beschermd zijn."
     },
     {
      "archetype": "Caregiver",
@@ -773,27 +773,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "De structuur die ik in mezelf meedraag."
+     "text": "*De structuur* die ik in mezelf meedraag."
     },
     {
      "group": "Relational",
-     "text": "Dat ik me altijd weer op een ander richt."
+     "text": "Dat ik me altijd weer *op een ander richt.*"
     },
     {
      "group": "Seeker",
-     "text": "Dat ik nog steeds alles kan opnemen wat er op me afkomt."
+     "text": "Dat ik wat komt nog steeds *tegemoet kan gaan.*"
     },
     {
      "group": "Chaos",
-     "text": "Het vermogen om niet mee te spelen."
+     "text": "Het vermogen om *niet mee te spelen.*"
     },
     {
      "group": "Abstract",
-     "text": "Dat ik in alles wat gebeurt nog betekenis zie."
+     "text": "Dat ik in alles wat gebeurt nog *betekenis zie.*"
     },
     {
      "group": "Agency",
-     "text": "Mijn wil om iets te bereiken, ook met lege handen."
+     "text": "*Mijn wil* om iets te bereiken, ook met lege handen."
     }
    ],
    "l2_answers": [
@@ -820,12 +820,12 @@
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "De overtuiging dat het weer goedkomt. Niet blind — ik heb genoeg meegemaakt om te weten dat hoop geen garantie is — dus kies ik er bewust voor."
+     "text": "De overtuiging dat het weer goedkomt. Niet blind: ik heb genoeg meegemaakt om te weten dat hoop geen garantie is, dus kies ik er bewust voor."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "De nieuwsgierigheid naar wat er nu kan. Niet onbezonnen — ik weet dat opnieuw beginnen pijn doet — maar ik kijk alweer verder, en daar kies ik voor."
+     "text": "De nieuwsgierigheid naar wat er nu kan. Niet onbezonnen: ik weet dat opnieuw beginnen pijn doet, maar ik kijk alweer verder, en daar kies ik voor."
     },
     {
      "archetype": "Outlaw",
@@ -868,27 +868,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Hoe iemand zich verhoudt tot de morele actualiteit."
+     "text": "Hoe iemand zich *verhoudt tot wat moreel speelt.*"
     },
     {
      "group": "Relational",
-     "text": "Hoe het op dat moment eigenlijk met iemand gaat."
+     "text": "Hoe het op dat moment *eigenlijk met iemand gaat.*"
     },
     {
      "group": "Seeker",
-     "text": "Wat iemand nog allemaal in petto heeft."
+     "text": "Wat iemand nog *allemaal in petto heeft.*"
     },
     {
      "group": "Chaos",
-     "text": "Waar iemand niet helemaal samenvalt met wie hij is."
+     "text": "Waar iemand *niet helemaal samenvalt* met wie hij is."
     },
     {
      "group": "Abstract",
-     "text": "Welke wereld iemand voor zichzelf in elkaar zet."
+     "text": "Welke *wereld iemand voor zichzelf in elkaar zet.*"
     },
     {
      "group": "Agency",
-     "text": "Hoeveel vuur er in iemand zit, en waar het naartoe wil."
+     "text": "*Hoeveel vuur er in iemand zit*, en waar het naartoe wil."
     }
    ],
    "l2_answers": [
@@ -925,7 +925,7 @@
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Of ze echt zijn. Niet beleefd, eerlijk, echt. Ik ben allergisch voor aanpassing. Vroeger stootte het me af. Nu lees ik het."
+     "text": "Of ze echt zijn. Niet beleefd, maar eerlijk, echt. Ik ben allergisch voor aanpassing. Vroeger stootte het me af. Nu lees ik het."
     },
     {
      "archetype": "Trickster",
@@ -935,7 +935,7 @@
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Hoe hun hoofd werkt. Niet wát ze weten, maar welke verbanden ze leggen. Over de jaren is dat mijn scherpste filter geworden."
+     "text": "Hoe hun hoofd werkt. Niet wát ze weten, maar welke verbanden ze leggen. Met de jaren is dat mijn scherpste filter geworden."
     },
     {
      "archetype": "Artist",
@@ -963,27 +963,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Als iemand doet alsof afspraken voor hem vrijblijvend zijn."
+     "text": "Als iemand *doet alsof afspraken voor hem vrijblijvend zijn.*"
     },
     {
      "group": "Relational",
-     "text": "Als iemand ongevoelig is voor wat hij bij een ander aanricht."
+     "text": "Als iemand *ongevoelig is voor wat hij bij een ander aanricht.*"
     },
     {
      "group": "Seeker",
-     "text": "Als iemand iets al afschrijft voordat het een kans heeft gehad."
+     "text": "Als iemand *iets al afschrijft voordat het een kans* heeft gehad."
     },
     {
      "group": "Chaos",
-     "text": "Als iemand iets anders voorspiegelt dan er is."
+     "text": "Als iemand *iets anders voorspiegelt dan er is.*"
     },
     {
      "group": "Abstract",
-     "text": "Als iemand me opjaagt voordat iets tot me is doorgedrongen."
+     "text": "Als iemand me *opjaagt voordat iets tot me is doorgedrongen.*"
     },
     {
      "group": "Agency",
-     "text": "Als iemand mij afremt waar het erop aankomt."
+     "text": "Als iemand *mij afremt waar het erop aankomt.*"
     }
    ],
    "l2_answers": [
@@ -1005,27 +1005,27 @@
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "Opzettelijke wreedheid. Dat is het enige moment waarop mijn geduld opraakt — en ik merk dat mijn reactie dan feller is dan de situatie vraagt."
+     "text": "Opzettelijke wreedheid. Dat is het enige waarbij mijn geduld opraakt — en ik merk dat mijn reactie dan feller is dan de situatie vraagt."
     },
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Bewust cynisch. De keuze om niet te geloven terwijl vertrouwen mogelijk is. Die keuze begrijp ik — verdragen kost me nog steeds moeite."
+     "text": "Bewust cynisme. De keuze om niet te geloven terwijl vertrouwen mogelijk is. Die keuze begrijp ik — verdragen kost me nog steeds moeite."
     },
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Ongezien afwijzen. Een idee, een plan, een mens wegzetten voordat je er ook maar in bent geweest. Dat begrijp ik — maar ik word er rusteloos van."
+     "text": "Ongezien afwijzen. Een idee, een plan, een mens wegzetten voordat je het ook maar hebt leren kennen. Dat begrijp ik — maar ik word er rusteloos van."
     },
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Als iemand liegt en denkt dat ik het niet doorheb. Niet de leugen irriteert me — het gebrek aan respect dat erachter zit. Dan voel ik me gelijk ontbonden."
+     "text": "Als iemand liegt en denkt dat ik het niet doorheb. Niet de leugen irriteert me — het gebrek aan respect dat erachter zit. Dan voel ik me meteen nergens meer aan gebonden."
     },
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Als iemand zich opblaast en iedereen meespeelt. Niet de pose stoort me — hoe absurd hard de rest werkt om hem overeind te houden. Daar wil ik meteen een gat in prikken."
+     "text": "Als iemand zich opblaast en iedereen meespeelt. Niet de pose stoort me — wel hoe absurd hard de rest werkt om hem overeind te houden. Daar wil ik meteen een gat in prikken."
     },
     {
      "archetype": "Sage",
@@ -1040,12 +1040,12 @@
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Als iemand zich vastzet en niet te bewegen is. Ik zie de opening — en dat er een wil tegenover staat die ik niet om krijg, frustreert me fysiek."
+     "text": "Als iemand zich vastzet en niet te bewegen is. Ik zie de opening — en dat er een wil tegenover staat die ik niet omkrijg, frustreert me fysiek."
     },
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Als iemand me openlijk onderuithaalt. Niet de kritiek zelf — dat ik even zwak sta waar anderen bij zijn, daar reageer ik veel feller op dan nodig is."
+     "text": "Als iemand me openlijk onderuithaalt. Niet de kritiek zelf — maar dat ik even zwak sta waar anderen bij zijn, daar reageer ik veel feller op dan nodig is."
     }
    ]
   },
@@ -1054,31 +1054,31 @@
    "level": "leerling",
    "subject": "ander_attentie",
    "position": 12,
-   "text": "Waar ben jij mild voor bij een ander — en strikt voor bij jezelf?",
+   "text": "Waar ben jij mild voor bij een ander — en streng voor bij jezelf?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Een fout die niemand ziet — bij een ander laat ik hem gaan, bij mezelf niet."
+     "text": "*Een fout die niemand ziet* — bij een ander laat ik hem gaan, bij mezelf niet."
     },
     {
      "group": "Relational",
-     "text": "Mijn woord aan iemand — een ander mag een keer afhaken, ik niet."
+     "text": "*Mijn woord aan iemand* — een ander mag een keer afhaken, ik niet."
     },
     {
      "group": "Seeker",
-     "text": "Mijn eigen zuiverheid — een ander mag weleens de makkelijke weg kiezen, ik houd mezelf eraan."
+     "text": "*Mijn eigen zuiverheid* — een ander mag weleens de makkelijke weg kiezen, ik houd mezelf eraan."
     },
     {
      "group": "Chaos",
-     "text": "Meegaan met wat er van me verwacht wordt — een ander gun ik dat, mezelf niet."
+     "text": "*Meegaan met wat er van me verwacht wordt* — een ander gun ik dat, mezelf niet."
     },
     {
      "group": "Abstract",
-     "text": "Iets afleveren wat niet af is — een ander mag het afraffelen, ik niet."
+     "text": "*Iets afleveren wat niet af is* — een ander mag het afraffelen, ik niet."
     },
     {
      "group": "Agency",
-     "text": "Inzakken als het zwaar wordt — een ander mag dat, ik niet."
+     "text": "*Inzakken als het zwaar wordt* — een ander mag dat, ik niet."
     }
    ],
    "l2_answers": [
@@ -1153,27 +1153,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Een voorschot, maar onder voorbehoud."
+     "text": "Een voorschot, maar *onder voorbehoud.*"
     },
     {
      "group": "Relational",
-     "text": "Veel — ik begin liever open dan op mijn hoede."
+     "text": "*Veel* — ik begin liever open dan op mijn hoede."
     },
     {
      "group": "Seeker",
-     "text": "Meer dan de meeste mensen, en ik zie wel waar het strandt."
+     "text": "Meer dan de meeste mensen, en *ik zie wel waar het strandt.*"
     },
     {
      "group": "Chaos",
-     "text": "Weinig — beleefdheid alleen zegt mij niets."
+     "text": "*Weinig* — beleefdheid alleen zegt mij niets."
     },
     {
      "group": "Abstract",
-     "text": "Een voorzichtig beetje, tot ik zie wie er werkelijk zit."
+     "text": "*Een voorzichtig beetje*, tot ik zie wie er werkelijk zit."
     },
     {
      "group": "Agency",
-     "text": "Genoeg om samen iets te kunnen beginnen."
+     "text": "*Genoeg* om samen iets te kunnen beginnen."
     }
    ],
    "l2_answers": [
@@ -1215,7 +1215,7 @@
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Een beetje, met een scheve blik. Ik kijk eerst hoe iemand reageert als ik iets onverwachts zeg — wie daar tegen kan en terugkaatst, mag dichterbij."
+     "text": "Een beetje, met een scheve blik. Ik kijk eerst hoe iemand reageert als ik iets onverwachts zeg — wie daartegen kan en terugkaatst, mag dichterbij."
     },
     {
      "archetype": "Sage",
@@ -1225,7 +1225,7 @@
     {
      "archetype": "Artist",
      "group": "Abstract",
-     "text": "Genoeg om nieuwsgierig te zijn. Ik ga mee in iemands eigenheid — maar wie mijn werk niet serieus neemt, verliest het net zo snel weer."
+     "text": "Genoeg om nieuwsgierig te zijn. Ik ga mee in iemands eigenheid — maar wie mijn werk niet serieus neemt, verliest dat net zo snel weer."
     },
     {
      "archetype": "Magician",
@@ -1248,27 +1248,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Dat er onder mijn kalmte wel degelijk iets beweegt."
+     "text": "Dat er onder mijn kalmte *wel degelijk iets beweegt.*"
     },
     {
      "group": "Relational",
-     "text": "Dat mijn eigen gevoel vaak achter dat van de ander staat."
+     "text": "Dat mijn eigen gevoel vaak *achter dat van de ander staat.*"
     },
     {
      "group": "Seeker",
-     "text": "Dat er onder het lichte ook iets donkers of onrustigs zit."
+     "text": "Dat er onder het lichte *ook iets donkers of onrustigs zit.*"
     },
     {
      "group": "Chaos",
-     "text": "Dat mijn scherpte vaak gewoon wil zeggen dat iets me raakt."
+     "text": "Dat mijn scherpte vaak gewoon wil zeggen *dat iets me raakt.*"
     },
     {
      "group": "Abstract",
-     "text": "Dat wat ik voel vaak via een omweg naar buiten komt."
+     "text": "Dat wat ik voel vaak *via een omweg naar buiten komt.*"
     },
     {
      "group": "Agency",
-     "text": "Dat ik ook iets voel als ik er een probleem van maak."
+     "text": "Dat ik ook *iets voel als ik er een probleem van maak.*"
     }
    ],
    "l2_answers": [
@@ -1343,27 +1343,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Duidelijkheid, ook als die niet prettig is."
+     "text": "*Duidelijkheid*, ook als die niet prettig is."
     },
     {
      "group": "Relational",
-     "text": "Het gevoel dat iemand er niet alleen voor staat."
+     "text": "Het gevoel dat iemand er *niet alleen voor staat.*"
     },
     {
      "group": "Seeker",
-     "text": "Telkens weer een frisse start, voor wie dat nodig heeft."
+     "text": "Telkens weer *een frisse start*, voor wie dat nodig heeft."
     },
     {
      "group": "Chaos",
-     "text": "Een blik die mensen even wakker schudt."
+     "text": "Een blik die mensen even *wakker schudt.*"
     },
     {
      "group": "Abstract",
-     "text": "Diepgang, ook in een gewoon gesprek."
+     "text": "*Diepgang*, ook in een gewoon gesprek."
     },
     {
      "group": "Agency",
-     "text": "Een zetje, ook als iemand nog twijfelt."
+     "text": "*Een zetje*, ook als iemand nog twijfelt."
     }
    ],
    "l2_answers": [
@@ -1425,7 +1425,7 @@
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Zekerheid. Mensen leunen op mij alsof ik het altijd weet. Ergens onderweg is die rol geen keuze meer geworden maar een automatisme."
+     "text": "Zekerheid. Mensen leunen op mij alsof ik het altijd weet. Ergens onderweg is die rol geen keuze meer, maar een automatisme geworden."
     }
    ]
   },
@@ -1438,27 +1438,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Als het meer openheid vraagt dan ik veilig vind."
+     "text": "Als het *meer openheid vraagt dan ik veilig vind.*"
     },
     {
      "group": "Relational",
-     "text": "Als het alleen nog maar één kant op gaat."
+     "text": "Als het *alleen nog maar één kant op gaat.*"
     },
     {
      "group": "Seeker",
-     "text": "Als het te zwaar wordt om nog licht te kunnen blijven."
+     "text": "Als het te zwaar wordt om *nog licht te kunnen blijven.*"
     },
     {
      "group": "Chaos",
-     "text": "Als het te dichtbij komt en ik me ingesloten voel."
+     "text": "Als iemand me *meer wil binden* dan ik toelaat."
     },
     {
      "group": "Abstract",
-     "text": "Als er tussen ons niets meer te zeggen valt."
+     "text": "Als er tussen ons *niets meer te zeggen valt.*"
     },
     {
      "group": "Agency",
-     "text": "Als mijn inzet bij iemand nergens meer toe leidt."
+     "text": "Als mijn *inzet* bij iemand *nergens meer toe leidt.*"
     }
    ],
    "l2_answers": [
@@ -1520,7 +1520,7 @@
     {
      "archetype": "Hero",
      "group": "Agency",
-     "text": "Als iemand weigert voor zichzelf te vechten. Ik kan lang meevechten, maar op het moment dat zij de handdoek in de ring gooien, trek ik me terug."
+     "text": "Als iemand weigert voor zichzelf te vechten. Ik kan lang meevechten, maar op het moment dat die de handdoek in de ring gooit, trek ik me terug."
     }
    ]
   },
@@ -1533,44 +1533,44 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Eén vast punt dat iemand anders even voor me bewaakt."
+     "text": "*Eén vast punt* dat iemand anders even voor me bewaakt."
     },
     {
      "group": "Relational",
-     "text": "Iemand die me helpt mezelf weer even los te zien van de ander."
+     "text": "Iemand die me helpt *mezelf weer even los te zien* van de ander."
     },
     {
      "group": "Seeker",
-     "text": "Iemand die me helpt kiezen waar ik voor ga staan."
+     "text": "Iemand die me *helpt kiezen* waar ik voor ga staan."
     },
     {
      "group": "Chaos",
-     "text": "Iemand die me laat zien waarvoor het de moeite is om door te bouwen."
+     "text": "Iemand die me laat zien waarvoor het de *moeite waard is om door te bouwen.*"
     },
     {
      "group": "Abstract",
-     "text": "Iemand die me uit mijn hoofd haalt en ergens bij betrekt."
+     "text": "Iemand die me *uit mijn hoofd haalt* en ergens bij betrekt."
     },
     {
      "group": "Agency",
-     "text": "Toestemming om het even neer te leggen."
+     "text": "*Toestemming* om het even neer te leggen."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Eén zekerheid die iemand anders voor me bewaakt. Als alles ter discussie staat, moet er iets overeind blijven — maar daarom aankloppen voelt als toegeven dat ik het kwijt ben."
+     "text": "Eén zekerheid die iemand anders voor me bewaakt. Als alles ter discussie staat, moet er iets overeind blijven — maar daarvoor aankloppen voelt als toegeven dat ik het kwijt ben."
     },
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Iemand die één ding van me overneemt. Niet alles — één taak, één beslissing, zodat er weer iets is waar ik op kan steunen. Maar daarom aankloppen past niet bij de rol die ik heb."
+     "text": "Iemand die één ding van me overneemt. Niet alles — één taak, één beslissing, zodat er weer iets is waar ik op kan steunen. Maar daarvoor aankloppen past niet bij de rol die ik heb."
     },
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Iemand die me even van zich af laat staan. Als ik vastzit in de ander, helpt het als iemand zegt: wat wil jij zelf? Maar daarom aankloppen voelt alsof ik de verbinding verbreek."
+     "text": "Iemand die me even los van de ander laat staan. Als ik vastzit in de ander, helpt het als iemand zegt: wat wil jij zelf? Maar daarvoor aankloppen voelt alsof ik de verbinding verbreek."
     },
     {
      "archetype": "Caregiver",
@@ -1585,7 +1585,7 @@
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Iemand die me een reden geeft om te blijven. Als het stokt, wil ik verder trekken — maar wat me echt helpt, is een doel om voor te staan, en dat uitspreken voelt als jezelf opsluiten."
+     "text": "Iemand die me een reden geeft om te blijven. Als het stokt, wil ik verder trekken — maar wat me echt helpt, is een doel om voor te staan, en dat uitspreken voelt als mezelf opsluiten."
     },
     {
      "archetype": "Outlaw",
@@ -1628,34 +1628,34 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Lak hebben aan de regels — ik veroordeel het snel, juist omdat het ook aan mij trekt."
+     "text": "*Lak hebben aan de regels* — ik veroordeel het snel, juist omdat het ook aan mij trekt."
     },
     {
      "group": "Relational",
-     "text": "Makkelijk nee zeggen — dat krijg ik moeilijk over mijn hart."
+     "text": "*Makkelijk nee zeggen* — dat krijg ik moeilijk over mijn lippen."
     },
     {
      "group": "Seeker",
-     "text": "Zekerheid eisen — geen garanties nodig, zeg ik, maar ik mis ze wel."
+     "text": "*Zekerheid eisen* — geen garanties nodig, zeg ik, maar ik mis ze wel."
     },
     {
      "group": "Chaos",
-     "text": "Vastigheid willen — ik noem het burgerlijk, maar ik zoek het zelf ook."
+     "text": "*Vastigheid willen* — ik noem het burgerlijk, maar ik zoek het zelf ook."
     },
     {
      "group": "Abstract",
-     "text": "Behoeftig zijn — ik vind het snel te veel, maar ik heb anderen meer nodig dan ik laat zien."
+     "text": "*Behoeftig zijn* — ik vind het snel te veel, maar ik heb anderen meer nodig dan ik laat zien."
     },
     {
      "group": "Agency",
-     "text": "Iets voor niets willen — ik verdien alles zelf, ook wat ik had mogen krijgen."
+     "text": "*Iets voor niets willen* — ik verdien alles zelf, ook wat ik had mogen krijgen."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Lichtzinnigheid. Wie overal een grap van maakt, vind ik onserieus. Maar die ergernis is vooral afgunst — op het gemak waarmee zij iets loslaten dat ik nooit durf los te laten."
+     "text": "Lichtzinnigheid. Wie overal een grap van maakt, vind ik onserieus. Maar die ergernis is vooral afgunst — op het gemak waarmee zo iemand iets loslaat wat ik nooit durf los te laten."
     },
     {
      "archetype": "Ruler",
@@ -1680,7 +1680,7 @@
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "Verbetenheid. Wie koste wat kost een doel najaagt, vind ik krampachtig. Maar ik ben net zo hardnekkig — dan in het niet-kiezen, en dat noem ik vrijheid."
+     "text": "Verbetenheid. Wie koste wat kost een doel najaagt, vind ik krampachtig. Maar ik ben net zo hardnekkig — alleen in het niet-kiezen, en dat noem ik vrijheid."
     },
     {
      "archetype": "Outlaw",
@@ -1723,27 +1723,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Het gesprek krijgt richting, en het vrijblijvende verdwijnt."
+     "text": "Het gesprek krijgt richting, en *het vrijblijvende verdwijnt.*"
     },
     {
      "group": "Relational",
-     "text": "Mensen worden zachter tegen elkaar, en het harde valt weg."
+     "text": "Mensen worden zachter tegen elkaar, en *het harde valt weg.*"
     },
     {
      "group": "Seeker",
-     "text": "Er komt ruimte voor nieuwsgierigheid, en wat al vastlag, mag weer open."
+     "text": "Er komt *ruimte voor nieuwsgierigheid*, en wat al vastlag, mag weer open."
     },
     {
      "group": "Chaos",
-     "text": "Wat stroef liep, gaat schuiven — en het keurige wordt minder keurig."
+     "text": "Wat stroef liep, gaat schuiven — en *het keurige wordt minder keurig.*"
     },
     {
      "group": "Abstract",
-     "text": "Het gesprek wordt dieper, en het haastige zakt weg."
+     "text": "Het gesprek wordt dieper, en *het haastige zakt weg.*"
     },
     {
      "group": "Agency",
-     "text": "Er gaat iets gebeuren, en het afwachten houdt op."
+     "text": "Er gaat iets gebeuren, en *het afwachten houdt op.*"
     }
    ],
    "l2_answers": [
@@ -1818,27 +1818,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Pas echt in beeld als er iets besloten moet worden."
+     "text": "Pas echt in beeld *als er iets besloten moet worden.*"
     },
     {
      "group": "Relational",
-     "text": "Samen met anderen, niet in mijn eentje vooraan."
+     "text": "*Samen met anderen*, niet in mijn eentje vooraan."
     },
     {
      "group": "Seeker",
-     "text": "Genoeg om anderen mee te krijgen, niet meer."
+     "text": "*Genoeg om anderen mee te krijgen*, niet meer."
     },
     {
      "group": "Chaos",
-     "text": "Volledig — wat er door mij in beweging komt, moet gezien worden."
+     "text": "*Volledig* — wat er door mij in beweging komt, moet gezien worden."
     },
     {
      "group": "Abstract",
-     "text": "Zo weinig mogelijk — het werk mag voor zich spreken."
+     "text": "*Zo weinig mogelijk* — het werk mag voor zich spreken."
     },
     {
      "group": "Agency",
-     "text": "Precies zo veel als het resultaat nodig heeft."
+     "text": "Precies *zo veel als het resultaat nodig heeft.*"
     }
    ],
    "l2_answers": [
@@ -1913,34 +1913,34 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Erkenning hoort verdiend te zijn — zomaar lof heeft voor mij geen waarde."
+     "text": "*Erkenning hoort verdiend te zijn* — zomaar lof heeft voor mij geen waarde."
     },
     {
      "group": "Relational",
-     "text": "Erkenning voelt pas goed als ik haar kan delen."
+     "text": "Erkenning voelt pas *goed als ik haar kan delen.*"
     },
     {
      "group": "Seeker",
-     "text": "Erkenning doet me meer dan ik laat zien."
+     "text": "Erkenning *doet me meer dan ik laat zien.*"
     },
     {
      "group": "Chaos",
-     "text": "Erkenning valt in het niet bij het moment dat iets eindelijk scheurt."
+     "text": "Erkenning *valt in het niet bij het moment dat iets eindelijk scheurt.*"
     },
     {
      "group": "Abstract",
-     "text": "Erkenning mist meestal waar het mij om ging."
+     "text": "Erkenning *mist meestal waar het mij om ging.*"
     },
     {
      "group": "Agency",
-     "text": "Erkenning is mooi meegenomen, maar het gaat mij om het resultaat."
+     "text": "Erkenning is mooi meegenomen, maar *het gaat mij om het resultaat.*"
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Erkenning weeg ik aan de bron. Niet elke stem telt gelijk — dat is een selectie die ik bewust hanteer."
+     "text": "Erkenning weeg ik naar de bron. Niet elke stem telt gelijk — dat is een selectie die ik bewust hanteer."
     },
     {
      "archetype": "Ruler",
@@ -2008,27 +2008,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Ik loop in gedachten na of alles klopt."
+     "text": "Ik loop in gedachten na *of alles klopt.*"
     },
     {
      "group": "Relational",
-     "text": "Ik denk aan de mensen om wie ik geef."
+     "text": "Ik denk aan *de mensen om wie ik geef.*"
     },
     {
      "group": "Seeker",
-     "text": "Ik denk aan wat er allemaal nog kan."
+     "text": "Ik denk aan *wat er allemaal nog kan.*"
     },
     {
      "group": "Chaos",
-     "text": "Ik volg wat er in me opkomt, meteen."
+     "text": "Ik volg *wat er in me opkomt*, meteen."
     },
     {
      "group": "Abstract",
-     "text": "Ik laat mijn geest zijn eigen gang gaan."
+     "text": "Ik laat mijn geest *zijn eigen gang gaan.*"
     },
     {
      "group": "Agency",
-     "text": "Ik werk door aan wat ik van plan ben."
+     "text": "Ik *werk door* aan wat ik van plan ben."
     }
    ],
    "l2_answers": [
@@ -2085,7 +2085,7 @@
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Ik puzzel aan wat anders kan. Wie waar staat, waar het knelt — in stilte werk ik aan wat er achter de schermen speelt."
+     "text": "Ik puzzel op wat anders kan. Wie waar staat, waar het knelt — in stilte werk ik aan wat er achter de schermen speelt."
     },
     {
      "archetype": "Hero",
@@ -2103,27 +2103,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Als alles op zijn plek staat."
+     "text": "Als *alles op zijn plek* staat."
     },
     {
      "group": "Relational",
-     "text": "Als iedereen om me heen het goed heeft."
+     "text": "Als *iedereen om me heen* het goed heeft."
     },
     {
      "group": "Seeker",
-     "text": "Als het moment zelf goed is."
+     "text": "Als *het moment zelf* goed is."
     },
     {
      "group": "Chaos",
-     "text": "Als er gezegd is wat gezegd moest worden."
+     "text": "Als er *gezegd is wat gezegd moest worden.*"
     },
     {
      "group": "Abstract",
-     "text": "Als iets voor mij af en helder is."
+     "text": "Als iets voor mij *af en helder* is."
     },
     {
      "group": "Agency",
-     "text": "Als het doel bereikt is — even."
+     "text": "Als *het doel bereikt* is — even."
     }
    ],
    "l2_answers": [
@@ -2198,27 +2198,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Met feiten en regels — al maakt dat me harder dan nodig."
+     "text": "*Met feiten en regels* — al maakt dat me harder dan nodig."
     },
     {
      "group": "Relational",
-     "text": "Ik schik me liever — ook als dat ten koste gaat van mezelf."
+     "text": "*Ik schik me liever* — ook als dat ten koste gaat van mezelf."
     },
     {
      "group": "Seeker",
-     "text": "Liever niet — ik doe alsof het meevalt, of ik ga mijn eigen weg."
+     "text": "*Liever niet* — ik doe alsof het meevalt, of ik ga mijn eigen weg."
     },
     {
      "group": "Chaos",
-     "text": "Recht op de man af, of met een kwinkslag — en dan ligt er soms meer aan scherven dan gewild."
+     "text": "*Recht op de man af*, of met een kwinkslag — en dan liggen er soms meer scherven dan gewild."
     },
     {
      "group": "Abstract",
-     "text": "Met argumenten, en als dat niet werkt, trek ik me terug en praat ik niet meer mee."
+     "text": "*Met argumenten*, en als dat niet werkt, trek ik me terug en praat ik niet meer mee."
     },
     {
      "group": "Agency",
-     "text": "Ik ga ervoor om te winnen — ook als het me meer kost dan het oplevert."
+     "text": "*Ik ga ervoor om te winnen* — ook als het me meer kost dan het oplevert."
     }
    ],
    "l2_answers": [
@@ -2293,27 +2293,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Met wie er iets mee moet, en verder met niemand."
+     "text": "*Met wie er iets mee moet*, en verder met niemand."
     },
     {
      "group": "Relational",
-     "text": "Met wie me na staat, of wie het zwaar heeft."
+     "text": "Met wie me nastaat, of *wie het zwaar heeft.*"
     },
     {
      "group": "Seeker",
-     "text": "Met bijna iedereen — ik ga ervan uit dat het goed terechtkomt."
+     "text": "*Met bijna iedereen* — ik ga ervan uit dat het goed terechtkomt."
     },
     {
      "group": "Chaos",
-     "text": "Met wie het durft te horen — niet met wie het netjes wil houden."
+     "text": "*Met wie het durft te horen* — niet met wie het netjes wil houden."
     },
     {
      "group": "Abstract",
-     "text": "Met wie het echt wil begrijpen — de rest hoort het niet."
+     "text": "*Met wie het echt wil begrijpen* — de rest hoort het niet."
     },
     {
      "group": "Agency",
-     "text": "Met wie het verschil kan maken."
+     "text": "Met wie het *verschil kan maken.*"
     }
    ],
    "l2_answers": [
@@ -2330,7 +2330,7 @@
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Met wie ik in mijn hart heb. Kennis is voor mij iets wat je deelt als je elkaar vertrouwt — met een vreemde voelt het als niets."
+     "text": "Met wie ik in mijn hart heb gesloten. Kennis is voor mij iets wat je deelt als je elkaar vertrouwt — met een vreemde voelt het als niets."
     },
     {
      "archetype": "Caregiver",
@@ -2388,27 +2388,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Aan hoe stevig het staat als ik het toets."
+     "text": "Aan *hoe stevig het staat* als ik het toets."
     },
     {
      "group": "Relational",
-     "text": "Aan wat er gebeurt als ik bij iemand ben."
+     "text": "Aan wat er gebeurt *als ik bij iemand ben.*"
     },
     {
      "group": "Seeker",
-     "text": "Aan een gevoel van ruimte als ik eraan denk."
+     "text": "Aan *een gevoel van ruimte* als ik eraan denk."
     },
     {
      "group": "Chaos",
-     "text": "Aan dat ik er niet meer omheen kan."
+     "text": "Dat ik er *niet meer omheen* kan."
     },
     {
      "group": "Abstract",
-     "text": "Aan dat het in mijn hoofd of in een beeld ineens klopt."
+     "text": "Dat het in mijn hoofd of in een beeld *ineens klopt.*"
     },
     {
      "group": "Agency",
-     "text": "Aan dat het werkt."
+     "text": "Dat *het werkt.*"
     }
    ],
    "l2_answers": [
@@ -2445,7 +2445,7 @@
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Aan dat ik niet kan meedoen. Als iets in mij niet meer wil meespelen, hoef ik niets aan te tonen — mijn lichaam is mijn hoofd dan al voor."
+     "text": "Dat ik niet kan meedoen. Als iets in mij niet meer wil meespelen, hoef ik niets aan te tonen — mijn lichaam is mijn hoofd dan al voor."
     },
     {
      "archetype": "Trickster",
@@ -2483,27 +2483,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Pas als het tegendeel echt bewezen is."
+     "text": "Pas als het tegendeel echt *bewezen is.*"
     },
     {
      "group": "Relational",
-     "text": "Als ik hoor hoe iemand het zelf ervaart."
+     "text": "Als ik hoor hoe iemand het *zelf ervaart.*"
     },
     {
      "group": "Seeker",
-     "text": "Zodra ik iets tegenkom wat iets beters belooft."
+     "text": "Zodra ik iets tegenkom *wat iets beters belooft.*"
     },
     {
      "group": "Chaos",
-     "text": "Op het moment dat er iets begint te wringen."
+     "text": "Op het moment dat er *iets begint te wringen.*"
     },
     {
      "group": "Abstract",
-     "text": "Als het na een tijdje vanbinnen anders is gaan zitten."
+     "text": "Als het na een tijdje *vanbinnen anders is* gaan zitten."
     },
     {
      "group": "Agency",
-     "text": "Als het in de praktijk niet werkt."
+     "text": "Als het in de *praktijk niet werkt.*"
     }
    ],
    "l2_answers": [
@@ -2520,7 +2520,7 @@
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Als ik iemand van dichtbij leer kennen. Een mening over “die mensen” smelt weg zo gauw ik er één van in mijn hart sluit."
+     "text": "Als ik iemand van dichtbij leer kennen. Een mening over 'die mensen' smelt weg zo gauw ik er één van in mijn hart sluit."
     },
     {
      "archetype": "Caregiver",
@@ -2530,7 +2530,7 @@
     {
      "archetype": "Innocent",
      "group": "Seeker",
-     "text": "Zodra iemand beter blijkt dan ik dacht. Dat gebeurt me graag — wantrouwen houd ik nooit erg lang vol."
+     "text": "Zodra iemand beter blijkt dan ik dacht. Dat maak ik graag mee — wantrouwen houd ik nooit erg lang vol."
     },
     {
      "archetype": "Explorer",
@@ -2578,27 +2578,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Waar iets niet helemaal in de haak is."
+     "text": "Waar iets *niet helemaal in de haak is.*"
     },
     {
      "group": "Relational",
-     "text": "Hoe het met mensen gaat, ook als ze niets zeggen."
+     "text": "*Hoe het met mensen gaat*, ook als ze niets zeggen."
     },
     {
      "group": "Seeker",
-     "text": "De mogelijkheden die nog voor het oprapen liggen."
+     "text": "*De mogelijkheden* die nog voor het oprapen liggen."
     },
     {
      "group": "Chaos",
-     "text": "Waar het om draait — meestal niet waar de aandacht heen gaat."
+     "text": "*Waar het om draait* — meestal niet waar de aandacht heen gaat."
     },
     {
      "group": "Abstract",
-     "text": "Hoeveel diepte er in het alledaagse zit."
+     "text": "*Hoeveel diepte* er in het alledaagse zit."
     },
     {
      "group": "Agency",
-     "text": "Wat er te bereiken valt, als iemand het aandurft."
+     "text": "*Wat er te bereiken valt*, als iemand het aandurft."
     }
    ],
    "l2_answers": [
@@ -2610,7 +2610,7 @@
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Waar de structuur het gaat begeven. Niet het probleem zelf — de barst die eraan voorafgaat. Daar zet ik al stutten onder voor anderen het voelen."
+     "text": "Waar de structuur het gaat begeven. Niet het probleem zelf — de barst die eraan voorafgaat. Daar zet ik al stutten onder voordat anderen het voelen."
     },
     {
      "archetype": "Lover",
@@ -2620,7 +2620,7 @@
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "De zorg die is geleverd achter het onbevlekte, het werk dat pas opvalt als het wegvalt. Wie het doet, bedank ik altijd."
+     "text": "De zorg achter alles wat smetteloos lijkt, het werk dat pas opvalt als het wegvalt. Wie het doet, bedank ik altijd."
     },
     {
      "archetype": "Innocent",
@@ -2630,7 +2630,7 @@
     {
      "archetype": "Explorer",
      "group": "Seeker",
-     "text": "De opening. In elke situatie, elk systeem, elke kamer — ik zie waar er nog ruimte zit. Die scan functioneert als mijn snelste reflex."
+     "text": "De opening. In elke situatie, elk systeem, elke kamer — ik zie waar er nog ruimte zit. Die scan is mijn snelste reflex."
     },
     {
      "archetype": "Outlaw",
@@ -2640,7 +2640,7 @@
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Het toneel. Bijna iedereen heeft een rol aangenomen die hij allang niet meer doorheeft — en ik kijk ernaar vanaf de eerste rij."
+     "text": "Het toneel. Bijna iedereen heeft een rol aangenomen die hij allang niet meer als rol ziet — en ik kijk ernaar vanaf de eerste rij."
     },
     {
      "archetype": "Sage",
@@ -2673,27 +2673,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Dat een regel soms net zoveel chaos kan ontsteken als wat hij probeert te ordenen — en dat strakker aantrekken het dan niet oplost."
+     "text": "Dat een regel soms *net zoveel chaos kan veroorzaken* als wat hij probeert te ordenen — en dat strakker aantrekken het dan niet oplost."
     },
     {
      "group": "Relational",
-     "text": "Dat ik een ander niet heel kan maken — en dat vasthouden het alleen zwaarder maakt."
+     "text": "*Dat ik een ander niet heel kan maken* — en dat vasthouden het alleen zwaarder maakt."
     },
     {
      "group": "Seeker",
-     "text": "Dat het leven soms gewoon tegenvalt — en dat de klap harder aankomt als ik wegkijk."
+     "text": "*Dat het leven soms gewoon tegenvalt* — en dat de klap harder aankomt als ik wegkijk."
     },
     {
      "group": "Chaos",
-     "text": "Dat muren vaak langer staan dan ik — en dat blijven rammen me bitter maakt."
+     "text": "*Dat muren vaak langer staan dan ik* — en dat blijven rammen me bitter maakt."
     },
     {
      "group": "Abstract",
-     "text": "Dat het wezenlijke zich niet laat vatten — en dat piekeren het alleen verder wegduwt."
+     "text": "*Dat het wezenlijke zich niet laat vatten* — en dat piekeren het alleen verder wegduwt."
     },
     {
      "group": "Agency",
-     "text": "Dat sommige dingen buiten mijn bereik liggen — en dat ik dat niet meer zie zodra ik eenmaal bezig ben."
+     "text": "*Dat sommige dingen buiten mijn bereik liggen* — en dat ik dat niet meer zie zodra ik eenmaal bezig ben."
     }
    ],
    "l2_answers": [
@@ -2730,7 +2730,7 @@
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Dat het systeem niet gaat veranderen in mijn leven. Ik blijf ertegenin gaan — al merk ik dat die strijd meer van mij afneemt dan van hen."
+     "text": "Dat het systeem niet gaat veranderen zolang ik leef. Ik blijf ertegenin gaan — al merk ik dat die strijd meer van mij afneemt dan van hen."
     },
     {
      "archetype": "Trickster",
@@ -2764,31 +2764,31 @@
    "level": "leerling",
    "subject": "wereld_wijsheid",
    "position": 30,
-   "text": "Wat weet je nu door je participatie in de wereld?",
+   "text": "Wat weet je nu door je deelname aan de wereld?",
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Dat milder worden niet hetzelfde is als slapper worden."
+     "text": "Dat milder worden *niet hetzelfde is als slapper worden.*"
     },
     {
      "group": "Relational",
-     "text": "Dat ik dichterbij kom als ik mezelf niet kwijtraak."
+     "text": "Dat ik *dichterbij kom* als ik mezelf niet kwijtraak."
     },
     {
      "group": "Seeker",
-     "text": "Dat je meer vindt als je niet meteen doorloopt."
+     "text": "Dat je meer vindt als je *niet meteen doorloopt.*"
     },
     {
      "group": "Chaos",
-     "text": "Dat iets laten staan soms moediger is dan het omgooien."
+     "text": "Dat iets laten staan soms *moediger is* dan het omgooien."
     },
     {
      "group": "Abstract",
-     "text": "Dat ik meer begrijp als ik ergens middenin sta."
+     "text": "Dat ik meer begrijp als ik *ergens middenin sta.*"
     },
     {
      "group": "Agency",
-     "text": "Dat wat je in gang zet, een eigen leven gaat leiden."
+     "text": "Dat wat je in gang zet, een *eigen leven gaat leiden.*"
     }
    ],
    "l2_answers": [
@@ -2825,7 +2825,7 @@
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Dat verandering niet komt van de mensen die het hardst schreeuwen. Die les werkt als mijn strengste correctie — veranderen is ook bouwen; dat valt me nog zwaar."
+     "text": "Dat verandering niet komt van de mensen die het hardst schreeuwen. Die les is mijn strengste correctie: veranderen is ook bouwen, en dat valt me nog zwaar."
     },
     {
      "archetype": "Trickster",
@@ -2863,34 +2863,34 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Weinig — wat zich niet laat uitleggen, zet ik apart tot het wel kan."
+     "text": "*Weinig* — wat zich niet laat uitleggen, zet ik apart tot het wel kan."
     },
     {
      "group": "Relational",
-     "text": "Veel, zolang het iets met mensen te maken heeft."
+     "text": "Veel, zolang het iets *met mensen* te maken heeft."
     },
     {
      "group": "Seeker",
-     "text": "Alles — al kijk ik liever naar het wonder dan naar het donker."
+     "text": "*Alles* — al kijk ik liever naar het wonder dan naar het donker."
     },
     {
      "group": "Chaos",
-     "text": "Meer dan aan wat wel klopt."
+     "text": "*Meer* dan aan wat wel klopt."
     },
     {
      "group": "Abstract",
-     "text": "Eindeloos — wat ik niet begrijp, houdt me juist bezig."
+     "text": "*Eindeloos* — wat ik niet begrijp, houdt me juist bezig."
     },
     {
      "group": "Agency",
-     "text": "Genoeg om te ontdekken hoe het werkt."
+     "text": "*Genoeg* om te ontdekken hoe het werkt."
     }
    ],
    "l2_answers": [
     {
      "archetype": "Judge",
      "group": "Ruling",
-     "text": "Weinig. Wat ik niet kan controleren, krijgt een plek in een apart vakje — tot het verklaard is, beslis ik er niets op. Maar dat vakje wordt met de jaren voller."
+     "text": "Weinig. Wat ik niet kan controleren, krijgt een plek in een apart vakje — tot het verklaard is, baseer ik er niets op. Maar dat vakje wordt met de jaren voller."
     },
     {
      "archetype": "Ruler",
@@ -2940,7 +2940,7 @@
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Veel, als iets wat ik nog niet doorzie. Het raadselachtige is voor mij een systeem dat zijn regels nog niet heeft prijsgegeven — en die wil ik vinden."
+     "text": "Veel — het is iets wat ik nog niet doorzie. Het raadselachtige is voor mij een systeem dat zijn regels nog niet heeft prijsgegeven — en die wil ik vinden."
     },
     {
      "archetype": "Hero",
@@ -2958,27 +2958,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Dat wat is en altijd zo blijft."
+     "text": "Dat wat is en *altijd zo blijft.*"
     },
     {
      "group": "Relational",
-     "text": "Elke relatie die ooit heeft bestaan."
+     "text": "*Elke relatie* die ooit heeft bestaan."
     },
     {
      "group": "Seeker",
-     "text": "Het leven zelf — en waar het me nog naartoe neemt."
+     "text": "*Het leven zelf* — en waar het me nog naartoe neemt."
     },
     {
      "group": "Chaos",
-     "text": "Wat ook elke orde kan openbreken."
+     "text": "Wat ook *elke orde kan openbreken.*"
     },
     {
      "group": "Abstract",
-     "text": "Per definitie alles wat buiten mij ligt."
+     "text": "Per definitie *alles wat buiten mij ligt.*"
     },
     {
      "group": "Agency",
-     "text": "De beweging van een tijdsgeest."
+     "text": "De beweging van *een tijdsgeest.*"
     }
    ],
    "l2_answers": [
@@ -2995,12 +2995,12 @@
     {
      "archetype": "Lover",
      "group": "Relational",
-     "text": "Liefde. Die houdt niet op als iemand er niet meer is — ik voel haar nog voor wie allang weg zijn."
+     "text": "Liefde. Die houdt niet op als iemand er niet meer is — ik voel haar nog voor wie allang weg is."
     },
     {
      "archetype": "Caregiver",
      "group": "Relational",
-     "text": "De keten van cultivatie. Als kind werd ik gevoed, gewassen en getroost — en net zo goed andere entiteiten."
+     "text": "De keten van zorg. Als kind werd ik gevoed, gewassen en getroost — net als talloze anderen."
     },
     {
      "archetype": "Innocent",
@@ -3015,7 +3015,7 @@
     {
      "archetype": "Outlaw",
      "group": "Chaos",
-     "text": "Een vlam zo vurig dat het verblindt en verbrandt — dit vuur is een ontembare bron."
+     "text": "Een vlam zo fel dat ze verblindt en verbrandt — dit vuur is een ontembare bron."
     },
     {
      "archetype": "Trickster",
@@ -3025,7 +3025,7 @@
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Het heelal. Daarin ben ik een bizar stukje stofje — maar in mijn gedachten past het hele heelal."
+     "text": "Het heelal. Daarin ben ik een bizar klein stofje — maar in mijn gedachten past het hele heelal."
     },
     {
      "archetype": "Artist",
@@ -3053,27 +3053,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "IJverig zijn — soms ligt beheersing één brug verder."
+     "text": "*IJverig zijn* — soms ligt beheersing één brug verder."
     },
     {
      "group": "Relational",
-     "text": "De ander opzoeken — zoiets snapt niemand in zijn eentje."
+     "text": "*De ander opzoeken* — zoiets snapt niemand in zijn eentje."
     },
     {
      "group": "Seeker",
-     "text": "Ik laat het toe — niets doen is ook een beweging."
+     "text": "*Ik laat het toe* — niets doen is ook een beweging."
     },
     {
      "group": "Chaos",
-     "text": "Laat alles maar schudden — een systeem dat nooit mag veranderen, sterft vanzelf."
+     "text": "*Laat alles maar schudden* — een systeem dat nooit mag veranderen, sterft vanzelf."
     },
     {
      "group": "Abstract",
-     "text": "Diep naar binnen — sommige dingen moet ik eerst zelf verwerken."
+     "text": "*Diep naar binnen* — sommige dingen moet ik eerst zelf verwerken."
     },
     {
      "group": "Agency",
-     "text": "Ermee aan de slag — het goede valt niet uit de lucht."
+     "text": "*Ermee aan de slag* — het goede valt niet uit de lucht."
     }
    ],
    "l2_answers": [
@@ -3115,12 +3115,12 @@
     {
      "archetype": "Trickster",
      "group": "Chaos",
-     "text": "Ik weeg het, maar mild. Strenger oordelen zet weinig recht — wat lichtheid juist wel."
+     "text": "Ik weeg het, maar mild. Strenger oordelen zet weinig recht — een beetje lichtheid juist wel."
     },
     {
      "archetype": "Sage",
      "group": "Abstract",
-     "text": "Ik kan zo gronden zonder alles over te nemen. Als het te intens wordt, blijf ik zo veel rustiger."
+     "text": "Ik kan aarden zonder alles over te nemen. Als het te intens wordt, blijf ik daardoor veel rustiger."
     },
     {
      "archetype": "Artist",
@@ -3148,27 +3148,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Iemand die zich vastklampt aan controle, tot er niets meer beweegt."
+     "text": "*Iemand die zich vastklampt aan controle*, tot er niets meer beweegt."
     },
     {
      "group": "Relational",
-     "text": "Iemand die opgaat in anderen tot er niemand meer van over is."
+     "text": "*Iemand die opgaat in anderen* tot er van hem niets meer over is."
     },
     {
      "group": "Seeker",
-     "text": "Iemand die nergens meer in gelooft en maar wat ronddrijft."
+     "text": "*Iemand die nergens meer in gelooft* en maar wat ronddrijft."
     },
     {
      "group": "Chaos",
-     "text": "Iemand voor wie niets meer ergens toe doet."
+     "text": "*Iemand voor wie niets meer ergens toe doet.*"
     },
     {
      "group": "Abstract",
-     "text": "Iemand die zich opsluit in zijn eigen hoofd, onbereikbaar."
+     "text": "*Iemand die zich opsluit* in zijn eigen hoofd, onbereikbaar."
     },
     {
      "group": "Agency",
-     "text": "Iemand die doorgaat tot hij in één keer breekt."
+     "text": "Iemand die *doorgaat* tot hij in één keer breekt."
     }
    ],
    "l2_answers": [
@@ -3225,7 +3225,7 @@
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Iemand die denkt dat hij alles kan dwingen. Met elke klap wordt het plan groter en wilder — tot het in één keer instort, en ik met hem."
+     "text": "Iemand die denkt dat hij alles kan dwingen. Met elke klap wordt het plan groter en wilder — tot het in één keer instort, en ik mee."
     },
     {
      "archetype": "Hero",
@@ -3243,27 +3243,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Ik ga alles tot in het kleinste sturen, uit pure paniek."
+     "text": "*Ik ga alles tot in het kleinste sturen*, uit pure paniek."
     },
     {
      "group": "Relational",
-     "text": "Alles in me raakt overspoeld, en ik zoek houvast bij een ander."
+     "text": "*Alles in me raakt overspoeld*, en ik zoek houvast bij een ander."
     },
     {
      "group": "Seeker",
-     "text": "Eerst niets, en dan stort het ineens in."
+     "text": "*Eerst niets*, en dan stort het ineens in."
     },
     {
      "group": "Chaos",
-     "text": "Het jaagt door me heen — een uitbarsting of een snelle grap."
+     "text": "*Het jaagt door me heen* — een uitbarsting of een snelle grap."
     },
     {
      "group": "Abstract",
-     "text": "Ik ga malen, of ik raak er los van."
+     "text": "*Ik ga malen*, of ik raak er los van."
     },
     {
      "group": "Agency",
-     "text": "Ik zet door, tot het me in één keer onderuithaalt."
+     "text": "*Ik zet door*, tot het me in één keer onderuithaalt."
     }
    ],
    "l2_answers": [
@@ -3338,27 +3338,27 @@
    "l1_answers": [
     {
      "group": "Ruling",
-     "text": "Een belofte die gehouden wordt."
+     "text": "*Een belofte* die gehouden wordt."
     },
     {
      "group": "Relational",
-     "text": "Het moment dat iemand laat zien wat hij verbergt."
+     "text": "Het moment dat *iemand laat zien wat hij verbergt.*"
     },
     {
      "group": "Seeker",
-     "text": "Wat nog nieuw en puur is."
+     "text": "Wat nog *nieuw en puur is.*"
     },
     {
      "group": "Chaos",
-     "text": "Dat geen enkel idee onaantastbaar is."
+     "text": "Dat *geen enkel idee onaantastbaar* is."
     },
     {
      "group": "Abstract",
-     "text": "De stilte waarin ik kan dwalen."
+     "text": "*De stilte* waarin ik kan dwalen."
     },
     {
      "group": "Agency",
-     "text": "Wat iemand met eigen handen tot stand brengt."
+     "text": "Wat iemand *met eigen handen* tot stand brengt."
     }
    ],
    "l2_answers": [
@@ -3370,7 +3370,7 @@
     {
      "archetype": "Ruler",
      "group": "Ruling",
-     "text": "Mijn woord. Als ik iets zeg, staat het. Die standaard is mijn fundament — ik hou daar meer aan vast dan aan wat ook."
+     "text": "Mijn woord. Als ik iets zeg, staat het. Die standaard is mijn fundament — ik houd daar meer aan vast dan aan wat dan ook."
     },
     {
      "archetype": "Lover",
@@ -3415,7 +3415,7 @@
     {
      "archetype": "Magician",
      "group": "Agency",
-     "text": "Het moment van transformatie. Die seconde waarop iets verandert — die dynamiek doorzie ik als het enige dat echt telt."
+     "text": "Het moment van transformatie. Die seconde waarop iets verandert — die dynamiek zie ik als het enige wat echt telt."
     },
     {
      "archetype": "Hero",

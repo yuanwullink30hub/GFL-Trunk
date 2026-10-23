@@ -22,6 +22,7 @@ const { activityCollection, activityDoc } = require('../services/activityLog');
 const { findFile, sendFile } = require('../services/adminAppReleases');
 const { decryptUser, decryptUsers } = require('../services/encryption');
 const { generateCode, hashCode, formatCode } = require('../services/activationCodes');
+const { createLink: createAppLink, listLinks, revokeLink } = require('../services/adminAppLinks');
 const { declineRefund, holdPaymentLink, RefundError, REFUND_WINDOW_DAYS, UNLINK_GRACE_DAYS, LINK_HOLD_DAYS, readEmail } = require('../services/reportAccess');
 const { adminRefund, PaymentError } = require('../services/payments');
 const { loadSettings, updateSettings, resolvePaymentConfig, paymentDiagnostics } = require('../services/paymentConfig');
@@ -801,6 +802,28 @@ router.put('/settings/feedback-email', async (req, res) => {
 // One-time vouchers for a full report. Stored hashed; the plaintext is returned exactly
 // once, by the POST that creates it. Used/revoked codes remain as the logbook.
 // ─────────────────────────────────────────────────────────────
+
+// ─── Install links for the management phone app (services/adminAppLinks.js) ───
+// The plain link is in the POST response only; the list shows the last four characters.
+router.get('/app-links', async (_req, res) => {
+  try { res.json({ links: await listLinks() }); } catch (err) {
+    console.error('[Admin] app links list failed:', err.message);
+    res.status(500).json({ error: 'Could not load the install links' });
+  }
+});
+router.post('/app-links', async (req, res) => {
+  try { res.status(201).json(await createAppLink(req.user.userId)); } catch (err) {
+    console.error('[Admin] app link create failed:', err.message);
+    res.status(500).json({ error: 'Could not create an install link' });
+  }
+});
+router.delete('/app-links/:id', async (req, res) => {
+  if (!ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid id' });
+  try { res.json({ revoked: await revokeLink(new ObjectId(req.params.id)) }); } catch (err) {
+    console.error('[Admin] app link revoke failed:', err.message);
+    res.status(500).json({ error: 'Could not revoke the install link' });
+  }
+});
 
 const MAX_CODES_PER_BATCH = 50;
 const CODE_PUBLIC_FIELDS = { codeHash: 0, unlockId: 0 };

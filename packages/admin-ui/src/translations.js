@@ -141,6 +141,41 @@ export default {
         audit: { nl: 'Audit Log', en: 'Audit Log' },
         feedback: { nl: 'Feedback', en: 'Feedback' },
         contact: { nl: 'Contact', en: 'Contact' },
+        settings: { nl: 'Instellingen', en: 'Settings' },
+      },
+
+      /* ── Settings tab — the installed phone app only (owner, 23 Oct 2026) ── */
+      settings: {
+        updateTitle: { nl: 'App bijwerken', en: 'Update the app' },
+        updateHelp: {
+          nl: 'De app laadt de nieuwste versie van de website. Controleer of er een nieuwe staat en laad hem.',
+          en: 'The app loads the latest version from the website. Check whether a new one is out and load it.',
+        },
+        check: { nl: 'Controleren op updates', en: 'Check for updates' },
+        checking: { nl: 'Bezig met controleren…', en: 'Checking…' },
+        current: { nl: 'Je hebt de nieuwste versie.', en: 'You have the latest version.' },
+        ready: { nl: 'Er staat een nieuwe versie klaar.', en: 'A new version is ready.' },
+        apply: { nl: 'Bijwerken', en: 'Update' },
+        checkFailed: { nl: 'Kon niet controleren — ben je online?', en: 'Could not check — are you online?' },
+        shareTitle: { nl: 'App delen', en: 'Share the app' },
+        shareHelp: {
+          nl: 'Maak een installatielink voor een andere beheerder. De link werkt één keer en alleen op een telefoon; daarna is hij op. Inloggen met een eigen beheeraccount blijft nodig.',
+          en: 'Make an install link for another admin. It works once and only on a phone; after that it is spent. Logging in with their own admin account is still needed.',
+        },
+        create: { nl: 'Maak installatielink', en: 'Make install link' },
+        creating: { nl: 'Bezig…', en: 'Working…' },
+        newLink: { nl: 'Nieuwe link — alleen nu zichtbaar', en: 'New link — visible only now' },
+        copy: { nl: 'Kopiëren', en: 'Copy' },
+        copied: { nl: 'Gekopieerd', en: 'Copied' },
+        share: { nl: 'Delen', en: 'Share' },
+        shareText: { nl: 'Installeer de beheer-app van Garden For Life:', en: 'Install the Garden For Life management app:' },
+        recent: { nl: 'Recente links', en: 'Recent links' },
+        none: { nl: 'Nog geen links gemaakt.', en: 'No links made yet.' },
+        statusOpen: { nl: 'Open', en: 'Open' },
+        statusUsed: { nl: 'Gebruikt', en: 'Used' },
+        statusRevoked: { nl: 'Ingetrokken', en: 'Revoked' },
+        revoke: { nl: 'Intrekken', en: 'Revoke' },
+        confirmRevoke: { nl: 'Deze link intrekken? Hij werkt daarna niet meer.', en: 'Revoke this link? It will no longer work.' },
       },
 
       /* ── Overview tab ── */

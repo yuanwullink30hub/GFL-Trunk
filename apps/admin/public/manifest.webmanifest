@@ -2,7 +2,7 @@
   "name": "Admin GFL",
   "short_name": "Admin GFL",
   "description": "Garden For Life — beheer",
-  "id": "/admin-dashboard/",
+  "id": "/beheer/",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -3,7 +3,7 @@ import { LanguageProvider, useLanguage } from '@gfl/i18n';
 import AdminDashboardModal from '@gfl/admin-ui';
 import { login, getMe, getToken, logout, checkServerHealth } from '@gfl/api-client';
 import { SciFiButton, INPUT, FIELD_LABEL, CornerAccents, FONT, inputFocus, inputBlur } from '@gfl/ui';
-import { installOnly, isIos, useInstall } from './install';
+import { installOnly, isIos, isPhoneApp, useInstall } from './install';
 
 /** Installed app only (window.gflAdmin): "new version ready — restart". The update comes from the private feed. */
 function UpdateBar() {
@@ -61,8 +61,8 @@ function InstallScreen({ onLogout }) {
 
 /**
  * The management app. Installed as Admin GFL (apps/admin-desktop), run from the repo with
- * `pnpm --filter @gfl/admin live`, and since 23 Oct 2026 also at gardenforlife.nl/admin-dashboard so it
- * works on a phone (apps/platform/scripts/build-admin.mjs). The desktop app ships no management UI.
+ * `pnpm --filter @gfl/admin live`, and since 23 Oct 2026 also at gardenforlife.nl/beheer (the phone app) so it
+ * works on a phone (apps/platform/scripts/build-admin.mjs, one-time install links). The desktop app ships no management UI.
  * It logs in like any account; the server's
  * management API answers only a valid management token and looks nonexistent to anything else
  * (apps/backend/routes/admin.js).
@@ -142,7 +142,7 @@ function Shell() {
 
   if (checking) return null;
   if (user && installOnly()) return <InstallScreen onLogout={signOut} />;
-  if (user) return (<><AdminDashboardModal user={user} onLogout={signOut} onClose={signOut} /><UpdateBar /></>);
+  if (user) return (<><AdminDashboardModal user={user} onLogout={signOut} onClose={signOut} phoneApp={isPhoneApp()} /><UpdateBar /></>);
 
   if (offline) {
     return (

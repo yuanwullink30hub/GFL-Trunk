@@ -1,6 +1,7 @@
-# The management app (scripts/build-admin.mjs): its own single-page app under /admin-dashboard.
-/admin-dashboard    /admin-dashboard/index.html  200
-/admin-dashboard/*  /admin-dashboard/index.html  200
+# The management phone app (scripts/build-admin.mjs): its own single-page app under /beheer, served only
+# with a device grant (functions/_middleware.js).
+/beheer    /beheer/index.html  200
+/beheer/*  /beheer/index.html  200
 
 # SPA catch-all — MUST be last (Cloudflare Pages: first match wins)
 /* /index.html 200

@@ -10,6 +10,7 @@ const aiRoutes = require('./routes/ai');
 const authRoutes = require('./routes/auth');
 const assessmentRoutes = require('./routes/assessment');
 const adminRoutes = require('./routes/admin');
+const adminAppLinkRoutes = require('./routes/adminAppLink');
 const activityRoutes = require('./routes/activity');
 const filesRoutes = require('./routes/files');
 const pdfRoutes = require('./routes/pdf');
@@ -77,6 +78,8 @@ app.use('/api/assessment', assessmentRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/files', filesRoutes);
 app.use('/api/admin', adminRoutes);
+// One-time install links for the management phone app — a plain form post from gardenforlife.nl/<link>.
+app.use('/api/app-link', adminAppLinkRoutes);
 app.use('/api/pdf', pdfRoutes);
 app.use('/api/questions', questionsRoutes);
 app.use('/api/contact', contactRoutes);

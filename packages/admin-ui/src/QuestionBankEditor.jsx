@@ -7,6 +7,9 @@
  * Every field saves on its own as a draft (700 ms after the last keystroke, or on leaving the field), pinned to
  * the version the editor last saw. A stale save takes the stored draft (fields not being typed in follow it)
  * and is sent again. Nothing reaches respondents until "Publiceer naar de test" (routes/questions.js, /bank).
+ *
+ * Undo (owner, 23 Oct 2026): a field's text from before an edit is kept once you leave the field; the undo button
+ * (fixed at the bottom while there is something to undo) puts the latest one back and saves it, one step per tap.
  */
 import React, { createContext, memo, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLanguage } from '@gfl/i18n';
@@ -26,6 +29,7 @@ const NETWORK = { Ruling: 'CEN', Relational: 'Limbic', Seeker: 'Openness', Chaos
 const WHEEL = { Judge: 1, Lover: 2, Caregiver: 3, Innocent: 4, Explorer: 5, Outlaw: 6, Trickster: 7, Sage: 8, Artist: 9, Magician: 10, Hero: 11, Ruler: 12 };
 const REFUSAL_LABEL = 'Geen van deze past';
 const SAVE_DELAY = 700;
+const UNDO_DEPTH = 30;
 const BODY = "'Figtree', sans-serif";
 const O = '249, 115, 22'; // the dashboard accent (orange); tints from its alpha ramp 0.04 / 0.1 / 0.2 / 0.5
 const P = '168, 85, 247';
@@ -120,6 +124,13 @@ const STYLES = `
 .qb-aname i { font-style: normal; font-family: ${DISPLAY}; font-size: max(11px, 0.6vw); color: rgba(255, 254, 240, 0.4); }
 .qb-refusal { border-top: 1px dashed rgba(${P}, 0.2); padding-top: 0.6rem; font-family: ${FONT}; font-size: max(8px, 0.4vw); letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255, 254, 240, 0.4); }
 
+.qb-undo { position: fixed; right: 1rem; bottom: 1rem; z-index: 60; display: flex; align-items: center; gap: 0.8rem; max-width: calc(100vw - 2rem);
+  padding: 0.55rem 0.6rem 0.55rem 0.9rem; border-radius: 0.5rem; background-color: rgba(2, 0, 3, 0.3);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(${O}, 0.2);
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(${O}, 0.1); }
+.qb-undo > span { font-family: ${FONT}; font-size: max(9px, 0.45vw); letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255, 254, 240, 0.6);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
 .qb-banner { border: 1px dashed rgba(${O}, 0.5); border-radius: 0.15rem; padding: 0.6rem 0.8rem; font-size: max(12px, 0.65vw); color: rgba(255, 254, 240, 0.8); }
 .qb-banner[data-kind="err"] { border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; }
 .qb-banner ul { margin: 0.4rem 0 0; padding-left: 1.1rem; }
@@ -173,7 +184,7 @@ const AutoText = memo(function AutoText({ field, value, onChange, onFocus, onBlu
 });
 
 /** One question: its own field values, saves and save state. Reports its counts and publish state upward. */
-const QuestionCard = memo(function QuestionCard({ level, question, subjectLabel, layout, live, onCount, onLive, onError, register }) {
+const QuestionCard = memo(function QuestionCard({ level, question, subjectLabel, layout, live, onCount, onLive, onError, onEdit, register }) {
   const { t, tFunc } = useLanguage();
   const qid = question.question_id;
   const [values, setValues] = useState(() => valuesOf(question));
@@ -186,11 +197,7 @@ const QuestionCard = memo(function QuestionCard({ level, question, subjectLabel,
   const timers = useRef({});
   const chain = useRef(Promise.resolve());
   const inFlight = useRef(0);
-
-  useEffect(() => register(qid, {
-    body: () => valuesRef.current,
-    pending: () => dirty.current.size > 0 || inFlight.current > 0, // typed and not yet stored
-  }), [qid, register]);
+  const before = useRef({}); // field → its text when this edit began (for undo)
 
   useEffect(() => () => Object.values(timers.current).forEach(clearTimeout), []);
 
@@ -240,6 +247,7 @@ const QuestionCard = memo(function QuestionCard({ level, question, subjectLabel,
   }, [level, qid, question.position, layout, onLive, onError, tFunc]);
 
   const handleChange = useCallback((field, value) => {
+    if (!(field in before.current)) before.current[field] = getField(valuesRef.current, field);
     setValues((cur) => setField(cur, field, value));
     dirty.current.add(field);
     clearTimeout(timers.current[field]);
@@ -249,7 +257,24 @@ const QuestionCard = memo(function QuestionCard({ level, question, subjectLabel,
   const handleBlur = useCallback((field) => {
     if (focused.current === field) focused.current = null;
     if (timers.current[field]) save(field); // typed but not yet sent: send now
+    const was = before.current[field];
+    delete before.current[field];
+    if (was !== undefined && was !== getField(valuesRef.current, field)) onEdit({ qid, position: question.position, field, before: was });
+  }, [save, onEdit, qid, question.position]);
+
+  // Undo puts a field's earlier text back and saves it like a typed change.
+  const restore = useCallback((field, text) => {
+    valuesRef.current = setField(valuesRef.current, field, text);
+    setValues(valuesRef.current);
+    dirty.current.add(field);
+    save(field);
   }, [save]);
+
+  useEffect(() => register(qid, {
+    body: () => valuesRef.current,
+    pending: () => dirty.current.size > 0 || inFlight.current > 0, // typed and not yet stored
+    restore,
+  }), [qid, register, restore]);
 
   const count = layout.filter((g) => filled(values.l1[g.group])).length
     + layout.reduce((n, g) => n + g.archetypes.filter((a) => filled(values.l2[a.name])).length, 0);
@@ -385,6 +410,23 @@ export default function QuestionBankEditor({ level = 'leerling' }) {
   }, []);
   const onLive = useCallback((qid, isLive) => setLive((prev) => (prev[qid] === isLive ? prev : { ...prev, [qid]: isLive })), []);
   const onError = useCallback((text) => setBanner({ kind: 'err', text }), []);
+  // The stack lives in a ref (the button reads it the instant a blur pushed onto it); state only redraws.
+  const undoRef = useRef([]);
+  const [undoStack, setUndoStack] = useState([]);
+  const onEdit = useCallback((entry) => {
+    undoRef.current = [...undoRef.current, entry].slice(-UNDO_DEPTH);
+    setUndoStack(undoRef.current);
+  }, []);
+  const undo = () => {
+    const last = undoRef.current[undoRef.current.length - 1];
+    if (!last) return;
+    undoRef.current = undoRef.current.slice(0, -1);
+    setUndoStack(undoRef.current);
+    const card = cards.current.get(last.qid);
+    if (!card) return;
+    card.restore(last.field, last.before);
+    document.getElementById(`qb-${last.qid}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const layout = useMemo(() => (data ? data.groups.map((group) => ({
     group,
@@ -529,12 +571,25 @@ export default function QuestionBankEditor({ level = 'leerling' }) {
                 onCount={onCount}
                 onLive={onLive}
                 onError={onError}
+                onEdit={onEdit}
                 register={register}
               />
             ))}
           </React.Fragment>
         ))}
       </div>
+      {undoStack.length > 0 && (() => {
+        const last = undoStack[undoStack.length - 1];
+        const what = last.field === 'text' ? t('admin.dashboard.questionBank.undoQuestion') : last.field.slice(3);
+        return (
+          <div className="qb-undo" role="region" aria-live="polite">
+            <span>{tFunc('admin.dashboard.questionBank.undoWhat')(last.position, what)}</span>
+            <SciFiButton size="sm" onClick={undo}>
+              ↶ {t('admin.dashboard.questionBank.undo')}{undoStack.length > 1 ? ` (${undoStack.length})` : ''}
+            </SciFiButton>
+          </div>
+        );
+      })()}
     </FitCtx.Provider>
   );
 }

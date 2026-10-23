@@ -38,6 +38,9 @@ const MANAGEMENT_APP_ORIGIN = 'app://gflbeheer';
 const PAGES_PREVIEW_ORIGIN_RE = /^https:\/\/[a-z0-9][a-z0-9-]*\.gfl-trunk\.pages\.dev$/;
 
 // ── Middleware ──
+// One-time install links for the management phone app — a plain form post from gardenforlife.nl/<link>, a
+// top-level navigation rather than a fetch, so it sits before CORS (which refuses a privacy-stripped Origin: null).
+app.use('/api/app-link', adminAppLinkRoutes);
 app.use(cors({
   origin: (origin, cb) => {
     // Allow same-machine and LAN dev origins without forcing .env edits.
@@ -78,8 +81,6 @@ app.use('/api/assessment', assessmentRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/files', filesRoutes);
 app.use('/api/admin', adminRoutes);
-// One-time install links for the management phone app — a plain form post from gardenforlife.nl/<link>.
-app.use('/api/app-link', adminAppLinkRoutes);
 app.use('/api/pdf', pdfRoutes);
 app.use('/api/questions', questionsRoutes);
 app.use('/api/contact', contactRoutes);

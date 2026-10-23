@@ -79,7 +79,8 @@ const LINK_HEADERS = {
   'Content-Type': 'text/html; charset=utf-8',
   'Cache-Control': 'no-store',
   'X-Robots-Tag': 'noindex, nofollow',
-  'Referrer-Policy': 'no-referrer',
+  // Origin only, never the path (the token): no-referrer would make the button's post arrive with Origin: null.
+  'Referrer-Policy': 'strict-origin',
   'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; form-action https://api.gardenforlife.nl https://gardenforlife.nl; base-uri 'none'; frame-ancestors 'none'",
 };
 

@@ -41,10 +41,10 @@ test('the fallback amounts per level and period (payments not configured)', asyn
     const launch = new Date('2026-10-22T12:00:00Z');
     const normal = new Date('2027-04-01T12:00:00Z');
     const cents = async (now, level) => (await resolvePaymentConfig(now, { level })).grossCents;
-    assert.equal(await cents(launch, 'beginner'), 581);
+    assert.equal(await cents(launch, 'beginner'), 629);
     assert.equal(await cents(launch, 'intermediate'), 1452);
     assert.equal(await cents(launch, 'advanced'), 1452);
-    assert.equal(await cents(normal, 'beginner'), 1452);
+    assert.equal(await cents(normal, 'beginner'), 1573);
     assert.equal(await cents(normal, 'advanced'), 3630);
     assert.equal((await resolvePaymentConfig(launch, { level: 'beginner' })).priceTier, 'beginner');
   } finally {

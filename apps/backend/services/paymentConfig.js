@@ -36,7 +36,7 @@ const DEFAULTS = {
 };
 const FALLBACK_CENTS = {
   full: { launch: 1452, normal: 3630 },    // € 12 / € 30 excl. btw
-  beginner: { launch: 581, normal: 1452 }, // € 4,80 / € 12 excl. btw
+  beginner: { launch: 629, normal: 1573 },  // € 5,20 / € 13 excl. btw (owner, 23 Oct 2026: € 13 − 60%)
 };
 const PRICE_IDS = {
   full: { launch: 'priceLaunch', normal: 'priceNormal' },

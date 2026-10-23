@@ -273,20 +273,21 @@ const AdminDashboardModal = memo(({ user, onLogout }) => {
     <HoloKeyframes />
     {/* The page — void, cyber grid and ambient glows — with the shell centred on it: 75% of the window
         from tablet up (owner, 2026-09-19), the whole screen on a phone. Inside the shell the header and
-        footer stay put and the middle scrolls. */}
+        footer stay put and the middle scrolls. On a phone the whole page scrolls, header and footer included
+        (owner, 23 Oct 2026: the room is needed to read and write questions). */}
     <div style={{
-      position: 'fixed', inset: 0,
+      ...(isMobile ? { position: 'relative', minHeight: '100dvh' } : { position: 'fixed', inset: 0 }),
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       backgroundColor: '#0a0510',
       backgroundImage: HOLO_PAGE_BG,
       backgroundSize: HOLO_PAGE_BG_SIZE,
     }}>
-    <div style={{ position: 'relative', width: isMobile ? '100%' : '75vw', height: isMobile ? '100%' : '75vh' }}>
+    <div style={{ position: 'relative', width: isMobile ? '100%' : '75vw', height: isMobile ? 'auto' : '75vh', ...(isMobile ? { minHeight: '100dvh', alignSelf: 'stretch' } : {}) }}>
     {!isMobile && <HoloCorners frame />}
     <div style={{
       ...HOLO_PANEL,
       ...(isMobile ? { border: 'none', borderRadius: 0 } : {}),
-      height: '100%',
+      ...(isMobile ? { minHeight: '100dvh' } : { height: '100%' }),
       display: 'flex', flexDirection: 'column',
       color: C.text,
       fontFamily: FONT,
@@ -376,8 +377,7 @@ const AdminDashboardModal = memo(({ user, onLogout }) => {
       <main className="holo-scroll" style={{
         position: 'relative', zIndex: 1,
         flex: 1, minHeight: 0,
-        overflowY: 'auto',
-        ...(isMobile ? { overflowX: 'hidden' } : {}),
+        ...(isMobile ? { overflowX: 'clip' } : { overflowY: 'auto' }),
       }}>
         <div style={{
           padding: ds.contentPad,

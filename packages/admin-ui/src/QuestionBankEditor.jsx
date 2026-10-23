@@ -135,6 +135,9 @@ const STYLES = `
   /* phones: 16px in the boxes, or iOS zooms the page on every tap into one (owner, 23 Oct 2026: admin on a phone) */
   .qb-field { font-size: 16px; }
   .qb-question { font-size: 17px; }
+  /* phones: nothing sticks, the index and the card heads scroll away with the page (owner, 23 Oct 2026) */
+  .qb-index, .qb-top { position: static; }
+  .qb-subject, .qb-card { scroll-margin-top: 0.5rem; }
 }
 `;
 

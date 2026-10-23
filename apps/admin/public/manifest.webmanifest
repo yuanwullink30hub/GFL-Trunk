@@ -1,6 +1,6 @@
 {
-  "name": "Admin GFL",
-  "short_name": "Admin GFL",
+  "name": "GardenForLife",
+  "short_name": "GardenForLife",
   "description": "Garden For Life — beheer",
   "id": "/beheer/",
   "start_url": "./",

@@ -98,6 +98,30 @@ export default {
       notAllowed: { nl: 'Dit account heeft geen beheerrechten.', en: 'This account has no management rights.' },
     },
 
+    // On a phone the dashboard lives in the installed app; the browser only logs in and offers the install
+    // (apps/admin App.jsx InstallScreen — owner, 23 Oct 2026).
+    install: {
+      title: { nl: 'Beheer-app', en: 'Management app' },
+      text: {
+        nl: 'Op je telefoon werkt het dashboard als app: eigen icoon op je beginscherm, volledig scherm, altijd de nieuwste versie. Installeer hem en open hem vanaf je beginscherm.',
+        en: 'On your phone the dashboard works as an app: its own icon on your home screen, full screen, always the latest version. Install it and open it from your home screen.',
+      },
+      button: { nl: 'Installeer de app', en: 'Install the app' },
+      manual: {
+        nl: 'Open het menu van je browser (⋮) en kies "App installeren" of "Toevoegen aan startscherm".',
+        en: 'Open your browser menu (⋮) and choose "Install app" or "Add to home screen".',
+      },
+      manualIos: {
+        nl: 'Tik op Delen (het vierkant met de pijl) en kies "Zet op beginscherm".',
+        en: 'Tap Share (the square with the arrow) and choose "Add to Home Screen".',
+      },
+      installed: {
+        nl: 'Geïnstalleerd. Open de app vanaf je beginscherm.',
+        en: 'Installed. Open the app from your home screen.',
+      },
+      logout: { nl: 'Uitloggen', en: 'Log out' },
+    },
+
     /* ═══════════ Dashboard shell + tabs ═══════════ */
     dashboard: {
       logout: { nl: 'Uitloggen', en: 'Log out' },

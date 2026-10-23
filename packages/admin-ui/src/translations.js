@@ -315,6 +315,10 @@ export default {
           en: (q, msg) => `Q${q} could not be saved (${msg}). Your text is still in the field and is sent again with your next change.`,
         },
         unsavedLeave: { nl: 'Er is nog niet alles opgeslagen.', en: 'Not everything is saved yet.' },
+        // Undo (owner, 23 Oct 2026): every change to a field, once you leave it, can be put back in one tap.
+        undo: { nl: 'Ongedaan maken', en: 'Undo' },
+        undoQuestion: { nl: 'vraagtekst', en: 'question text' },
+        undoWhat: { nl: (q, f) => `Q${q} · ${f}`, en: (q, f) => `Q${q} · ${f}` },
         questionPlaceholder: { nl: 'De vraag', en: 'The question' },
         l1Placeholder: { nl: (g) => `Richting voor ${g}`, en: (g) => `Direction for ${g}` },
         l2Placeholder: { nl: (a) => `Verfijning voor ${a}`, en: (a) => `Refinement for ${a}` },

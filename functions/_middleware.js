@@ -58,7 +58,7 @@ function linkPage(token, phone) {
        <form method="post" action="${REDEEM_URL}"><input type="hidden" name="t" value="${token}"><button type="submit">Open de beheer-app</button></form>`
     : '<p>Deze link werkt alleen op een telefoon. Open hem daar; hij is nog niet gebruikt.</p>';
   return `<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow"><title>GardenForLife</title>
+<meta name="robots" content="noindex, nofollow"><title>Garden For Life</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600&family=Lexend+Mega:wght@700&display=swap" rel="stylesheet">
 <style>
@@ -72,7 +72,7 @@ p{margin:0 0 1.2rem;font-size:max(14px,.75vw);line-height:1.6}
 button{font-family:'Lexend Mega',sans-serif;font-weight:700;font-size:max(11px,.6vw);letter-spacing:.14em;text-transform:uppercase;color:#f97316;background:rgba(249,115,22,.08);
 border:1px solid rgba(249,115,22,.5);border-radius:.15rem;padding:.8rem 1.2rem;cursor:pointer;transition:all .2s ease}
 button:hover,button:active{background:#f97316;color:#000;box-shadow:0 0 20px rgba(249,115,22,.5)}
-</style></head><body><main><h1>GardenForLife</h1>${body}</main></body></html>`;
+</style></head><body><main><h1>Garden For Life</h1>${body}</main></body></html>`;
 }
 
 const LINK_HEADERS = {

@@ -1520,8 +1520,12 @@ export async function getAppLinks() {
 }
 
 /** A new one-time install link. Its `url` is in this response ONLY — the backend keeps a hash. */
-export async function createAppLink() {
-  const response = await fetch(`${API_BASE}/admin/app-links`, { method: 'POST', headers: authHeaders() });
+export async function createAppLink({ label = '' } = {}) {
+  const response = await fetch(`${API_BASE}/admin/app-links`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ label }),
+  });
   if (!response.ok) {
     const err = await response.json().catch(() => ({ error: response.statusText }));
     throw new Error(err.error || `Failed to create an install link (${response.status})`);

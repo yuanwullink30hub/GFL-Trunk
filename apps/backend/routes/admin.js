@@ -812,7 +812,7 @@ router.get('/app-links', async (_req, res) => {
   }
 });
 router.post('/app-links', async (req, res) => {
-  try { res.status(201).json(await createAppLink(req.user.userId)); } catch (err) {
+  try { res.status(201).json(await createAppLink(req.user.userId, req.body && req.body.label)); } catch (err) {
     console.error('[Admin] app link create failed:', err.message);
     res.status(500).json({ error: 'Could not create an install link' });
   }

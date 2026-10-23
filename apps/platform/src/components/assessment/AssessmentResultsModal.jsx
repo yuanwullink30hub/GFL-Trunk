@@ -232,19 +232,25 @@ const AssessmentResultsModal = ({
 
   // The two-layer test is scored once, by the server; its result (Main, Support, totals, mandjes) arrives
   // before the report is written (the analyze stream's `profile` event) and with it. Until then: no result.
-  const [serverProfile, setServerProfile] = useState(null);
-  // Beginner and Gevorderd take the two-layer test too (owner, 15 Oct), but only Leerling has a report yet:
-  // the other two levels end on a notice, and their answers never leave the browser.
-  const reportAvailable = !twoLayerPlan || assessmentLevel === 'deep';
+  // (The dev PDF preview starts with the replay's profile: in the app it arrives before the report text too.)
+  const [serverProfile, setServerProfile] = useState(() => (previewMode && typeof window !== 'undefined' && window.__GFL_PDF_REPLAY?.profile) || null);
+  // Every level takes the two-layer test (owner, 15 Oct), and every level has a report since 23 Oct 2026: Leerling,
+  // Beginner (its own prompt and PDF layout) and Gevorderd (its own prompt, Leerling's PDF layout). A level without a
+  // report would end on the notice below, its answers never leaving the browser.
+  const reportAvailable = !twoLayerPlan || ['deep', 'quick', 'standard'].includes(assessmentLevel);
+  // Dev PDF preview of a two-layer report: the replay carries the server's scoring, so the result is built from it
+  // exactly as the app builds it (never from the replay's — empty — local answers).
+  const replayProfile = previewMode && typeof window !== 'undefined' && window.__GFL_PDF_REPLAY?.profile ? true : false;
+  const fromServerProfile = Boolean(twoLayerResponses) || replayProfile;
 
   // Compute archetype result from layer answers
   const result = useMemo(() => {
-    if (twoLayerResponses) return serverProfile ? computeResultFromProfile(serverProfile, language) : null;
+    if (fromServerProfile) return serverProfile ? computeResultFromProfile(serverProfile, language) : null;
     const keys = layerAnswers ? Object.keys(layerAnswers) : [];
     const totalAnswers = keys.reduce((sum, k) => sum + Object.keys(layerAnswers[k] || {}).length, 0);
     console.log('[GFL] computeResultFromAnswers — layers:', keys.length, 'totalAnswers:', totalAnswers, 'sample:', JSON.stringify(layerAnswers).slice(0, 300));
     return computeResultFromAnswers(layerAnswers, liveSubjects, language);
-  }, [layerAnswers, liveSubjects, language, twoLayerResponses, serverProfile]);
+  }, [layerAnswers, liveSubjects, language, fromServerProfile, serverProfile]);
   
   // Ref for the scroll container
   const scrollRef = useRef(null);
@@ -482,8 +488,8 @@ const AssessmentResultsModal = ({
   // ── Fire AI analysis during loading phase (with SSE progress) ──
   useEffect(() => {
     // The two-layer test starts without a result: the server's scoring is what this call brings back.
-    if ((!result && !twoLayerResponses) || aiReady || aiCalledRef.current) return;
-    if (!reportAvailable) return; // Beginner / Gevorderd: no report yet — nothing is sent (owner, 15 Oct)
+    if ((!result && !fromServerProfile) || aiReady || aiCalledRef.current) return;
+    if (!reportAvailable) return; // a level without a report: nothing is sent (owner, 15 Oct)
     aiCalledRef.current = true;
 
     const runAnalysis = async () => {
@@ -555,7 +561,8 @@ const AssessmentResultsModal = ({
           responses: twoLayerResponses,
           rotation_sequence_id: twoLayerPlan.rotation_sequence_id,
           language,
-          level: 'advanced',
+          // The level picks the Master Prompt and the price (apps/backend/services/promptRouting.js, the seal).
+          level: REPORT_LEVEL[assessmentLevel] || 'advanced',
           uploadedFileContents: uploadedFileContents.length > 0 ? uploadedFileContents : undefined,
         } : {
           archetypeKey: result.mainArchetype,
@@ -1011,9 +1018,10 @@ const AssessmentResultsModal = ({
 
       // ── Helper: add page if needed ──
       let noPageBreak = false; // when true, suppress page breaks (e.g. resonantie sections on radar page)
+      let bottomPad = margin;  // where a page breaks; a flow may run further down (the AI prompt, owner 22 Oct 2026)
       const ensureSpace = (needed) => {
         if (noPageBreak) return false;
-        if (y + needed > H - margin) {
+        if (y + needed > H - bottomPad) {
           pdf.addPage();
           paintBg();
           y = margin;
@@ -3457,7 +3465,11 @@ const AssessmentResultsModal = ({
               // intro instead. The prompt's block titles arrive as subheadings — groupSubsections.)
               // Collapse 3+ consecutive blank lines down to one blank line
               promptContent = promptContent.replace(/\n{3,}/g, '\n\n');
+              // The copy block runs down to near the page edge, like the other pages, so its last lines never
+              // open a page of their own (owner, 22 Oct 2026).
+              bottomPad = 8;
               writePdfMarkdown(promptContent, margin + 2, contentW - 4, white); // block titles white too
+              bottomPad = margin;
             } else {
               // Model omitted its prompt section — render the deterministic fallback instead.
               writePdfMarkdown(buildFallbackAgentPrompt(), margin + 2, contentW - 4, white);
@@ -3928,7 +3940,7 @@ const AssessmentResultsModal = ({
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
             {!reportAvailable ? (
-              /* Beginner / Gevorderd: no report for this level yet — a notice and a way out (owner, 15 Oct) */
+              /* A level without a report: a notice and a way out (owner, 15 Oct) */
               <>
                 <p style={{
                   fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",

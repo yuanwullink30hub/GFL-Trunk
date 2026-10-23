@@ -20,10 +20,11 @@ const FS = {
 const S = {
   h2: { color: '#a855f7', fontSize: FS.h2, marginTop: '1.75rem', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 'bold' },
   h3: { color: '#c4b5fd', fontSize: FS.body, marginTop: '1.25rem', marginBottom: '0.5rem', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 'bold' },
-  p: { marginBottom: '0.75rem', color: '#cbd5e1', fontFamily: "'Figtree', sans-serif", fontSize: FS.body, lineHeight: 1.8 },
+  // Running text and lists in the tables' size (owner, 23 Oct 2026): one text size across the policy pages.
+  p: { marginBottom: '0.75rem', color: '#cbd5e1', fontFamily: "'Figtree', sans-serif", fontSize: FS.xl, lineHeight: 1.8 },
   ul: { marginLeft: '1.5rem', marginBottom: '0.75rem', listStyleType: 'disc' },
   ol: { marginLeft: '1.5rem', marginBottom: '0.75rem' },
-  li: { marginBottom: '0.35rem', color: '#cbd5e1', fontFamily: "'Figtree', sans-serif", fontSize: FS.body, lineHeight: 1.6 },
+  li: { marginBottom: '0.35rem', color: '#cbd5e1', fontFamily: "'Figtree', sans-serif", fontSize: FS.xl, lineHeight: 1.6 },
   strong: { color: '#c4b5fd' },
   updated: { color: '#94a3b8', fontSize: FS.xl, marginBottom: '1.5rem', fontStyle: 'italic', fontFamily: "'Figtree', sans-serif" },
   box: { background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: '0.35rem', padding: '1rem', margin: '1rem 0' },

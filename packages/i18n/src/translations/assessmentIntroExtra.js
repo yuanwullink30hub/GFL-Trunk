@@ -88,18 +88,18 @@ export default {
         nl: 'Voor wie is dit niveau?',
         en: 'Who is this level for?',
       },
-      // NL: the owner's text (16 Oct), verbatim. EN: translation, draft.
+      // NL: the owner's text (22 Oct 2026), verbatim. EN: translation, draft.
       quick: {
-        nl: 'Kies dit als je net begint met jezelf onderzoeken. Bijvoorbeeld omdat het voor werk of school moet, omdat anderen het deden, uit nieuwsgierigheid, of omdat er iets groots in je leven veranderde.',
-        en: 'Choose this if you are just starting to explore yourself. For example because work or school asks for it, because others did it, out of curiosity, or because something big changed in your life.',
+        nl: 'Je bent nieuwsgierig geworden door je werk, school, vrienden of iets wat er in je leven gebeurde. Je kijkt vooral naar wat je doet, wat het je oplevert en hoe anderen op je reageren. Deze test laat zien welk patroon daaronder zit: waar je sterk in bent, wat het je soms kost, en hoe je daar iets mee kunt. Kort, concreet en zonder vakjargon.',
+        en: 'You became curious through your work, school, friends or something that happened in your life. You mostly look at what you do, what it brings you and how others respond to you. This test shows the pattern underneath: where you are strong, what it sometimes costs you, and how you can work with it. Short, concrete and free of jargon.',
       },
       standard: {
-        nl: 'Kies dit als je al bewust met jezelf bezig bent en je patronen en triggers een beetje kent. Maar als het erop aankomt, reageer je vaak nog sneller dan je kiest.',
-        en: 'Choose this if you are already consciously working on yourself and know your patterns and triggers a little. But when it comes down to it, you often still react faster than you choose.',
+        nl: 'Je merkt dat bepaalde dingen steeds terugkomen: in hoe je reageert, wat je raakt, waar je vastloopt. Je wilt begrijpen waarom, en waar jouw eigen kijk begint en ophoudt naast wat anderen van je verwachten. Deze test brengt dat patroon in kaart, met de kracht en de prijs ervan, zodat je bewuster kunt kiezen.',
+        en: 'You notice that certain things keep coming back: in how you react, what touches you, where you get stuck. You want to understand why, and where your own view begins and ends next to what others expect of you. This test maps that pattern, with its strength and its price, so you can choose more consciously.',
       },
       deep: {
-        nl: 'Kies dit als je al langer, uit jezelf, aan je schaduwkanten werkt. Je kent je eigen reacties in specifieke situaties en zoekt de diepste vragen over jezelf op.',
-        en: 'Choose this if you have been working on your shadow sides for a while, of your own accord. You know your own reactions in specific situations and seek out the deepest questions about yourself.',
+        nl: 'Je kent je patronen en hebt je eigen koers. Wat je nu zoekt, ligt aan de rand daarvan: waar je eigen manier van kijken ophoudt, wat je schaduw je te zeggen heeft, en hoe tegenstellingen in jou naast elkaar kunnen bestaan. Deze test leest dieper en vraagt meer van je, en het rapport bevat ook de reflectie op wat er onder je keuzes stuurt.',
+        en: 'You know your patterns and have your own course. What you are looking for now lies at its edge: where your own way of seeing stops, what your shadow has to tell you, and how opposites in you can exist side by side. This test reads deeper and asks more of you, and the report also reflects on what steers beneath your choices.',
       },
     },
 

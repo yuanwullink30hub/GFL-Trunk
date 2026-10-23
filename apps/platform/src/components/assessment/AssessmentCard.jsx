@@ -487,9 +487,12 @@ const AssessmentCard = ({
   // earlier question. Offered while Layer 1 still has time (its timer resumes; a Layer 1 that ran out is done).
   const canTurnBack = twoLayer && levelConfig.allowLayerBack === true && layer === 2 && currentQuestion
     && (!hasTimer || (layerTimeLeft.current.get(`${currentQuestion.id}:1`) ?? 1) > 0);
+  // Beginner (owner, 23 Oct 2026): on Layer 1 the back button opens the previous question of this subject.
+  const canGoBackQuestion = twoLayer && levelConfig.allowQuestionBack === true && layer === 1 && currentQuestionIndex > 0;
   const handleTwoLayerBack = () => {
-    if (flip !== 'idle' || !canTurnBack) return;
-    setLayerState({ qid: currentQuestion.id, layer: 1 });
+    if (flip !== 'idle') return;
+    if (canTurnBack && layer === 2) setLayerState({ qid: currentQuestion.id, layer: 1 });
+    else if (canGoBackQuestion && onJumpTo) onJumpTo(currentQuestionIndex - 1);
   };
   // The layer's timer ran out: Layer 1 with a pick turns to its Layer 2; with nothing picked the question is
   // recorded as a timeout (zero points, never the same as a refusal) and the test moves on.
@@ -625,7 +628,7 @@ const AssessmentCard = ({
                 textAlign: 'center',
                 lineHeight: 1.7,
               }}>
-                {renderOverlayText(t('assessmentCard.intro.words'), subjectColor)}
+                {renderOverlayText(t(hasTimer ? 'assessmentCard.intro.words' : 'assessmentCard.intro.wordsNoTimer'), subjectColor)}
               </p>
 
               {/* The two-layer test states its pick rule once, under LET OP on each subject card (owner, 14 Oct) */}
@@ -659,7 +662,7 @@ const AssessmentCard = ({
                 lineHeight: 1.7,
               }}>
                 {/* Beginner (two-layer, no timer): the count and the rule, without a timer line (owner, 15 Oct) */}
-                {twoLayer && !hasTimer ? renderOverlayText(t('assessmentCard.twoLayer.noTimer'), subjectColor) : (<>
+                {twoLayer && !hasTimer ? renderOverlayText(t(levelConfig.allowQuestionBack ? 'assessmentCard.twoLayer.noTimerBack' : 'assessmentCard.twoLayer.noTimer'), subjectColor) : (<>
                 {renderOverlayText(t('assessmentCard.intro.timerIntro'), subjectColor)}
                 <br />
                 <span style={{ color: '#a855f7' }}>
@@ -1208,8 +1211,12 @@ const AssessmentCard = ({
               const isActive = idx === currentQuestionIndex;
               const qAnswers = allAnswers[q.id];
               const isAnswered = Array.isArray(qAnswers) ? qAnswers.length > 0 : qAnswers !== undefined;
-              // The two-layer test only moves forward (and never skips a question), so its markers only show progress.
-              const canClick = !twoLayer && levelConfig.allowQuestionJump !== false; // Default to true if not specified
+              // The two-layer test never skips a question: its markers show progress, and where the level allows it
+              // (Beginner) an answered question — or the first open one — opens again from its number.
+              const firstOpen = questions.findIndex((x) => allAnswers[x.id] === undefined || allAnswers[x.id] === null);
+              const canClick = twoLayer
+                ? levelConfig.allowQuestionJump === true && idx !== currentQuestionIndex && (isAnswered || idx === firstOpen)
+                : levelConfig.allowQuestionJump !== false; // Default to true if not specified
               return (
                 <button
                   key={q.id}
@@ -1225,7 +1232,7 @@ const AssessmentCard = ({
                     boxShadow: isActive ? `0 0 8px ${subjectColor}40` : 'none',
                     transform: isActive ? 'scale(1.15)' : 'scale(1)',
                     opacity: canClick || twoLayer ? 1 : 0.5,
-                    cursor: twoLayer ? 'default' : undefined,
+                    cursor: twoLayer ? (canClick ? 'pointer' : 'default') : undefined,
                   }}
                   disabled={!canClick}
                 >
@@ -1238,11 +1245,17 @@ const AssessmentCard = ({
           {/* Next + AUTO Buttons — manual advance */}
           {(twoLayer || !isAllAnswered || isLastQuestion) && (
             <div className="flex items-center justify-center gap-2">
-              {/* Beginner / Gevorderd: back from Layer 2 to Layer 1 of this question, in Geen's grey (owner, 15 Oct). */}
-              {canTurnBack && face.layer === 2 && (
+              {/* Beginner: back from Layer 2 to Layer 1 of this question, and from Layer 1 to the previous question of
+                  this subject, in Geen's grey (owner, 15 + 23 Oct). */}
+              {(levelConfig.allowQuestionBack || (canTurnBack && face.layer === 2)) && (() => {
+                // Beginner keeps the button in place (owner, 23 Oct 2026); it dims where there is nothing to go back to.
+                const backOn = (canTurnBack && face.layer === 2) || (canGoBackQuestion && face.layer === 1);
+                return (
                 <button
                   type="button"
                   onClick={handleTwoLayerBack}
+                  disabled={!backOn}
+                  aria-disabled={!backOn}
                   className="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded transition-all duration-200"
                   style={{
                     fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
@@ -1253,8 +1266,10 @@ const AssessmentCard = ({
                     backgroundColor: 'rgba(255, 255, 255, 0.05)',
                     border: '1px solid rgba(255, 255, 255, 0.45)',
                     color: 'rgba(255, 255, 255, 0.45)',
+                    opacity: backOn ? 1 : 0.35,
+                    cursor: backOn ? 'pointer' : 'default',
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'; }}
+                  onMouseEnter={(e) => { if (backOn) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'; }}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="#FFFEF0">
@@ -1262,7 +1277,8 @@ const AssessmentCard = ({
                   </svg>
                   {t('assessmentCard.twoLayer.back')}
                 </button>
-              )}
+                );
+              })()}
               {/* Two-layer "Geen", left of Doorgaan, on both layers: on Layer 1 the refusal ("Geen van deze
                   past"), on Layer 2 none of the refinements (the Layer-1 choice stands). It follows the face, so it
                   changes with the content at the fade's midpoint. */}

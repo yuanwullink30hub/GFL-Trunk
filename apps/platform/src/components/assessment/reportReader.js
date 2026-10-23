@@ -67,6 +67,14 @@ export const isExtensionTitle = (title) => /^de\s+extensie\b/i.test(cleanTitle(t
 /** The title as the model emitted it — what the card and the PDF show. Routing uses `title`. */
 export const shownTitle = (s) => (s && (s.displayTitle || s.title)) || '';
 
+// The Dutch headings as the reader shows them, by routing slot: no English jargon (owner, 22 Oct 2026).
+const DUTCH_DISPLAY_TITLES = {
+  main_essence: { stem: 'DE ESSENTIE', title: 'DE ESSENTIE (JE KERN)' },
+  support_mult: { stem: 'DE VERMENIGVULDIGING', title: 'DE VERMENIGVULDIGING (WAT JE KERN KLEURT)' },
+  shadow: { stem: 'DE SCHADUW', title: 'DE SCHADUW (DE TEGENPOOL VAN JE KERN)' },
+  blindspot: { stem: 'DE BLINDSPOT', title: 'DE BLINDSPOT (EIGENSCHAPPEN DIE JIJ MOEILIJKER BEREIKT)' },
+};
+
 // ── Headings: which lines start a section ────────────────────────────────────────────────────────
 
 // Master Prompt v6.2.x DEEL 5 — the emit order, by v4Parser slot. Only used where order is the
@@ -593,6 +601,17 @@ export function readReport(analysisText, { promptVersion = null, level = null } 
       ledger.discarded.push({ rule: 'a section Beginner does not carry (Stille Stem / Overgang)', title: s.title, text: s.content });
       return false;
     });
+  }
+  // After the accounting: the Dutch headings lose the prompt's English jargon (owner, 22 Oct 2026). The model
+  // copies "DE ESSENTIE (MAIN ARCHETYPE)" etc. from the prompt's title lines; the reader routes on the stem, so
+  // only the shown title changes — every level, every report already made.
+  for (const s of sections) {
+    const tag = matchNarrativeTag(s.title || '');
+    const nl = tag && DUTCH_DISPLAY_TITLES[tag.slot];
+    if (!nl) continue;
+    const shown = shownTitle(s);
+    const m = new RegExp(`^(\\W*)${nl.stem}\\b`, 'i').exec(shown);
+    if (m) s.displayTitle = m[1] + nl.title;
   }
   // After the accounting (which compares against the model's own lines): the Stille Stem run-in labels
   // become subheadings.

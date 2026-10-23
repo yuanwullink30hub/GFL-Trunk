@@ -42,13 +42,13 @@ export function currentPrice(now = new Date()) {
 
 /**
  * Full price per test level, excl. VAT, as the intro card shows it on each level (owner, 22 Oct 2026):
- * Beginner € 12, Gevorderd and Leerling € 30. Until the equinox each is LAUNCH_DISCOUNT_PCT off, so
- * Gevorderd/Leerling show € 12 (= LAUNCH_PRICE) and Beginner € 4,80. Display fallback like the rest: the
+ * Beginner € 13 (was € 12 until 23 Oct 2026), Gevorderd and Leerling € 30. Until the equinox each is
+ * LAUNCH_DISCOUNT_PCT off, so Gevorderd/Leerling show € 12 (= LAUNCH_PRICE) and Beginner € 5,20. Display fallback like the rest: the
  * backend charges the Stripe Price of the report's level (Beginner its own pair, paymentConfig.js).
  */
 export const LAUNCH_DISCOUNT_PCT = 60;
 export const LEVEL_REGULAR_PRICE = {
-  quick: { netCents: 1200, currency: 'EUR' },
+  quick: { netCents: 1300, currency: 'EUR' },
   standard: REGULAR_PRICE,
   deep: REGULAR_PRICE,
 };

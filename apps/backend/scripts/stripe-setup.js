@@ -5,8 +5,8 @@
  * tax-inclusive EUR Prices, identified by lookup key:
  *   essentie_launch           € 14,52 incl. BTW  Leerling + Gevorderd, until flipAt (services/paymentConfig.js)
  *   essentie_normal           € 36,30 incl. BTW  Leerling + Gevorderd, from flipAt
- *   essentie_beginner_launch  €  5,81 incl. BTW  Beginner, until flipAt (owner, 22 Oct 2026: € 12 − 60%)
- *   essentie_beginner_normal  € 14,52 incl. BTW  Beginner, from flipAt
+ *   essentie_beginner_13_launch  €  6,29 incl. BTW  Beginner, until flipAt (owner, 23 Oct 2026: € 13 − 60%)
+ *   essentie_beginner_13_normal  € 15,73 incl. BTW  Beginner, from flipAt (replaces the € 5,81 / € 14,52 pair)
  * and prints the env lines for apps/backend/.env.
  *
  * Run once with the TEST secret key now, and again with the LIVE key when the account is
@@ -28,8 +28,8 @@ const TAX_CODE = 'txcd_10000000'; // General - Electronically Supplied Services
 const PRICES = [
   { lookupKey: 'essentie_launch', unitAmount: 1452, nickname: 'Essentie — introductieprijs (incl. BTW)', env: 'PRICE_LAUNCH' },
   { lookupKey: 'essentie_normal', unitAmount: 3630, nickname: 'Essentie — normale prijs (incl. BTW)', env: 'PRICE_NORMAL' },
-  { lookupKey: 'essentie_beginner_launch', unitAmount: 581, nickname: 'Essentie Beginner — introductieprijs (incl. BTW)', env: 'PRICE_BEGINNER_LAUNCH' },
-  { lookupKey: 'essentie_beginner_normal', unitAmount: 1452, nickname: 'Essentie Beginner — normale prijs (incl. BTW)', env: 'PRICE_BEGINNER_NORMAL' },
+  { lookupKey: 'essentie_beginner_13_launch', unitAmount: 629, nickname: 'Essentie Beginner € 13 — introductieprijs (incl. BTW)', env: 'PRICE_BEGINNER_LAUNCH' },
+  { lookupKey: 'essentie_beginner_13_normal', unitAmount: 1573, nickname: 'Essentie Beginner € 13 — normale prijs (incl. BTW)', env: 'PRICE_BEGINNER_NORMAL' },
 ];
 
 async function main() {

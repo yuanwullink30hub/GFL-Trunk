@@ -2282,6 +2282,7 @@ const PhoneAppSettingsTab = memo(() => {
   const [creating, setCreating] = useState(false);
   const [fresh, setFresh] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [label, setLabel] = useState('');
   const body = { fontFamily: "'Figtree', sans-serif", fontSize: 'max(14px, 0.75vw)', lineHeight: 1.6, color: '#FFFEF0' };
 
   const loadLinks = useCallback(async () => {
@@ -2310,8 +2311,9 @@ const PhoneAppSettingsTab = memo(() => {
     setCreating(true);
     setError(null);
     try {
-      setFresh(await createAppLink());
+      setFresh(await createAppLink({ label }));
       setCopied(false);
+      setLabel('');
       await loadLinks();
     } catch (err) {
       setError(err.message);
@@ -2361,13 +2363,20 @@ const PhoneAppSettingsTab = memo(() => {
 
       <DashboardCard title={t('admin.dashboard.settings.shareTitle')} color="gold">
         <div style={{ ...body, marginBottom: '0.9rem', color: 'rgba(255, 254, 240, 0.8)' }}>{t('admin.dashboard.settings.shareHelp')}</div>
-        <SciFiButton onClick={makeLink} disabled={creating}>
-          {creating ? t('admin.dashboard.settings.creating') : t('admin.dashboard.settings.create')}
-        </SciFiButton>
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <label style={{ display: 'flex', flexDirection: 'column', flex: '1 1 12rem' }}>
+            <span style={FIELD_LABEL}>{t('admin.dashboard.settings.labelLabel')}</span>
+            <input type="text" maxLength={60} value={label} onChange={e => setLabel(e.target.value)}
+              placeholder={t('admin.dashboard.settings.labelPlaceholder')} style={{ ...INPUT_SM, fontSize: 16 }} />
+          </label>
+          <SciFiButton onClick={makeLink} disabled={creating}>
+            {creating ? t('admin.dashboard.settings.creating') : t('admin.dashboard.settings.create')}
+          </SciFiButton>
+        </div>
 
         {fresh && (
           <div style={{ marginTop: '1rem', padding: '0.8rem', borderRadius: '0.15rem', border: '1px solid rgba(74, 222, 128, 0.35)', background: 'rgba(74, 222, 128, 0.05)' }}>
-            <div style={{ ...LABEL, color: '#4ade80', opacity: 1 }}>{t('admin.dashboard.settings.newLink')}</div>
+            <div style={{ ...LABEL, color: '#4ade80', opacity: 1 }}>{t('admin.dashboard.settings.newLink')}{fresh.label ? ` — ${fresh.label}` : ''}</div>
             <div style={{ margin: '0.5rem 0 0.8rem', fontFamily: 'monospace', fontSize: 'max(14px, 0.7vw)', color: '#FFFEF0', wordBreak: 'break-all', userSelect: 'all' }}>{fresh.url}</div>
             <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
               <SciFiButton size="sm" onClick={copyLink}>{copied ? t('admin.dashboard.settings.copied') : t('admin.dashboard.settings.copy')}</SciFiButton>
@@ -2385,7 +2394,8 @@ const PhoneAppSettingsTab = memo(() => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '0.4rem' }}>
             {links.map((l) => (
               <div key={l._id} style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', flexWrap: 'wrap', padding: '0.45rem 0.6rem', borderLeft: `2px solid ${statusColor[l.status]}`, background: 'rgba(168, 85, 247, 0.03)' }}>
-                <span style={{ fontFamily: 'monospace', color: '#FFFEF0', fontWeight: 'bold', letterSpacing: '0.1em' }}>…{l.hint}</span>
+                <span style={{ ...body, fontWeight: 600 }}>{l.label || <span style={{ color: 'rgba(255, 254, 240, 0.4)' }}>—</span>}</span>
+                <span style={{ fontFamily: 'monospace', color: 'rgba(255, 254, 240, 0.6)', letterSpacing: '0.1em' }}>…{l.hint}</span>
                 <span style={{ ...CHROME('max(9px, 0.45vw)', statusColor[l.status]), fontWeight: 'bold' }}>{statusLabel[l.status]}</span>
                 <span style={{ ...body, fontSize: 'max(12px, 0.6vw)', color: 'rgba(255, 254, 240, 0.5)' }}>{when(l.usedAt || l.revokedAt || l.createdAt)}</span>
                 {l.status === 'open' && (

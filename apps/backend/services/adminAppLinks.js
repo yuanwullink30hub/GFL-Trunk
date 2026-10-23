@@ -49,15 +49,16 @@ function signGrant(deviceId, now = new Date()) {
   return `v1.${payload}.${b64url(signature)}`;
 }
 
-/** A new one-time link. The plain token is in the return value only. */
-async function createLink(createdBy, now = new Date()) {
+/** A new one-time link, with an optional name (who it is for). The plain token is in the return value only. */
+async function createLink(createdBy, label = '', now = new Date()) {
+  label = String(label || '').trim().slice(0, 60);
   for (let attempt = 0; attempt < 3; attempt++) {
     const token = generateToken();
     try {
       const r = await collections.adminAppLinks().insertOne({
-        tokenHash: hashToken(token), hint: token.slice(-4), createdBy, createdAt: now, usedAt: null, revokedAt: null,
+        tokenHash: hashToken(token), hint: token.slice(-4), label, createdBy, createdAt: now, usedAt: null, revokedAt: null,
       });
-      return { _id: r.insertedId, url: `${SITE}/${token}`, hint: token.slice(-4), createdAt: now };
+      return { _id: r.insertedId, url: `${SITE}/${token}`, hint: token.slice(-4), label, createdAt: now };
     } catch (e) {
       if (e.code !== 11000 || attempt === 2) throw e;
     }
@@ -70,7 +71,7 @@ async function listLinks(limit = 20) {
   const docs = await collections.adminAppLinks().find({}, { projection: { tokenHash: 0 } })
     .sort({ createdAt: -1 }).limit(limit).toArray();
   return docs.map((d) => ({
-    _id: d._id, hint: d.hint, createdAt: d.createdAt, usedAt: d.usedAt, revokedAt: d.revokedAt,
+    _id: d._id, hint: d.hint, label: d.label || '', createdAt: d.createdAt, usedAt: d.usedAt, revokedAt: d.revokedAt,
     status: d.revokedAt ? 'revoked' : d.usedAt ? 'used' : 'open',
   }));
 }

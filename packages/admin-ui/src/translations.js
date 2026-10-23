@@ -162,6 +162,8 @@ export default {
           nl: 'Maak een installatielink voor een andere beheerder. De link werkt één keer en alleen op een telefoon; daarna is hij op. Inloggen met een eigen beheeraccount blijft nodig.',
           en: 'Make an install link for another admin. It works once and only on a phone; after that it is spent. Logging in with their own admin account is still needed.',
         },
+        labelLabel: { nl: 'Naam', en: 'Name' },
+        labelPlaceholder: { nl: 'Voor wie is deze link? (optioneel)', en: 'Who is this link for? (optional)' },
         create: { nl: 'Maak installatielink', en: 'Make install link' },
         creating: { nl: 'Bezig…', en: 'Working…' },
         newLink: { nl: 'Nieuwe link — alleen nu zichtbaar', en: 'New link — visible only now' },

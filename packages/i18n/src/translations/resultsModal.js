@@ -578,14 +578,14 @@ export default {
         sacredTitle: { nl: 'Geometrische / heilige verbindingen:', en: 'Geometric / sacred connections:' },
         sacredBullets: {
           nl: [
-            '72° = 360°/5 = de hoek van een regelmatige vijfhoek — en we hebben exact 5 lagen',
+            '72° = 360°/5 = de middelpuntshoek van een regelmatige vijfhoek — en we hebben exact 5 lagen',
             '36° = de hoek in elke punt van het pentagram. Samen met 72° vormt hij de gouden driehoek (36° · 72° · 72°): de vragen en de uitkomsten van dit model in één driehoek die precies 180° sluit.',
-            '6 is zowel het kleinste perfecte getal (1+2+3 = 6 = 1×2×3) als het enige getal dat zowel een driehoeksgetal als een faculteit is',
+            '6 is zowel het kleinste perfecte getal (1+2+3 = 6 = 1×2×3) als één van slechts drie bekende getallen die tegelijk een driehoeksgetal en een faculteit zijn: 1, 6 en 120.',
           ],
           en: [
-            '72° = 360°/5 = the angle of a regular pentagon — and we have exactly 5 layers',
+            '72° = 360°/5 = the central angle of a regular pentagon — and we have exactly 5 layers',
             '36° = the angle at every point of the pentagram. Together with 72° it forms the golden triangle (36° · 72° · 72°): the questions and the outcomes of this model in one triangle that closes at exactly 180°.',
-            '6 is both the smallest perfect number (1+2+3 = 6 = 1×2×3) and the only number that is both a triangular number and a factorial',
+            '6 is both the smallest perfect number (1+2+3 = 6 = 1×2×3) and one of only three known numbers that are both a triangular number and a factorial: 1, 6 and 120.',
           ],
         },
         kicker: { nl: 'Niet slecht voor een psychologische test.', en: 'Not bad for a personality test.' },

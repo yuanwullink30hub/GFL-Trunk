@@ -10,6 +10,10 @@
  *
  * Undo (owner, 23 Oct 2026): a field's text from before an edit is kept once you leave the field; the undo button
  * (fixed at the bottom while there is something to undo) puts the latest one back and saves it, one step per tap.
+ *
+ * JSON in and out (owner, 4 Nov 2026): the bank copies or downloads as JSON, and the same JSON uploads back.
+ * An upload saves only the fields whose text differs, as drafts (one save per question); nothing goes live
+ * until it is published.
  */
 import React, { createContext, memo, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLanguage } from '@gfl/i18n';
@@ -43,6 +47,36 @@ const setField = (v, f, val) => (f === 'text' ? { ...v, text: val } : { ...v, [f
 const patchOf = (f, val) => (f === 'text' ? { text: val } : { [f.slice(0, 2)]: { [f.slice(3)]: val } });
 const fieldsOf = (layout) => ['text', ...layout.flatMap((g) => [`l1.${g.group}`, ...g.archetypes.map((a) => `l2.${a.name}`)])];
 const filled = (s) => Boolean(String(s || '').trim());
+
+/**
+ * What an uploaded bank (the JSON this editor copies) changes in the stored drafts: per question the fields whose
+ * text differs, as one save patch. Questions match on question_id; unknown ids, groups and archetypes are listed.
+ * @returns {{ changes: { qid, position, patch, fields }[], unknown: string[], level: string|null }}
+ */
+export function diffImport(bank, drafts, groups, archetypes) {
+  const list = Array.isArray(bank) ? bank : bank && Array.isArray(bank.questions) ? bank.questions : null;
+  if (!list) throw new Error('no questions');
+  const byId = new Map(drafts.map((q) => [q.question_id, q]));
+  const changes = [];
+  const unknown = [];
+  for (const iq of list) {
+    const q = iq && byId.get(iq.question_id);
+    if (!q) { unknown.push(String(iq && iq.question_id)); continue; }
+    const cur = valuesOf(q);
+    const patch = {};
+    let fields = 0;
+    if (typeof iq.text === 'string' && iq.text !== cur.text) { patch.text = iq.text; fields += 1; }
+    for (const [key, arr, allowed, name] of [['l1', iq.l1_answers, groups, 'group'], ['l2', iq.l2_answers, archetypes, 'archetype']]) {
+      for (const a of Array.isArray(arr) ? arr : []) {
+        if (!a || typeof a.text !== 'string') continue;
+        if (!allowed.includes(a[name])) { unknown.push(`Q${q.position} · ${a[name]}`); continue; }
+        if (a.text !== (cur[key][a[name]] || '')) { (patch[key] = patch[key] || {})[a[name]] = a.text; fields += 1; }
+      }
+    }
+    if (fields) changes.push({ qid: q.question_id, position: q.position, patch, fields });
+  }
+  return { changes, unknown, level: Array.isArray(bank) ? null : bank.level || null };
+}
 
 /** Incoming stored values, except in fields being typed in (dirty or focused). */
 function mergeIncoming(cur, q, dirty, focused, layout) {
@@ -353,6 +387,8 @@ export default function QuestionBankEditor({ level = 'leerling' }) {
   const [banner, setBanner] = useState(null); // { kind: 'info' | 'err', text, list? }
   const [publishing, setPublishing] = useState(false);
   const [copyText, setCopyText] = useState('');
+  const [importing, setImporting] = useState(false);
+  const fileRef = useRef(null);
   const [epoch, setEpoch] = useState(0);
   const [indexH, setIndexH] = useState(0);
   const cards = useRef(new Map());
@@ -470,7 +506,7 @@ export default function QuestionBankEditor({ level = 'leerling' }) {
     }
   };
 
-  const handleCopy = async () => {
+  const bankJson = () => {
     const bank = {
       level,
       l1_refusal_label: REFUSAL_LABEL,
@@ -483,7 +519,11 @@ export default function QuestionBankEditor({ level = 'leerling' }) {
         };
       }),
     };
-    const json = JSON.stringify(bank, null, 1);
+    return JSON.stringify(bank, null, 1);
+  };
+
+  const handleCopy = async () => {
+    const json = bankJson();
     try {
       await navigator.clipboard.writeText(json);
       setCopyText('');
@@ -491,6 +531,64 @@ export default function QuestionBankEditor({ level = 'leerling' }) {
     } catch {
       setCopyText(json);
       setBanner({ kind: 'info', text: t('admin.dashboard.questionBank.copyFallback') });
+    }
+  };
+
+  const handleDownload = () => {
+    const url = URL.createObjectURL(new Blob([bankJson()], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `vragenbank-${level}-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  // Upload: the same JSON back in. Compared with the stored drafts (fetched fresh, so versions are current);
+  // only changed fields are saved, one save per question, then the editor reloads.
+  const handleImport = async (file) => {
+    if (!file) return;
+    if (anyPending()) { setBanner({ kind: 'info', text: t('admin.dashboard.questionBank.waitForSaves') }); return; }
+    setBanner(null);
+    let bank;
+    try { bank = JSON.parse(await file.text()); } catch { setBanner({ kind: 'err', text: t('admin.dashboard.questionBank.importBadFile') }); return; }
+    setImporting(true);
+    try {
+      const fresh = await getQuestionBank(level);
+      let diff;
+      try { diff = diffImport(bank, fresh.questions, fresh.groups, fresh.archetypes.map((a) => a.name)); } catch { setBanner({ kind: 'err', text: t('admin.dashboard.questionBank.importBadFile') }); return; }
+      if (diff.level && diff.level !== level) {
+        setBanner({ kind: 'err', text: tFunc('admin.dashboard.questionBank.importWrongLevel')(LEVEL_LABELS[diff.level] || diff.level, LEVEL_LABELS[level] || level) });
+        return;
+      }
+      const skipped = diff.unknown.length ? [tFunc('admin.dashboard.questionBank.importUnknown')(diff.unknown.join(', '))] : [];
+      const nFields = diff.changes.reduce((n, c) => n + c.fields, 0);
+      if (!diff.changes.length) {
+        setBanner({ kind: 'info', text: t('admin.dashboard.questionBank.importNothing'), list: skipped.length ? skipped : undefined });
+        return;
+      }
+      if (!window.confirm(tFunc('admin.dashboard.questionBank.importConfirm')(diff.changes.length, nFields, diff.changes.map((c) => `Q${c.position}`).join(', ')))) return;
+      const version = new Map(fresh.questions.map((q) => [q.question_id, q.version]));
+      const failed = [];
+      for (const c of diff.changes) {
+        try {
+          await saveQuestionBankEntry(level, c.qid, version.get(c.qid), c.patch);
+        } catch (e) {
+          if (e.status === 409 && e.current) {
+            // Saved elsewhere meanwhile: the uploaded text still wins for the fields in the file.
+            try { await saveQuestionBankEntry(level, c.qid, e.current.version, c.patch); } catch (e2) { failed.push(`Q${c.position}: ${e2.message}`); }
+          } else failed.push(`Q${c.position}: ${e.message}`);
+        }
+      }
+      await load();
+      const list = [...failed, ...skipped];
+      setBanner({ kind: failed.length ? 'err' : 'info', text: tFunc('admin.dashboard.questionBank.importDone')(diff.changes.length - failed.length, nFields), list: list.length ? list : undefined });
+    } catch (e) {
+      setBanner({ kind: 'err', text: e.message });
+    } finally {
+      setImporting(false);
+      if (fileRef.current) fileRef.current.value = '';
     }
   };
 
@@ -510,6 +608,18 @@ export default function QuestionBankEditor({ level = 'leerling' }) {
               {publishing ? t('admin.dashboard.questionBank.publishing') : t('admin.dashboard.questionBank.publish')}
             </SciFiButton>
             <SciFiButton onClick={handleCopy} variant="white">{t('admin.dashboard.questionBank.copyJson')}</SciFiButton>
+            <SciFiButton onClick={handleDownload} variant="white">{t('admin.dashboard.questionBank.downloadJson')}</SciFiButton>
+            <SciFiButton onClick={() => fileRef.current?.click()} variant="white" disabled={importing}>
+              {importing ? t('admin.dashboard.questionBank.importing') : t('admin.dashboard.questionBank.uploadJson')}
+            </SciFiButton>
+            <input
+              ref={fileRef}
+              id="qb-import-file"
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(e) => handleImport(e.target.files && e.target.files[0])}
+            />
             <span style={CHROME('max(8px, 0.4vw)')}>{serving}</span>
           </div>
           {banner && (

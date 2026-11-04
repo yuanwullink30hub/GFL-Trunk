@@ -286,6 +286,24 @@ export default {
         copyJson: { nl: 'Kopieer als JSON', en: 'Copy as JSON' },
         copied: { nl: 'De vragenbank staat als JSON op je klembord.', en: 'The question bank is on your clipboard as JSON.' },
         copyFallback: { nl: 'Selecteer en kopieer de JSON hieronder.', en: 'Select and copy the JSON below.' },
+        downloadJson: { nl: 'Download JSON', en: 'Download JSON' },
+        uploadJson: { nl: 'Upload JSON', en: 'Upload JSON' },
+        importing: { nl: 'Bezig met uploaden…', en: 'Uploading…' },
+        importBadFile: { nl: 'Dit bestand is geen vragenbank-JSON. Gebruik het bestand zoals je het hier downloadt of kopieert.', en: 'This file is not a question-bank JSON. Use the file as you download or copy it here.' },
+        importWrongLevel: {
+          nl: (file, here) => `Dit bestand is voor ${file}, deze editor is ${here}. Er is niets opgeslagen.`,
+          en: (file, here) => `This file is for ${file}, this editor is ${here}. Nothing was saved.`,
+        },
+        importNothing: { nl: 'Niets veranderd: alle teksten in het bestand staan er al zo.', en: 'Nothing changed: every text in the file is already stored like that.' },
+        importUnknown: { nl: (list) => `Overgeslagen (onbekend): ${list}`, en: (list) => `Skipped (unknown): ${list}` },
+        importConfirm: {
+          nl: (q, f, which) => `${f} ${f === 1 ? 'veld' : 'velden'} in ${q} ${q === 1 ? 'vraag' : 'vragen'} (${which}) opslaan als concept? Niets gaat live tot je publiceert.`,
+          en: (q, f, which) => `Save ${f} ${f === 1 ? 'field' : 'fields'} in ${q} ${q === 1 ? 'question' : 'questions'} (${which}) as drafts? Nothing goes live until you publish.`,
+        },
+        importDone: {
+          nl: (q, f) => `Opgeslagen als concept: ${q} ${q === 1 ? 'vraag' : 'vragen'}, ${f} ${f === 1 ? 'veld' : 'velden'}. Publiceer om ze live te zetten.`,
+          en: (q, f) => `Saved as drafts: ${q} ${q === 1 ? 'question' : 'questions'}, ${f} ${f === 1 ? 'field' : 'fields'}. Publish to make them live.`,
+        },
         servingFile: { nl: 'Live: de geratificeerde vragenbank v1.0', en: 'Live: the ratified question bank v1.0' },
         servingPublished: {
           nl: (rev, when) => `Live: gepubliceerde versie ${rev} · ${when}`,

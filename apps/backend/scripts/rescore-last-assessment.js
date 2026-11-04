@@ -299,7 +299,7 @@ const EXTENDED_ARCHETYPES_NL = {
   MAGICIAN_HERO:       'De Alchemist',
   MAGICIAN_RULER:      'De Ingenieur',
   MAGICIAN_JUDGE:      'De Berekenaar',
-  MAGICIAN_OUTLAW:     'De Hoofdrolspeler',
+  MAGICIAN_OUTLAW:     'De Protagonist',
   MAGICIAN_TRICKSTER:  'De Magiër',
   MAGICIAN_SAGE:       'De Tovenaar',
   MAGICIAN_ARTIST:     'De Presteerder',

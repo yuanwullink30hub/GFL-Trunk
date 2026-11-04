@@ -15,7 +15,7 @@ const SIZE = { body: 'max(14px, 0.66vw)', h2: 'max(17px, 0.78vw)', title: 'max(2
 const T = { p: { ...S.p, fontSize: SIZE.body }, h2: { ...S.h2, fontSize: SIZE.h2 }, h3: { ...S.h3, fontSize: SIZE.body } };
 
 /**
- * The owner's own profile — Eyedentity → Profiel (the policy pages' first tab). De Hoofdrolspeler, in the
+ * The owner's own profile — Eyedentity → Profiel (the policy pages' first tab). De Protagonist, in the
  * first person: the card microcopy, the wheel + the Big Five cross-reading, the hardware under pressure, and the
  * quiet voice (reflection, motivation). Copy and numbers: data/ownerProfile.js. Loaded lazily by
  * EyedentityPage and warmed in idle time after the landing (utils/preloadUtils.js preloadInBackground), so

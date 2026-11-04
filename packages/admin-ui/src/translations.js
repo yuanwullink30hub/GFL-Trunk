@@ -62,6 +62,7 @@ export default {
         en: (v, p) => `Downloading version ${v}${p ? ` (${p}%)` : ''}…`,
       },
       statusReady: { nl: (v) => `Versie ${v} staat klaar`, en: (v) => `Version ${v} is ready` },
+      statusUiReady: { nl: 'Nieuwe versie van de schermen staat klaar', en: 'A new version of the screens is ready' },
       statusError: { nl: 'Kon niet op updates controleren — ben je online?', en: 'Could not check for updates — are you online?' },
       statusDev: { nl: 'Ontwikkelversie — updates staan uit', en: 'Development build — updates are off' },
       check: { nl: 'Controleren op updates', en: 'Check for updates' },

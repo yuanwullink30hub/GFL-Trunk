@@ -1,0 +1,48 @@
+# Admin GFL follows main without a new installer: every push to main that changes the management UI publishes
+# a signed build of it to R2 under admin-ui/ (apps/admin-desktop/scripts/publish-ui.js). Installed apps (0.1.13+)
+# download it in the background and offer a restart; the next start runs it (apps/admin-desktop/src/uiBundle.js).
+#
+# The same repository secrets as app-ui.yml (the same signing key; a manifest names its app, so the two apps
+# never run each other's builds). Without them the job says so and stops:
+#   GFL_UI_SIGNING_KEY, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+name: Admin App UI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/admin/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - 'apps/admin-desktop/scripts/sync-ui.js'
+      - 'apps/admin-desktop/scripts/publish-ui.js'
+      - 'apps/admin-desktop/src/csp.js'
+      - 'apps/admin-desktop/src/shellApi.js'
+      - 'apps/admin-desktop/src/uiBundle.js'
+      - '.github/workflows/admin-app-ui.yml'
+  workflow_dispatch:
+
+# One publish at a time; a newer push supersedes one still running (latest.json is uploaded last).
+concurrency:
+  group: admin-app-ui
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the management app's dependencies
+        run: corepack pnpm@9.0.0 install --frozen-lockfile --filter "@gfl/admin..."
+      - name: Test the update checks
+        run: node apps/admin-desktop/test/uiBundle.test.js
+      - name: Build, sign and publish the management UI
+        env:
+          GFL_UI_SIGNING_KEY: ${{ secrets.GFL_UI_SIGNING_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node apps/admin-desktop/scripts/publish-ui.js --confirm --ci

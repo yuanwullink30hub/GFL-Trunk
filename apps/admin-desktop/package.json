@@ -1,6 +1,6 @@
 {
   "name": "@gfl/admin-desktop",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "private": true,
   "description": "Admin GFL — the management app (apps/admin) as a locked desktop app, installed only on the management computer",
   "main": "src/main.js",
@@ -8,6 +8,8 @@
     "sync-ui": "node scripts/sync-ui.js",
     "start": "node scripts/sync-ui.js && electron .",
     "dist:win": "node scripts/sync-ui.js && electron-builder --win",
+    "release:ui": "node scripts/publish-ui.js",
+    "test": "node test/uiBundle.test.js",
     "publish:win": "node scripts/publish.js"
   },
   "devDependencies": {

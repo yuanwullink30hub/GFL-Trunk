@@ -28,7 +28,16 @@ const { collections } = require('../db');
 const config = require('../config');
 const { getStripe } = require('./stripe');
 
-const TERMS_VERSION = 'av-2.2-2026-09-27';
+const TERMS_VERSION = 'av-2.3-2026-11-04';
+// The version before it, accepted for a few days after a terms change: a report lives only in its tab, so
+// a reader whose page loaded before the deploy must still be able to pay (a reload would delete the report).
+// The consent evidence records the version that reader actually saw. 2.2 → 2.3 (2026-11-04) only added the
+// access term (3 months per code, for good after three codes).
+const PREVIOUS_TERMS = { version: 'av-2.2-2026-09-27', acceptedUntil: new Date('2026-11-11T00:00:00+01:00') };
+/** True for the current terms version, or the previous one during its grace period. */
+function isAcceptedTermsVersion(v, now = new Date()) {
+  return v === TERMS_VERSION || (v === PREVIOUS_TERMS.version && now < PREVIOUS_TERMS.acceptedUntil);
+}
 const EU_26 = ['AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK'];
 const DEFAULTS = {
   flipAt: '2027-03-20T20:25:00.000Z',
@@ -203,6 +212,7 @@ function clearPaymentConfigCache() { settingsCache = null; priceCache.clear(); }
 
 module.exports = {
   TERMS_VERSION,
+  isAcceptedTermsVersion,
   EU_26,
   tierFor,
   DEFAULTS,

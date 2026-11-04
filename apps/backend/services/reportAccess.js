@@ -63,6 +63,23 @@ function visibleHistory(hist) {
     .filter(({ entry }) => entry && !entry.refundedAt);
 }
 
+// Access model (owner, 2026-11-04): each code opens ACCESS_MONTHS, a new code waits 2 months after the
+// previous one and adds its months to the running expiry — and from the third code that still counts,
+// the account keeps its access for good. No subscription; it rewards coming back. Derived from the
+// history, so a refund that drops an account under three codes puts it back on its expiry date.
+const LIFETIME_AFTER_CODES = 3;
+
+/** True when the account has redeemed enough codes (refunded ones excluded) to keep its access for good. */
+function hasLifetimeAccess(user) {
+  return visibleHistory(user && user.orbHistory).length >= LIFETIME_AFTER_CODES;
+}
+
+/** True when the account's access window has closed (never for a lifetime account). */
+function isAccessExpired(user, now = new Date()) {
+  if (!user || hasLifetimeAccess(user)) return false;
+  return !!(user.accessUntil && new Date(user.accessUntil) < now);
+}
+
 /**
  * Record an unlock. Called on the internal `payment.confirmed` event (services/payments.js) and
  * when an activation code is redeemed. The email is kept for paid reports only — it is what
@@ -460,6 +477,9 @@ module.exports = {
   RefundError,
   codeHashFor,
   visibleHistory,
+  LIFETIME_AFTER_CODES,
+  hasLifetimeAccess,
+  isAccessExpired,
   recordUnlock,
   isCodeBlocked,
   isCodeActivatable,

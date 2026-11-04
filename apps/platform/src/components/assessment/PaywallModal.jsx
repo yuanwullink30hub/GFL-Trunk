@@ -383,6 +383,10 @@ const PaywallModal = ({ open, onClose, onPaid, onConsent, language, t, sealedOrb
                 </ul>
               </li>
             </ul>
+            {/* How long that access lasts — part of what is bought, so it stands before the price. */}
+            <p style={{ margin: 0, color: CREAM_DIM, fontFamily: BODY_FONT, fontSize: 'max(10px, 0.55vw)', lineHeight: 1.6 }}>
+              {t('resultsModal.paywall.accessTerm')}
+            </p>
 
             <div style={{
               display: 'flex', flexDirection: 'column', gap: '0.45rem',

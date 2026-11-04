@@ -15,8 +15,8 @@ const SIZE = { body: 'max(14px, 0.66vw)', h2: 'max(17px, 0.78vw)', title: 'max(2
 const T = { p: { ...S.p, fontSize: SIZE.body }, h2: { ...S.h2, fontSize: SIZE.h2 }, h3: { ...S.h3, fontSize: SIZE.body } };
 
 /**
- * The owner's own profile — Eyedentity → Profiel (the policy pages' first tab). De Ronin, in the first
- * person: the card microcopy, the wheel + the Big Five cross-reading, the hardware under pressure, and the
+ * The owner's own profile — Eyedentity → Profiel (the policy pages' first tab). De Hoofdrolspeler, in the
+ * first person: the card microcopy, the wheel + the Big Five cross-reading, the hardware under pressure, and the
  * quiet voice (reflection, motivation). Copy and numbers: data/ownerProfile.js. Loaded lazily by
  * EyedentityPage and warmed in idle time after the landing (utils/preloadUtils.js preloadInBackground), so
  * the chart library is ready before a first pan to the page. The portrait is warmed earlier still: App
@@ -62,8 +62,8 @@ export default function OwnerProfile() {
         data={OWNER_RADAR}
         shadow={OWNER_ARCHETYPES.shadow}
         blindspot={OWNER_ARCHETYPES.blindspot}
-        mainArchetype="Outlaw"
-        supportArchetype="Hero"
+        mainArchetype={OWNER_ARCHETYPES.mainName}
+        supportArchetype={OWNER_ARCHETYPES.supportName}
       />
       <div style={{ height: '0.9rem' }} />
       {P.wheel.map(para)}

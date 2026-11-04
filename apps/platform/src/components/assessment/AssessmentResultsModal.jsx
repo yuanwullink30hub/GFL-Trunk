@@ -1983,7 +1983,9 @@ const AssessmentResultsModal = ({
         bLines.forEach(bl => { ensureSpace(4.5); pdf.text(bl, margin + 7, y); y += 4.5; });
       });
       y += 5;
-      ensureSpace(8);
+      // One line at its baseline: it only needs its descender below y (owner, 4 Nov: 8 mm pushed it alone onto
+      // a fresh page while the bottom of this one was empty).
+      ensureSpace(2);
       pdf.setFontSize(8.5); pdf.setFont('helvetica', 'italic'); pdf.setTextColor(...dimWhite);
       pdf.text(t('resultsModal.pdf.taal.kicker'), margin + 2, y);
       y += 10;
@@ -4172,6 +4174,8 @@ const AssessmentResultsModal = ({
                 <div style={{
                   display: 'flex',
                   flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  justifyContent: 'center',
                   alignItems: 'center',
                   gap: '2rem',
                   paddingBottom: '1.5rem',
@@ -4211,7 +4215,10 @@ const AssessmentResultsModal = ({
                   />
                   </div>
 
-                  <div style={{ maxWidth: rs.profileTextMaxW }}>
+                  {/* flex + minWidth 0: the column takes only the space beside the portrait, never its
+                      longest word's width — otherwise FitTitle measures an already-stretched column and the
+                      title and quote run out of the card. Under 12rem of room (mobile) it wraps below. */}
+                  <div style={{ flex: '1 1 12rem', minWidth: 0, maxWidth: rs.profileTextMaxW }}>
                     {/* The configuration's name, shrunk only as far as its longest word needs (FitTitle) */}
                     <FitTitle text={extNameShown || result.name} fontSize={rs.titleFont} style={{
                       fontFamily: "'Lexend Mega', sans-serif",
@@ -4241,6 +4248,7 @@ const AssessmentResultsModal = ({
                       color: 'rgba(156, 163, 175, 1)',
                       fontFamily: "'Figtree', sans-serif",
                       fontStyle: 'italic',
+                      overflowWrap: 'break-word',
                     }}>
                       "{result.levensles}"
                     </p>

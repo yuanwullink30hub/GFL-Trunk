@@ -1,5 +1,5 @@
 /**
- * The owner's portrait on the policy pages (Eyedentity → Profiel): De Ronin, Rebel × Held.
+ * The owner's portrait on the policy pages (Eyedentity → Profiel): De Hoofdrolspeler, Magiër × Rebel.
  *
  * Kept apart from ownerProfile.js (the long first-person texts) so App can warm the portrait the moment the
  * landing is ready without pulling those texts into the main bundle: warmOwnerPortrait() fetches and decodes
@@ -9,7 +9,10 @@ import { getArchetypeImage } from '@gfl/assessment-core/data/archetypeImages';
 
 // The owner's configuration. This page is one real person's profile, not a reader's, so the variant is
 // fixed rather than left to DEFAULT_PORTRAIT_VARIANT ('female' — the neutral default for a reader).
-export const OWNER_ARCHETYPES = { main: 'OUTLAW', support: 'HERO', shadow: 'Ruler', blindspot: 'Judge', portraitVariant: 'male' };
+export const OWNER_ARCHETYPES = {
+  main: 'MAGICIAN', support: 'OUTLAW', mainName: 'Magician', supportName: 'Outlaw',
+  shadow: 'Innocent', blindspot: 'Artist', portraitVariant: 'male',
+};
 
 export const OWNER_PORTRAIT = getArchetypeImage(OWNER_ARCHETYPES.main, OWNER_ARCHETYPES.support, OWNER_ARCHETYPES.portraitVariant);
 

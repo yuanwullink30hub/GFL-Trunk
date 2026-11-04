@@ -166,9 +166,13 @@ function identify(line, explicit) {
 /** Short enough, and not a sentence: a line that can be a title. */
 function titleShaped(line) {
   const t = line.trim();
-  if (!t || t.length > 70 || t.startsWith('|') || t.startsWith('-- ')) return false;
+  if (!t || t.startsWith('|') || t.startsWith('-- ')) return false;
   if (/[.!?]$/.test(t)) return false;
-  return t.split(/\s+/).length <= 10;
+  // A trailing parenthetical is the prompt's note copied along, not part of the title's length (owner, 4 Nov:
+  // "PERSOONLIJKHEIDSRAPPORT VERGELIJKING - OCEAN (vijf trait-blokken, IF-state)" is 75 characters, so the
+  // whole OCEAN section stayed glued onto Creatieve Resonantie).
+  const core = t.replace(/\s*\([^()]*\)\s*$/, '');
+  return core.length > 0 && core.length <= 70 && core.split(/\s+/).length <= 10;
 }
 /** Written the way the prompt asks titles to be written: in capitals, or as a bold line. */
 function capsOrBold(line) {
@@ -258,17 +262,79 @@ function normalizeHeadings(text, ledger) {
 //   • and any heading that is not a section at all — the model's own — wherever it stands.
 // A narrative tag always splits and closes the container.
 const PROFILE_DATA_HEADER = /^(?:profiel\s*data\s*voor\s*ai|profile\s*data\s*for\s*ai)\b/i;
+// The OCEAN section's own heading. The renderer draws its own title, so whatever the model wrote as the
+// comparison header (any length, any note behind it) is only a boundary and is replaced by this one.
+const OCEAN_HEADER = '## PERSOONLIJKHEIDSRAPPORT VERGELIJKING';
+/** A trait subheading written as its own line — `**Openheid**`, `Openheid — 72`, `TRAIT O` — or null. */
+const bareTraitHeading = (line) => {
+  const t = line.trim();
+  if (!t || /^\s*#/.test(t) || /[.!?]$/.test(t) || t.length > 80) return null;
+  const title = bareHeading(t);
+  return title && isOceanMemberHeading(title) ? title : null;
+};
+/** The model's comparison header written as a plain line, in capitals or bold. */
+const isBareComparisonHeader = (line) => {
+  const t = line.trim();
+  return !!t && !/^\s*#/.test(t) && !/[.!?]$/.test(t) && t.length <= 140 && capsOrBold(t)
+    && COMPARISON_TITLE.test(bareHeading(t));
+};
 function groupSubsections(text, ledger) {
   if (!text) return text;
   let container = null; // 'ocean' | 'prompt' | null
+  const lines = text.split('\n');
+  // A trait subheading opens the OCEAN section only where the trait blocks really start: at least three
+  // different traits follow before the next section heading, and this trait does not come again further
+  // down (a lone "**Openheid**" before the real Openheid block stays in its own section).
+  const traitKey = (title) => title.toLowerCase().split(/[\s—–(-]+/)[0];
+  const traitsAhead = (from) => {
+    const seen = [];
+    for (let j = from; j < lines.length; j++) {
+      const h = lines[j].match(/^\s*#{2,3}\s+(.+)$/);
+      const title = h ? bareHeading(h[1]) : bareTraitHeading(lines[j]);
+      if (h && !isOceanMemberHeading(title)) break;
+      if (title && isOceanMemberHeading(title)) {
+        const key = traitKey(title);
+        if (seen.includes(key)) return key === seen[0] ? 0 : new Set(seen).size;
+        seen.push(key);
+      }
+    }
+    return new Set(seen).size;
+  };
+  const openOcean = (from) => {
+    if (container === 'ocean') return;
+    ledger && from && ledger.fuzzy.push({ from: from.trim(), to: OCEAN_HEADER.slice(3) });
+    out.push(OCEAN_HEADER);
+    container = 'ocean';
+  };
   const out = [];
-  for (const line of text.split('\n')) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const m = line.match(/^\s*#{2,3}\s+(.+)$/);
-    if (!m) { out.push(line); continue; }
+    if (!m) {
+      if (container !== 'ocean' && container !== 'prompt') {
+        // The model's own comparison header, however long: our heading takes its place.
+        if (isBareComparisonHeader(line)) { openOcean(line); continue; }
+        // No header at all: the first trait subheading opens the section.
+        const trait = bareTraitHeading(line);
+        if (trait && traitsAhead(i) >= 3) { openOcean(); out.push(`**${trait}**`); continue; }
+      } else if (container === 'ocean') {
+        // Inside the section every trait subheading is drawn the same way, bold or bare as written.
+        const trait = bareTraitHeading(line);
+        if (trait) { out.push(`**${trait}**`); continue; }
+      }
+      out.push(line);
+      continue;
+    }
     const title = bareHeading(m[1]);
     if (isOceanMemberHeading(title)) {
-      if (container !== 'ocean') { out.push('## PERSOONLIJKHEIDSRAPPORT VERGELIJKING'); container = 'ocean'; }
+      openOcean();
       out.push(`**${title}**`);
+      continue;
+    }
+    if (COMPARISON_TITLE.test(title)) {
+      // The model's comparison heading: our own takes its place (the renderer shows its own title anyway).
+      if (container === 'ocean') continue;
+      openOcean(title === bareHeading(OCEAN_HEADER) ? null : m[1]);
       continue;
     }
     const tag = matchNarrativeTag(m[1]);

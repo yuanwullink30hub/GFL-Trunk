@@ -195,6 +195,11 @@ export default {
       includesReport: { nl: 'Volledige rapport met 3x meer inhoudelijke data', en: 'The full report with 3x more in-depth data' },
       includesPrompt: { nl: 'AI prompt om je eigen agent op jouw psyche af te stellen', en: 'An AI prompt to tune your own agent to your psyche' },
       includesPlatform: { nl: 'Volledige toegang tot het platform:', en: 'Full access to the platform:' },
+      // How long the platform access lasts — said here, before payment (owner, 2026-11-04).
+      accessTerm: {
+        nl: 'De activatie code in je volledige rapport geeft 3 maanden toegang tot het platform, vanaf het moment dat je hem inwisselt (code geen gebruiksdatum). Elk volgend rapport telt er 3 maanden bij op (op zijn vroegst 2 maanden na het vorige) — na 3 rapporten heb je permanente toegang tot je zelf besluit het account te verwijderen.',
+        en: 'The activation code in your full report gives 3 months of access to the platform, from the moment you redeem it (the code has no use-by date). Every next report adds 3 months (at the earliest 2 months after the previous one) — after 3 reports you have permanent access until you yourself decide to delete the account.',
+      },
       platformTools: { nl: "Ontwikkelings programma's", en: 'Development programmes' },
       platformMedia: { nl: 'Verbindings-media voor netwerken en rekrutering', en: 'Connection media for networking and recruitment' },
       platformStorage: { nl: 'Lokale data opslag (Anti data-lek)', en: 'Local data storage (anti data leak)' },
@@ -318,8 +323,8 @@ export default {
       leavePaidCheck: { nl: 'Ik heb mijn pdf veilig opgeslagen', en: 'I have saved my PDF safely' },
       leaveContinue: { nl: 'Doorgaan', en: 'Continue' },
       leaveBack: { nl: 'Teruggaan', en: 'Go back' },
-      haveCode: { nl: 'Heb je een activatiecode?', en: 'Have an activation code?' },
-      codeLabel: { nl: 'Code', en: 'Code' },
+      haveCode: { nl: 'Heb je een voucher?', en: 'Have a voucher?' },
+      codeLabel: { nl: 'Vouchercode', en: 'Voucher code' },
       codeActivate: { nl: 'Activeren', en: 'Activate' },
       codeChecking: { nl: 'Controleren…', en: 'Checking…' },
       codeAcceptedTitle: { nl: 'Code geaccepteerd', en: 'Code accepted' },
@@ -333,8 +338,8 @@ export default {
         en: 'Too many attempts. Try again in fifteen minutes.',
       },
       codeReportExpired: {
-        nl: 'Dit rapport is ouder dan 24 uur en kan niet meer worden vrijgegeven. Je activatiecode is niet gebruikt.',
-        en: 'This report is older than 24 hours and can no longer be unlocked. Your activation code has not been used.',
+        nl: 'Dit rapport is ouder dan 24 uur en kan niet meer worden vrijgegeven. Je voucher is niet gebruikt.',
+        en: 'This report is older than 24 hours and can no longer be unlocked. Your voucher has not been used.',
       },
       codeNetwork: {
         nl: 'Geen verbinding met de server. Controleer je verbinding en probeer het opnieuw.',

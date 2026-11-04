@@ -21,7 +21,7 @@ const { rateLimit, createFailureCounter } = require('../middleware/rateLimit');
 const { encrypt, decrypt, hash, decryptUser } = require('../services/encryption');
 const { decodeOrb3 } = require('@gfl/orb-engine');
 const { readingForClaim } = require('../services/cardSignature');
-const { isCodeBlocked, isCodeActivatable, visibleHistory, BLOCKED_MESSAGE, NOT_UNLOCKED_MESSAGE } = require('../services/reportAccess');
+const { isCodeBlocked, isCodeActivatable, visibleHistory, hasLifetimeAccess, BLOCKED_MESSAGE, NOT_UNLOCKED_MESSAGE } = require('../services/reportAccess');
 
 // Email verification is ENFORCED only when SMTP is configured (so local dev without mail still
 // works — those accounts are created pre-verified). Token is single-use, 24h.
@@ -844,8 +844,10 @@ router.get('/me', authRequired, async (req, res) => {
       archetypeName: user.archetypeName || '',
       orbHistory: publicOrbHistory(user),
       // Access model: platform-access expiry + when the next code may be attached (2 months
-      // after the last one). The Privé upload button disables itself on this date.
-      accessUntil: user.accessUntil || null,
+      // after the last one). The Privé upload button disables itself on this date. From the third
+      // code the access is for good: no expiry is sent, so nothing in the client ever closes.
+      accessLifetime: hasLifetimeAccess(user),
+      accessUntil: hasLifetimeAccess(user) ? null : (user.accessUntil || null),
       nextUploadAvailableAt: (() => {
         const h = visibleHistory(user.orbHistory).pop()?.entry || null;
         if (!h || !h.at) return null;

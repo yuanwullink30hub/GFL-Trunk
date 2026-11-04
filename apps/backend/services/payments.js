@@ -24,7 +24,7 @@ const crypto = require('crypto');
 const { collections } = require('../db');
 const config = require('../config');
 const { getStripe, webhooks } = require('./stripe');
-const { resolvePaymentConfig, priceInfo, normCountry, TERMS_VERSION } = require('./paymentConfig');
+const { resolvePaymentConfig, priceInfo, normCountry, TERMS_VERSION, isAcceptedTermsVersion } = require('./paymentConfig');
 const paymentEvents = require('./paymentEvents');
 const { unsealCode, openSeal, SealError } = require('./sealedCode');
 const { orbKeyFor } = require('./orbKey');
@@ -199,7 +199,7 @@ async function payFullReport({ confirmationTokenId, sealedOrbCode, email, countr
 
   // 4. Consent (herroepingsrecht waiver + guarantee), version-pinned and evidenced.
   const text = String(consentText || '').trim();
-  if (consent !== true || termsVersion !== TERMS_VERSION || !text || text.length > 4000) {
+  if (consent !== true || !isAcceptedTermsVersion(termsVersion) || !text || text.length > 4000) {
     throw new PaymentError('consent_required', 400, { termsVersion: TERMS_VERSION });
   }
 

@@ -7,7 +7,7 @@ const { hash } = require('../services/encryption');
 const { decodeOrb3 } = require('@gfl/orb-engine');
 const { extractReading } = require('../services/readingExtract');
 const { readingForClaim } = require('../services/cardSignature');
-const { isCodeBlocked, isCodeActivatable, visibleHistory, BLOCKED_MESSAGE, NOT_UNLOCKED_MESSAGE } = require('../services/reportAccess');
+const { isCodeBlocked, isCodeActivatable, visibleHistory, LIFETIME_AFTER_CODES, BLOCKED_MESSAGE, NOT_UNLOCKED_MESSAGE } = require('../services/reportAccess');
 const { parseUpload } = require('../services/uploadParser');
 const { claimCheck, keyFromText, markRedeemed, verifyOrbKey } = require('../services/orbKey');
 const { rateLimit } = require('../middleware/rateLimit');
@@ -242,7 +242,9 @@ router.post('/link', authRequired, async (req, res) => {
         .catch((e) => console.warn('[orb/link] kaart-draft cleanup failed:', e.message));
     }
 
-    return res.json({ linked: true, accessUntil });
+    // From the third code that counts, access is for good (services/reportAccess.js hasLifetimeAccess).
+    const accessLifetime = visibleHistory(userDoc.orbHistory).length + 1 >= LIFETIME_AFTER_CODES;
+    return res.json({ linked: true, accessLifetime, accessUntil: accessLifetime ? null : accessUntil });
   } catch (e) {
     console.error('[orb/link] error:', e.message);
     return res.status(500).json({ error: 'Serverfout bij het koppelen van de code.' });

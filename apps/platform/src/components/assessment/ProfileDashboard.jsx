@@ -1051,21 +1051,16 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                 {/* App — settings of this computer (refresh rate, graphics, startup). Desktop app only. */}
                 {isDesktopApp() && <AppSettingsSection labelStyle={LABEL} />}
 
-                {/* Toegang — unlocks after 3 linked kristal-codes (access model): the user has
-                    proven commitment; offer subscription (cheaper than a new test), a year, or
-                    lifetime. No payment rails yet → options render disabled with a coming-soon note. */}
-                {(Array.isArray(user.orbHistory) ? user.orbHistory : []).length >= 3 && (
+                {/* Toegang — the access model in one line (owner, 2026-11-04): each kristal-code opens
+                    3 months, added to the running expiry; from the third code the access is for good,
+                    no subscription. The server decides (accessLifetime on /me). */}
+                {(user.accessLifetime || user.accessUntil) && (
                   <div style={{ marginTop: '1.15rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                     <div style={{ ...LABEL, marginBottom: '0.6rem' }}>{t('profile.dashboard.settings.accessTitle')}</div>
-                    <div style={{ fontSize: 'max(11px,0.58vw)', color: '#FFFEF0', lineHeight: 1.5, marginBottom: '0.7rem' }}>
-                      {t('profile.dashboard.settings.accessBody')}
-                      {user.accessUntil && <>{t('profile.dashboard.settings.accessValidPre')} <b>{fmtDate(user.accessUntil)}</b>{t('profile.dashboard.settings.accessValidPost')}</>}
-                    </div>
-                    <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                      <SciFiButton disabled variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.planQuarter')}</SciFiButton>
-                      <SciFiButton disabled variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.planYear')}</SciFiButton>
-                      <SciFiButton disabled variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.planLifetime')}</SciFiButton>
-                      <span style={{ fontSize: 'max(9px,0.5vw)', color: 'rgba(196,181,253,0.75)' }}>{t('profile.dashboard.settings.comingSoon')}</span>
+                    <div style={{ fontSize: 'max(11px,0.58vw)', color: '#FFFEF0', lineHeight: 1.5 }}>
+                      {user.accessLifetime
+                        ? t('profile.dashboard.settings.accessLifetime')
+                        : <>{t('profile.dashboard.settings.accessValidPre')} <b>{fmtDate(user.accessUntil)}</b>{t('profile.dashboard.settings.accessValidPost')}</>}
                     </div>
                   </div>
                 )}

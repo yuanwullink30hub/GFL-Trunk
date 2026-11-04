@@ -32,7 +32,7 @@ router.get('/key', async (_req, res) => {
 
 router.post('/tickets', authRequired, async (req, res) => {
   try {
-    const user = await collections.users().findOne({ _id: new ObjectId(String(req.user.userId)) }, { projection: { accessUntil: 1 } });
+    const user = await collections.users().findOne({ _id: new ObjectId(String(req.user.userId)) }, { projection: { accessUntil: 1, orbHistory: 1 } });
     if (!user) return res.status(404).json({ error: 'Account not found' });
     const { epoch, blinded } = req.body || {};
     return res.json(await tickets.issueTickets({ user, epoch, blinded }));

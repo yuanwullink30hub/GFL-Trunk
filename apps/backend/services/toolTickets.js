@@ -18,6 +18,7 @@
 const crypto = require('crypto');
 const { collections } = require('../db');
 const { encrypt, decrypt } = require('./encryption');
+const { isAccessExpired } = require('./reportAccess');
 
 const SUITE_NAME = 'RSABSSA-SHA384-PSS-Randomized';
 const MODULUS_BITS = 3072;
@@ -103,7 +104,7 @@ async function issueTickets({ user, epoch, blinded, now = new Date() }) {
   if (!Array.isArray(blinded) || blinded.length === 0 || blinded.length > MAX_PER_REQUEST) {
     throw new TicketError('bad_request', `Send 1–${MAX_PER_REQUEST} blinded tickets`);
   }
-  if (user.accessUntil && new Date(user.accessUntil) < now) throw new TicketError('no_access', 'Access has expired', 403);
+  if (isAccessExpired(user, now)) throw new TicketError('no_access', 'Access has expired', 403);
 
   const key = await getKey(current, { create: true });
   const s = await suite();

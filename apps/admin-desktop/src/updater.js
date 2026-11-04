@@ -7,8 +7,12 @@
  * updater sends it along with every feed and download request, checks right away and every few hours.
  * Logging out removes the token and stops the checks. Differential downloads are off (the feed serves
  * whole files), so every update downloads the full installer.
+ *
+ * The screens update apart from the installer (uiUpdates.js): their state rides in `status.ui`; the update
+ * button checks both, and "restart" installs a downloaded installer or, when only new screens wait, restarts.
  */
 const { app, BrowserWindow, ipcMain } = require('electron');
+const { checkUi, scheduleUiUpdates, uiStatus } = require('./uiUpdates');
 
 const CHECK_EVERY_MS = 4 * 60 * 60 * 1000;
 
@@ -17,17 +21,25 @@ let token = null;
 let timer = null;
 
 function publish(next) {
-  status = { ...status, ...next, current: app.getVersion() };
+  status = { ...status, ...next, current: app.getVersion(), ui: uiStatus() };
   for (const win of BrowserWindow.getAllWindows()) if (!win.isDestroyed()) win.webContents.send('update:status', status);
 }
 
+/** Restart into the newly downloaded screens. */
+function restartForUi() {
+  if (!uiStatus() || uiStatus().state !== 'staged') return false;
+  setImmediate(() => { app.relaunch(); app.exit(0); });
+  return true;
+}
+
 function setupUpdater() {
-  ipcMain.handle('update:status', () => status);
+  ipcMain.handle('update:status', () => ({ ...status, ui: uiStatus() }));
+  scheduleUiUpdates(() => publish({}));
 
   if (!app.isPackaged) {
     ipcMain.handle('session:set', () => false);
-    ipcMain.handle('update:check', () => status);
-    ipcMain.handle('update:install', () => false);
+    ipcMain.handle('update:check', async () => { await checkUi(); return { ...status, ui: uiStatus() }; });
+    ipcMain.handle('update:install', () => restartForUi());
     return;
   }
 
@@ -61,16 +73,21 @@ function setupUpdater() {
   });
 
   // The "check for updates" button (dashboard header). Needs the session: the feed answers nothing else.
+  // The installer feed needs the session; the screens' feed does not.
   ipcMain.handle('update:check', async () => {
-    if (!token) return status;
-    await autoUpdater.checkForUpdates().catch(() => { /* reported via 'error' */ });
-    return status;
+    await Promise.all([
+      token ? autoUpdater.checkForUpdates().catch(() => { /* reported via 'error' */ }) : null,
+      checkUi(),
+    ]);
+    return { ...status, ui: uiStatus() };
   });
 
   ipcMain.handle('update:install', () => {
-    if (status.state !== 'ready') return false;
-    setImmediate(() => autoUpdater.quitAndInstall(false, true));
-    return true;
+    if (status.state === 'ready') {
+      setImmediate(() => autoUpdater.quitAndInstall(false, true));
+      return true;
+    }
+    return restartForUi();
   });
 }
 

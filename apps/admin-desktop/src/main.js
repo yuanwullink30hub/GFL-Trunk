@@ -3,12 +3,15 @@
  *
  * A window around the bundled management UI (apps/admin build, served from app://gflbeheer). It runs
  * only on the management computer: the installer is never public (the backend hands it out to a
- * logged-in management account) and updates come from the same private source (updater.js).
+ * logged-in management account) and installer updates come from the same private source (updater.js).
+ * The screens themselves follow main without a reinstall: signed UI builds, run from the next start
+ * (uiUpdates.js / uiBundle.js).
  */
 const { app, BrowserWindow, Menu, shell } = require('electron');
 const path = require('path');
 const { registerAppScheme, handleAppScheme, APP_ORIGIN } = require('./appProtocol');
 const { setupUpdater } = require('./updater');
+const { startUi } = require('./uiUpdates');
 
 const APP_ICON = path.join(__dirname, '..', 'build', 'icon.png');
 
@@ -73,6 +76,7 @@ function createWindow() {
 }
 
 if (isPrimaryInstance) app.whenReady().then(() => {
+  startUi(); // which UI this run serves — before the window loads
   handleAppScheme();
   Menu.setApplicationMenu(null);
   setupUpdater();

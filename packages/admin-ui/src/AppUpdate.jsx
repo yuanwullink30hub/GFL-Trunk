@@ -34,21 +34,25 @@ export function AppUpdateControl() {
   const u = useAdminAppUpdate();
   if (!u) return null;
 
+  // Two things update: the installer (u.state, private feed) and the screens (u.ui, signed builds — uiUpdates.js).
+  const ui = u.ui && u.ui.state;
+  const ready = u.state === 'ready' || ui === 'staged';
   const label = u.state === 'ready' ? tFunc('admin.app.statusReady')(u.version)
     : u.state === 'downloading' ? tFunc('admin.app.statusDownloading')(u.version, u.percent)
-      : u.state === 'checking' ? t('admin.app.statusChecking')
-        : u.state === 'current' ? t('admin.app.statusCurrent')
-          : u.state === 'error' ? t('admin.app.statusError')
-            : u.state === 'dev' ? t('admin.app.statusDev')
-              : '';
-  const tone = u.state === 'ready' ? '#f97316' : u.state === 'error' ? '#fca5a5' : u.state === 'current' ? '#4ade80' : 'rgba(255, 254, 240, 0.5)';
-  const busy = u.state === 'checking' || u.state === 'downloading' || u.state === 'dev';
+      : ui === 'staged' ? t('admin.app.statusUiReady')
+        : u.state === 'checking' || ui === 'checking' ? t('admin.app.statusChecking')
+          : u.state === 'current' || ui === 'current' ? t('admin.app.statusCurrent')
+            : u.state === 'error' || ui === 'error' ? t('admin.app.statusError')
+              : u.state === 'dev' ? t('admin.app.statusDev')
+                : '';
+  const tone = ready ? '#f97316' : u.state === 'error' || ui === 'error' ? '#fca5a5' : u.state === 'current' || ui === 'current' ? '#4ade80' : 'rgba(255, 254, 240, 0.5)';
+  const busy = u.state === 'checking' || ui === 'checking' || u.state === 'downloading';
 
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.7rem' }}>
       <span>Admin GFL v{u.current || ''}</span>
       {label && <span style={{ color: tone }}>{label}</span>}
-      {u.state === 'ready' ? (
+      {ready ? (
         <SciFiButton variant="orange" size="xs" onClick={() => u.install()}>{t('admin.app.restartUpdate')}</SciFiButton>
       ) : u.canCheck && (
         <SciFiButton variant="purple" size="xs" disabled={busy} onClick={() => u.check()}>{t('admin.app.check')}</SciFiButton>

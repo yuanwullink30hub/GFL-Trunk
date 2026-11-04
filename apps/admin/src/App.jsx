@@ -15,10 +15,11 @@ function UpdateBar() {
     api.status().then(setStatus).catch(() => {});
     return api.onStatus(setStatus);
   }, []);
-  if (!status || status.state !== 'ready') return null;
+  const uiReady = status && status.ui && status.ui.state === 'staged'; // new screens, waiting for a restart
+  if (!status || (status.state !== 'ready' && !uiReady)) return null;
   return (
     <div style={{ position: 'fixed', left: '50%', bottom: '1.25rem', transform: 'translateX(-50%)', zIndex: 2147483000, display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.7rem 1.1rem', borderRadius: '0.5rem', background: 'rgba(2, 0, 3, 0.3)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
-      <span style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(12px, 0.65vw)', color: '#FFFEF0' }}>{t('admin.app.updateReady')} {status.version}</span>
+      <span style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(12px, 0.65vw)', color: '#FFFEF0' }}>{status.state === 'ready' ? `${t('admin.app.updateReady')} ${status.version}` : t('admin.app.statusUiReady')}</span>
       <SciFiButton size="sm" onClick={() => window.gflAdmin.update.install()}>{t('admin.app.restart')}</SciFiButton>
     </div>
   );

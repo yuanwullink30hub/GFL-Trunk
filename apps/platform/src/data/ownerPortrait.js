@@ -1,5 +1,5 @@
 /**
- * The owner's portrait on the policy pages (Eyedentity → Profiel): De Hoofdrolspeler, Magiër × Rebel.
+ * The owner's portrait on the policy pages (Eyedentity → Profiel): De Protagonist, Magiër × Rebel.
  *
  * Kept apart from ownerProfile.js (the long first-person texts) so App can warm the portrait the moment the
  * landing is ready without pulling those texts into the main bundle: warmOwnerPortrait() fetches and decodes

@@ -1,5 +1,5 @@
 /**
- * The owner's own profile on the policy pages (Eyedentity → Profiel): De Hoofdrolspeler, Magiër × Rebel.
+ * The owner's own profile on the policy pages (Eyedentity → Profiel): De Protagonist, Magiër × Rebel.
  *
  * Source: the owner's report of 4-11-2026 (GardenForLife_The_Protagonist, the two-layer Leerling test),
  * rewritten in the first person — not a model reporting to a person, but the owner describing their own
@@ -56,11 +56,11 @@ export const OWNER_OCEAN = [
 
 export const OWNER_PROFILE = {
   nl: {
-    name: 'De Hoofdrolspeler',
+    name: 'De Protagonist',
     pairing: 'Magiër × Rebel — mijn profiel',
     lesson: 'De wereld vormt zich rond wie het verhaal durft te dragen, dus droeg ik het — overal, altijd. Maar een hoofdrol zonder tegenspelers speelt voor een lege zaal. Mijn beste hoofdstuk begon toen ik iemand anders de opening gaf.',
     lessonLabel: 'Mijn levensles',
-    intro: 'Dit is mijn eigen profiel, zoals het Deltawerken-model het las: De Hoofdrolspeler, met de Magiër als kern en de Rebel als tweede stem. Ik heb het rapport herschreven in mijn eigen woorden, zodat je ziet hoe zo’n lezing eruitziet. Het is een spiegel voor zelfreflectie, geen diagnose.',
+    intro: 'Dit is mijn eigen profiel, zoals het Deltawerken-model het las: De Protagonist, met de Magiër als kern en de Rebel als tweede stem. Ik heb het rapport herschreven in mijn eigen woorden, zodat je ziet hoe zo’n lezing eruitziet. Het is een spiegel voor zelfreflectie, geen diagnose.',
     giftTitle: 'Mijn gave',
     gift: 'Werkelijkheid buigen door het verhaal te grijpen. Waar anderen afwachten, zie ik waar een vastgelopen situatie kantelt — en ik wacht niet op toestemming om die draai te maken. Ik stap midden in het verhaal en geef het een wending, hardop en zichtbaar. Mensen merken dat er iets gebeurt zodra ik de kamer binnenkom. Verhalen die vastzitten, komen in beweging omdat ik erin durf te stappen.',
     geometryTitle: 'Mijn geometrie',
@@ -83,7 +83,7 @@ export const OWNER_PROFILE = {
     ocean: {
       O: 'Mijn openheid is niet de breedte van wat ik opneem, maar van wat ik bereid ben te verbouwen. Intellect ligt boven esthetische openheid: ik ben open via systemen, modellen en wat-als, minder via schoonheid om de schoonheid. Dat spoort met mijn wiel tot in het detail, want de hardware waar esthetiek leeft — de Kunstenaar — is precies mijn blindspot. Hier zeggen beide instrumenten hetzelfde: ik zoek niet receptief, maar disruptief.',
       C: 'Hier wringt het, en dat vind ik de interessantste plek. Het wiel leest mijn Magiër en mijn Rebel als weinig gehecht aan regels: kortere wegen, kaders breken. En toch meldt mijn zelfrapport 96. Ik lees dat als discipline in dienst van het doel — de volharding die nodig is om een systeem echt te breken en te herbouwen. IJver verklaart mijn Held moeiteloos. Ordelijkheid niet: de Heerser en de Rechter zijn mijn lichtste gewichten. Het wiel zegt kaderbreker, het zelfrapport zegt ordelijk, en ik kies geen winnaar.',
-      E: 'Volgens het wiel werkt de Magiër liever van achter het gordijn. Mijn 88 zegt iets anders, en dat is De Hoofdrolspeler letterlijk: de tovenaar die niet achter het gordijn blijft, maar het toneel op loopt. Assertiviteit ligt ver boven enthousiasme. Ik stap naar voren, neem de leiding en zet door; de warmte van anticipatie en verbinding weegt bij mij lichter. Ik ben eerder iemand die de ruimte inneemt dan iemand die hem opwarmt.',
+      E: 'Volgens het wiel werkt de Magiër liever van achter het gordijn. Mijn 88 zegt iets anders, en dat is De Protagonist letterlijk: de tovenaar die niet achter het gordijn blijft, maar het toneel op loopt. Assertiviteit ligt ver boven enthousiasme. Ik stap naar voren, neem de leiding en zet door; de warmte van anticipatie en verbinding weegt bij mij lichter. Ik ben eerder iemand die de ruimte inneemt dan iemand die hem opwarmt.',
       A: 'Een 39 past bij een Magiër en een Rebel: ik ruil de waarheid niet in voor een prettige sfeer. Maar de aspecten zijn de echte bevinding. Compassie 76, beleefdheid 9. Dat is geen tegenspraak; het is mijn handtekening. Ik voel scherp wat er met mensen gebeurt, en ik zeg ze toch de waarheid in het gezicht. Ik saboteer de etiquette, niet de persoon.',
       N: 'Twee van de honderd. Dat lees ik niet als onverstoorbaar, maar als een configuratie die haar kost niet voelt: bij mijn actiehardware is de afwezigheid van gevoelde spanning juist het signaal. Volatiliteit 7 wringt met mijn Rebel, die het wiel leest als een motor op verontwaardiging. Terugtrekking 2 klopt wel: mijn kern werkt naar buiten. Wat dit getal niet ziet, is wáár mijn afdaling landt — en bij mij landt ze op één plek, laat en hard.',
     },

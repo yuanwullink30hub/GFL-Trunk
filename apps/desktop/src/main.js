@@ -254,7 +254,7 @@ function createWindow() {
   }
   // Benchmark run ({ "bench": true }, see App.jsx): quit once the page reports the sequence finished.
   if (graphicsFlags.bench) {
-    win.webContents.on('console-message', (_e, _level, message) => {
+    win.webContents.on('console-message', ({ message }) => {
       if (String(message).startsWith('[bench] done')) setTimeout(() => app.quit(), 1000);
     });
   }
@@ -267,10 +267,10 @@ function createWindow() {
   });
 
   // Reloads of our own page (login and logout hard-refresh) pass; everything else leaves the app.
-  win.webContents.on('will-navigate', (event, url) => {
-    if (originOf(url) !== UI_ORIGIN) {
+  win.webContents.on('will-navigate', (event) => {
+    if (originOf(event.url) !== UI_ORIGIN) {
       event.preventDefault();
-      openOutside(url);
+      openOutside(event.url);
     }
   });
 
@@ -376,9 +376,11 @@ function attachRendererLog(win) {
   const { screen } = require('electron'); // only usable after 'ready'
   write(`[auto-hdr] ${autoHdrResult}`);
   write(`[display] ${screen.getAllDisplays().map((d) => `${d.size.width}x${d.size.height} @ ${d.displayFrequency} Hz${d.id === screen.getPrimaryDisplay().id ? ' (primary)' : ''}`).join(' · ')}`);
-  win.webContents.on('console-message', (_e, level, message, line, sourceId) => {
-    const relevant = level >= 2 || /nebula|webgl|gpu|worker|offscreen|shader/i.test(String(message));
-    if (relevant) write(`[${['log', 'info', 'warn', 'error'][level] || level}] ${String(message).slice(0, 2000)} (${String(sourceId || '').split('/').pop()}:${line})`);
+  // Electron 35+ passes one event object; `level` is a string. Keep the old [log]/[info]/[warn]/[error] tags.
+  const LOG_TAG = { debug: 'log', info: 'info', warning: 'warn', error: 'error' };
+  win.webContents.on('console-message', ({ level, message, lineNumber, sourceId }) => {
+    const relevant = level === 'warning' || level === 'error' || /nebula|webgl|gpu|worker|offscreen|shader/i.test(String(message));
+    if (relevant) write(`[${LOG_TAG[level] || level}] ${String(message).slice(0, 2000)} (${String(sourceId || '').split('/').pop()}:${lineNumber})`);
   });
   win.webContents.on('did-fail-load', (_e, code, desc, url) => write(`[load-failed] ${code} ${desc} ${url}`));
   win.webContents.on('render-process-gone', (_e, details) => write(`[renderer-gone] ${details.reason} ${details.exitCode}`));
@@ -406,6 +408,8 @@ function registerIpc() {
   ipcMain.handle('workspace:choose', async () => {
     const result = await dialog.showOpenDialog({
       title: 'Choose your Garden For Life folder',
+      // Electron 43+ opens Downloads when no defaultPath is given.
+      defaultPath: workspaceRoot || app.getPath('home'),
       properties: ['openDirectory', 'createDirectory'],
       buttonLabel: 'Use this folder',
     });
@@ -448,6 +452,7 @@ function registerIpc() {
     const win = BrowserWindow.fromWebContents(event.sender);
     const pick = await dialog.showOpenDialog(win, {
       title: 'Werkmap verplaatsen — kies de nieuwe locatie',
+      defaultPath: path.dirname(root),
       properties: ['openDirectory', 'createDirectory'],
       buttonLabel: 'Hierheen verplaatsen',
     });

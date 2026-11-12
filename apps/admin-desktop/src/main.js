@@ -64,10 +64,10 @@ function createWindow() {
     openOutside(url);
     return { action: 'deny' };
   });
-  win.webContents.on('will-navigate', (event, url) => {
-    if (originOf(url) !== APP_ORIGIN) {
+  win.webContents.on('will-navigate', (event) => {
+    if (originOf(event.url) !== APP_ORIGIN) {
       event.preventDefault();
-      openOutside(url);
+      openOutside(event.url);
     }
   });
 

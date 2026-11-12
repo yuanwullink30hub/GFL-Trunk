@@ -68,6 +68,10 @@ const fileToBase64 = (file) =>
     reader.readAsDataURL(file);
   });
 
+// Gmail SMTP refuses a message over 25 MB after MIME (base64) encoding, which leaves ~18 MB of files.
+// The backend's body limit for send-direct (apps/backend/server.js) is sized to match.
+const MAX_ATTACHMENT_BYTES = 18 * 1024 * 1024;
+
 const formatFileSize = (bytes) => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -139,7 +143,14 @@ const EmailTemplate = memo(({ isMobile }) => {
         setSendError(tFunc('admin.email.readError')(file.name));
       }
     }
-    setAttachments(prev => [...prev, ...newAttachments]);
+    setAttachments(prev => {
+      const next = [...prev, ...newAttachments];
+      const totalBytes = next.reduce((sum, a) => sum + (a.size || 0), 0);
+      if (totalBytes > MAX_ATTACHMENT_BYTES) {
+        setSendError(tFunc('admin.email.attachmentsTooLarge')(formatFileSize(totalBytes)));
+      }
+      return next;
+    });
     // Reset input so same file can be re-selected
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -173,6 +184,12 @@ const EmailTemplate = memo(({ isMobile }) => {
     const invalidCc = ccEmails.filter(e => !emailRegex.test(e));
     if (invalidCc.length > 0) {
       setSendError(tFunc('admin.email.invalidCcEmail')(invalidCc[0]));
+      return;
+    }
+
+    const totalBytes = attachments.reduce((sum, a) => sum + (a.size || 0), 0);
+    if (totalBytes > MAX_ATTACHMENT_BYTES) {
+      setSendError(tFunc('admin.email.attachmentsTooLarge')(formatFileSize(totalBytes)));
       return;
     }
 

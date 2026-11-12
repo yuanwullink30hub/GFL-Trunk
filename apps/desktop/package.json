@@ -17,8 +17,10 @@
   },
   "devDependencies": {
     "@electron/fuses": "2.1.3",
+    "dmg-builder": "26.18.1",
     "electron": "^44.11.1",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^26.18.1",
+    "electron-builder-squirrel-windows": "26.18.1"
   },
   "dependencies": {
     "electron-updater": "^6.8.11",

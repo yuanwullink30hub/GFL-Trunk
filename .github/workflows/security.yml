@@ -30,6 +30,15 @@ jobs:
           node-version: 22
       - name: No High or Critical advisory on a production dependency
         run: corepack pnpm@9.0.0 audit --prod --audit-level high
+      # The two Electron apps sit outside the workspace with their own lockfiles, so the root audit never
+      # saw them (that is how an end-of-life Electron 33 went unnoticed). Not --prod: electron itself is a
+      # devDependency yet ships inside the installer.
+      - name: No High or Critical advisory in the desktop app
+        working-directory: apps/desktop
+        run: corepack pnpm@9.0.0 audit --ignore-workspace --audit-level high
+      - name: No High or Critical advisory in the admin app
+        working-directory: apps/admin-desktop
+        run: corepack pnpm@9.0.0 audit --ignore-workspace --audit-level high
 
   backend-security:
     runs-on: ubuntu-latest

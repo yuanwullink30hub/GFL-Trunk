@@ -1032,6 +1032,10 @@ export default {
         nl: (name) => `Fout bij inlezen van ${name}`,
         en: (name) => `Error reading ${name}`,
       },
+      attachmentsTooLarge: {
+        nl: (total) => `Bijlagen samen ${total} — Gmail verstuurt maximaal ±18 MB aan bijlagen per mail. Deel grotere bestanden via een link.`,
+        en: (total) => `Attachments total ${total} — Gmail sends at most ±18 MB of attachments per email. Share larger files via a link.`,
+      },
       enterAtLeastOneEmail: {
         nl: 'Vul minimaal één e-mailadres in',
         en: 'Enter at least one email address',

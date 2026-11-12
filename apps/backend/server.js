@@ -62,14 +62,19 @@ app.use('/api/payments/webhook', stripeWebhookRoutes);
 //   /api/admin/*     the master prompt and documents, admin-only (the router 404s everyone else).
 //   /api/orb/login   a whole report PDF, as base64 — its cover alone embeds a ~5.6 MB image. It keeps
 //                    the old 25 MB allowance; the PDF is parsed in a sandboxed child (routes/orb.js).
+//   /api/admin/forms/send-direct  admin e-mail with base64 attachments. Gmail SMTP refuses messages over
+//                    25 MB *after* MIME encoding, i.e. ~18 MB of files; base64 in the JSON makes that ~24 MB,
+//                    so 26 MB lets anything Gmail would accept through (EmailTemplate.jsx checks 18 MB first).
 // Everything else — the orb snapshot (≤500 KB), tool inputs (64 KB), forms — fits in 1 MB.
 const jsonBody = express.json({ limit: '1mb' });
 const jsonAnalyze = express.json({ limit: '22mb' });
 const jsonAdmin = express.json({ limit: '10mb' });
+const jsonAdminMail = express.json({ limit: '26mb' });
 const jsonReportPdf = express.json({ limit: '25mb' });
 app.use((req, res, next) => {
   if (req.path === '/api/ai/analyze') return jsonAnalyze(req, res, next);
   if (req.path === '/api/orb/login') return jsonReportPdf(req, res, next);
+  if (req.path === '/api/admin/forms/send-direct') return jsonAdminMail(req, res, next);
   if (req.path.startsWith('/api/admin/')) return jsonAdmin(req, res, next);
   return jsonBody(req, res, next);
 });
@@ -219,63 +224,6 @@ function scheduleProfilePurge() {
   setTimeout(() => { purgeProfiles().finally(scheduleProfilePurge); }, delay);
 }
 
-// ── BETA END: delete all assessment data on 27-09-2026 12:00 UTC (launch day) ──
-// Keeps: user accounts, audit logs (devActivity), questions.
-// Deletes: assessments, assessmentReviews.
-const BETA_WIPE_DATE = new Date('2026-09-27T12:00:00Z');
-// Node's setTimeout delay is a 32-bit signed int: anything over ~24.8 days overflows and gets
-// clamped to 1ms (fires immediately). The wipe is months out, so we re-arm in safe chunks.
-const MAX_TIMEOUT = 2147483647; // 2^31 - 1 ms
-
-function scheduleBetaWipe() {
-  const msUntilWipe = BETA_WIPE_DATE.getTime() - Date.now();
-
-  if (msUntilWipe <= 0) {
-    // Already past the deadline — run immediately on startup
-    console.log('[GFL-API] ⚠️  Beta wipe deadline has passed — executing now');
-    executeBetaWipe();
-    return;
-  }
-
-  if (msUntilWipe > MAX_TIMEOUT) {
-    // Too far out for a single timer — re-check after one max chunk (never fires early).
-    console.log(`[GFL-API] Beta data wipe scheduled for ${BETA_WIPE_DATE.toISOString()} (in ${Math.round(msUntilWipe / 86400000)}d)`);
-    setTimeout(scheduleBetaWipe, MAX_TIMEOUT).unref?.();
-    return;
-  }
-
-  console.log(`[GFL-API] Beta data wipe scheduled for ${BETA_WIPE_DATE.toISOString()} (in ${Math.round(msUntilWipe / 86400000)}d)`);
-  setTimeout(() => executeBetaWipe(), msUntilWipe);
-}
-
-async function executeBetaWipe() {
-  try {
-    const { getDB } = require('./db');
-    const db = getDB();
-
-    const [assessments, reviews] = await Promise.all([
-      db.collection('assessments').deleteMany({}),
-      db.collection('assessmentReviews').deleteMany({}),
-    ]);
-
-    // Log the wipe in the audit trail
-    db.collection('devActivity').insertOne({
-      // The TTL now keys on expiresAt; a row without it would live forever.
-      expiresAt: new Date(Date.now() + 90 * 86400 * 1000),
-      type: 'admin_login',
-      timestamp: new Date(),
-      userId: 'SYSTEM',
-      email: 'system@gardenforlife.nl',
-      message: `BETA WIPE: deleted ${assessments.deletedCount} assessments, ${reviews.deletedCount} reviews`,
-      branch: '', hash: '', reportId: null, reportType: '',
-    }).catch(() => {});
-
-    console.log(`[GFL-API] ✅ Beta wipe complete: ${assessments.deletedCount} assessments, ${reviews.deletedCount} reviews deleted`);
-  } catch (err) {
-    console.error('[GFL-API] ❌ Beta wipe failed:', err.message);
-  }
-}
-
 // ── Start ──
 async function start() {
   // Fail closed: in production an insecure configuration refuses to start (config/secure.js). Only which
@@ -295,9 +243,6 @@ async function start() {
   if (config.mongoUri) {
     await connectDB();
     console.log('[GFL-API] MongoDB connected');
-
-    // ── BETA END: hard-coded wipe of all assessment data on 27-09-2026 12:00 UTC ──
-    scheduleBetaWipe();
 
     // Computed profiles never survive the night — swept at 00:00 Europe/Amsterdam.
     scheduleProfilePurge();

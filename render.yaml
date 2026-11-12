@@ -29,6 +29,11 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # Pin the major: Render otherwise keeps the Node default from the day the service was created and
+      # misses security patches. "22" resolves to the newest 22.x on every deploy; never use ">=22".
+      # Node 22 is maintenance LTS until 2027-04-30 — move to 24 before then.
+      - key: NODE_VERSION
+        value: "22"
       - key: PORT
         value: "10000"         # Render assigns this automatically, but explicit is fine
       - key: DEFAULT_AI_PROVIDER
